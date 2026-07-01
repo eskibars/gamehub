@@ -1,0 +1,493 @@
+:root {
+  color-scheme: light;
+  --ink: #17211d;
+  --muted: #60706a;
+  --line: #d8e0dc;
+  --paper: #fbfaf6;
+  --panel: #ffffff;
+  --accent: #146c5d;
+  --accent-strong: #0d4f43;
+  --gold: #e5b84b;
+  --rose: #d95f70;
+  --blue: #3974b8;
+  --shadow: 0 18px 50px rgba(23, 33, 29, 0.12);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    linear-gradient(135deg, rgba(20, 108, 93, 0.12), transparent 34%),
+    linear-gradient(315deg, rgba(217, 95, 112, 0.12), transparent 28%),
+    var(--paper);
+  color: var(--ink);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
+  gap: 24px;
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.builder {
+  display: grid;
+  gap: 16px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 86px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0;
+  font-size: clamp(2rem, 4vw, 4.2rem);
+  line-height: 0.96;
+  letter-spacing: 0;
+}
+
+h2 {
+  margin-bottom: 10px;
+  font-size: 1.05rem;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  text-align: right;
+}
+
+.panel,
+.preview-panel {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.panel {
+  padding: 18px;
+}
+
+.controls-panel,
+.input-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.control-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  align-items: end;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.field input,
+.field select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  padding: 11px 12px;
+  outline: none;
+}
+
+.field input:focus,
+.field select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(20, 108, 93, 0.14);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 45px;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+.input-panel {
+  grid-template-columns: 1fr 1fr;
+}
+
+.paste-zone {
+  min-height: 180px;
+  border: 1px dashed var(--accent);
+  border-radius: 8px;
+  padding: 16px;
+  background: rgba(20, 108, 93, 0.06);
+}
+
+.paste-zone.is-dragging,
+.bingo-card.is-dragging {
+  border-color: var(--rose);
+  background: rgba(217, 95, 112, 0.08);
+  box-shadow: 0 0 0 4px rgba(217, 95, 112, 0.16), var(--shadow);
+}
+
+.paste-zone p {
+  color: var(--muted);
+}
+
+.image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  padding: 0 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.button:hover {
+  border-color: var(--accent);
+}
+
+.button.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+.button.primary:hover {
+  background: var(--accent-strong);
+}
+
+.button.ghost {
+  background: transparent;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 14px;
+}
+
+.section-heading p {
+  margin-bottom: 0;
+  color: var(--muted);
+}
+
+.tile-library {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  max-height: 380px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.library-tile {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  min-height: 116px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px;
+}
+
+.library-tile img {
+  width: 100%;
+  aspect-ratio: 1.45;
+  object-fit: contain;
+  background: #f5f7f6;
+  border-radius: 6px;
+}
+
+.library-tile input {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 8px;
+}
+
+.icon-button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.preview-panel {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.preview-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.bingo-card {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: clamp(12px, 2vw, 22px);
+  border: 3px solid var(--ink);
+  background: #fffefa;
+}
+
+.bingo-card h2 {
+  margin: 0;
+  text-align: center;
+  color: var(--ink);
+  font-size: clamp(1.4rem, 3vw, 2.2rem);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.bingo-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-size), minmax(0, 1fr));
+  gap: 5px;
+  aspect-ratio: 1 / 1.2;
+}
+
+.bingo-cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 2px solid var(--ink);
+  background: #fff;
+  text-align: center;
+}
+
+.bingo-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #f5f7f6;
+}
+
+.bingo-cell span {
+  z-index: 1;
+  max-width: 100%;
+  padding: 6px;
+  font-size: clamp(0.58rem, 1.7vw, 1rem);
+  font-weight: 850;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+
+.bingo-cell.image span,
+.bingo-cell.mixed span {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  left: 4px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.bingo-cell.free {
+  background: var(--gold);
+}
+
+.bingo-cell.empty {
+  color: var(--muted);
+  background: repeating-linear-gradient(45deg, #fff, #fff 8px, #f1f4f2 8px, #f1f4f2 16px);
+}
+
+.message {
+  min-height: 24px;
+  margin-bottom: 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+.share-box {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+dialog {
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  box-shadow: var(--shadow);
+}
+
+dialog::backdrop {
+  background: rgba(23, 33, 29, 0.36);
+}
+
+.dialog-card {
+  display: grid;
+  gap: 14px;
+  width: min(420px, calc(100vw - 32px));
+  padding: 22px;
+  background: #fff;
+}
+
+.dialog-card p {
+  color: var(--muted);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+#printArea {
+  display: none;
+}
+
+@media (max-width: 980px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 680px) {
+  .app-shell {
+    padding: 14px;
+  }
+
+  .topbar,
+  .account,
+  .section-heading {
+    align-items: stretch;
+    flex-direction: column;
+    text-align: left;
+  }
+
+  .control-grid,
+  .input-panel,
+  .preview-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .app-shell {
+    display: none;
+  }
+
+  #printArea {
+    display: block;
+  }
+
+  .print-card {
+    width: 7.5in;
+    max-width: none;
+    height: 9.75in;
+    margin: 0 auto;
+    page-break-after: always;
+    box-shadow: none;
+  }
+
+  .print-card:last-child {
+    page-break-after: auto;
+  }
+
+  .bingo-cell span {
+    font-size: 14pt;
+  }
+}

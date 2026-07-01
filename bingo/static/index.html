@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bingo Card Builder</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="builder">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Local-first bingo</p>
+            <h1>Bingo Card Builder</h1>
+          </div>
+          <div class="account" aria-live="polite">
+            <span id="accountStatus">Saved locally</span>
+            <button id="openAuth" class="button ghost" type="button">Sync/share</button>
+          </div>
+        </header>
+
+        <section class="panel controls-panel" aria-label="Card setup">
+          <label class="field">
+            <span>Card title</span>
+            <input id="cardTitle" type="text" maxlength="80" placeholder="Movie Night Bingo">
+          </label>
+
+          <div class="control-grid">
+            <label class="field">
+              <span>Grid size</span>
+              <select id="gridSize">
+                <option value="3">3 x 3</option>
+                <option value="4">4 x 4</option>
+                <option value="5" selected>5 x 5</option>
+              </select>
+            </label>
+            <label class="toggle">
+              <input id="freeSpace" type="checkbox" checked>
+              <span>Include Free Space</span>
+            </label>
+            <label class="field">
+              <span>Cards to print</span>
+              <input id="printCount" type="number" min="1" max="50" value="1">
+            </label>
+          </div>
+        </section>
+
+        <section class="panel input-panel" aria-label="Tile inputs">
+          <div class="input-column">
+            <h2>Text tiles</h2>
+            <textarea id="textTiles" rows="5" placeholder="One tile per line&#10;Find a hidden clue&#10;Someone says the title"></textarea>
+            <button id="addTextTiles" class="button primary" type="button">Add text tiles</button>
+          </div>
+
+          <div class="input-column paste-zone" id="pasteZone" tabindex="0">
+            <h2>Image tiles</h2>
+            <p>Drop images here, paste copied images, or browse your files.</p>
+            <input id="imageTiles" class="visually-hidden" type="file" accept="image/*" multiple>
+            <div class="image-actions">
+              <label class="button primary" for="imageTiles">Browse images</label>
+              <button id="clearImages" class="button ghost" type="button">Clear images</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel library-panel" aria-label="Tile library">
+          <div class="section-heading">
+            <div>
+              <h2>Tile library</h2>
+              <p id="tileCount">0 tiles ready</p>
+            </div>
+            <button id="clearTiles" class="button ghost" type="button">Clear all</button>
+          </div>
+          <div id="tileLibrary" class="tile-library"></div>
+        </section>
+      </section>
+
+      <aside class="preview-panel">
+        <div class="preview-actions">
+          <button id="shuffleCard" class="button primary" type="button">Shuffle</button>
+          <button id="printCards" class="button" type="button">Print</button>
+          <button id="saveShare" class="button" type="button">Share</button>
+        </div>
+
+        <section class="bingo-card accepts-images" id="bingoCard" aria-label="Bingo card preview" tabindex="0"></section>
+        <p id="cardMessage" class="message" role="status"></p>
+
+        <section class="share-box" id="shareBox" hidden>
+          <label class="field">
+            <span>Share link</span>
+            <input id="shareLink" type="text" readonly>
+          </label>
+        </section>
+      </aside>
+    </main>
+
+    <dialog id="authDialog">
+      <form method="dialog" class="dialog-card">
+        <h2>Sign in to sync or share</h2>
+        <p>Local editing works without an account. Sharing stores a copy on the Flask server and counts toward your user storage limit.</p>
+        <label class="field">
+          <span>Email</span>
+          <input id="authEmail" type="email" placeholder="you@example.com">
+        </label>
+        <label class="field">
+          <span>Name</span>
+          <input id="authName" type="text" placeholder="Your name">
+        </label>
+        <div class="dialog-actions">
+          <button class="button ghost" value="cancel" type="submit">Cancel</button>
+          <button id="devLogin" class="button primary" type="button">Continue</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="printArea" aria-hidden="true"></div>
+    <script src="app.js" defer></script>
+  </body>
+</html>

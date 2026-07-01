@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Color Guesser</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Anonymous token-link play</p>
+          <h1>Color Guesser</h1>
+        </div>
+        <p class="connection" id="connectionStatus">Ready</p>
+      </header>
+
+      <section class="start-view" id="startView">
+        <section class="choice-panel" id="choicePanel">
+          <h2>Choose a Mode</h2>
+          <div class="choice-actions">
+            <button class="choice-button" id="showJoin" type="button">Join Game</button>
+            <button class="choice-button" id="showCreate" type="button">Create Game</button>
+          </div>
+        </section>
+
+        <form class="setup-panel" id="createForm" hidden>
+          <div class="section-heading">
+            <h2>Start Game</h2>
+            <button class="small-button" id="addColor" type="button">Add Color</button>
+          </div>
+
+          <div class="color-editor" id="colorEditor"></div>
+
+          <div class="settings-grid">
+            <label class="field">
+              <span>Pegs</span>
+              <input id="pegCount" type="number" min="3" max="8" value="4">
+            </label>
+            <label class="field">
+              <span>Rounds</span>
+              <input id="maxRounds" type="number" min="4" max="20" value="10">
+            </label>
+          </div>
+
+          <p class="auto-note">The hidden code is generated automatically when the game starts.</p>
+
+          <button class="primary-button" type="submit">Create Share Link</button>
+        </form>
+
+        <form class="join-panel" id="joinForm" hidden>
+          <h2>Join Game</h2>
+          <label class="field">
+            <span>Share code or link</span>
+            <input id="joinCode" type="text" autocomplete="off" placeholder="Paste a link or short code">
+          </label>
+          <button class="primary-button" type="submit">Open Game</button>
+        </form>
+      </section>
+
+      <section class="collapsed-actions" id="collapsedActions" hidden>
+        <button class="small-button" id="newGameButton" type="button">New Game</button>
+        <button class="small-button" id="joinAnotherButton" type="button">Join Another</button>
+      </section>
+
+      <section class="play-view" id="playView" hidden>
+        <aside class="game-info">
+          <p class="eyebrow">Share</p>
+          <div class="share-row">
+            <strong id="shareCode">----------</strong>
+            <button class="small-button" id="copyShare" type="button">Copy</button>
+          </div>
+          <dl class="facts">
+            <dt>Pegs</dt>
+            <dd id="factPegs">4</dd>
+            <dt>Rounds</dt>
+            <dd id="factRounds">10</dd>
+            <dt>Status</dt>
+            <dd id="factStatus">Active</dd>
+          </dl>
+          <section class="maker-secret" id="makerSecret" hidden>
+            <p class="eyebrow">Code</p>
+            <div class="secret-preview" id="secretPreview"></div>
+          </section>
+        </aside>
+
+        <section class="board-panel">
+          <div class="board-heading">
+            <h2>Board</h2>
+            <p id="gameMessage">Waiting for guesses.</p>
+          </div>
+          <div class="guess-board" id="guessBoard"></div>
+        </section>
+
+        <aside class="guess-panel">
+          <h2>Guess</h2>
+          <div class="palette" id="guessPalette"></div>
+          <div class="guess-slots" id="guessSlots"></div>
+          <button class="primary-button" id="submitGuess" type="button">Submit Guess</button>
+        </aside>
+      </section>
+    </main>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

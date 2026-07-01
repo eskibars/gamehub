@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Boggle Table</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Live word table</p>
+          <h1>Boggle Table</h1>
+        </div>
+        <p class="connection" id="connectionStatus">Ready</p>
+      </header>
+
+      <section class="setup" id="setupView">
+        <form class="panel" id="createForm">
+          <div class="section-heading">
+            <h2>Create Game</h2>
+          </div>
+          <div class="settings-grid">
+            <label class="field">
+              <span>Board</span>
+              <select id="boardSize">
+                <option value="4">4x4</option>
+                <option value="5">5x5</option>
+                <option value="6">6x6</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Timer</span>
+              <select id="timerSeconds">
+                <option value="60">1:00</option>
+                <option value="120">2:00</option>
+                <option value="180" selected>3:00</option>
+                <option value="240">4:00</option>
+                <option value="300">5:00</option>
+              </select>
+            </label>
+          </div>
+          <button class="primary-button" type="submit">Create Share Link</button>
+        </form>
+
+        <form class="panel" id="joinByCodeForm">
+          <div class="section-heading">
+            <h2>Join Game</h2>
+          </div>
+          <label class="field">
+            <span>Share link or code</span>
+            <input id="joinCode" type="text" autocomplete="off" placeholder="Paste link or code">
+          </label>
+          <button class="secondary-button" type="submit">Open Lobby</button>
+        </form>
+      </section>
+
+      <section class="game" id="gameView" hidden>
+        <aside class="panel table-panel">
+          <div class="section-heading">
+            <h2>Table</h2>
+            <button class="small-button" id="newGameButton" type="button">New</button>
+          </div>
+          <div class="share-row">
+            <strong id="shareCode">--------</strong>
+            <button class="small-button" id="copyShare" type="button">Copy</button>
+          </div>
+          <dl class="facts">
+            <dt>Board</dt>
+            <dd id="factBoard">4x4</dd>
+            <dt>Timer</dt>
+            <dd id="factTimer">3:00</dd>
+            <dt>Status</dt>
+            <dd id="factStatus">Lobby</dd>
+          </dl>
+
+          <form class="name-form" id="nameForm">
+            <label class="field">
+              <span>Name</span>
+              <input id="playerName" type="text" maxlength="32" autocomplete="name" placeholder="Your name">
+            </label>
+            <button class="secondary-button" type="submit">Join Table</button>
+          </form>
+
+          <div class="lobby-actions" id="lobbyActions" hidden>
+            <button class="primary-button" id="readyButton" type="button">Ready</button>
+            <button class="secondary-button" id="startButton" type="button">Start</button>
+          </div>
+
+          <div class="players" id="playersList"></div>
+        </aside>
+
+        <section class="board-area">
+          <div class="timer-bar">
+            <div>
+              <p class="eyebrow">Clock</p>
+              <strong id="timerDisplay">--:--</strong>
+            </div>
+            <p id="gameMessage">Waiting in the lobby.</p>
+          </div>
+          <div class="letter-board" id="letterBoard" aria-label="Boggle board"></div>
+          <form class="word-form" id="wordForm">
+            <input id="wordInput" type="text" autocomplete="off" spellcheck="false" placeholder="Type a word">
+            <button class="primary-button" type="submit">Enter</button>
+          </form>
+        </section>
+
+        <aside class="panel words-panel">
+          <div class="section-heading">
+            <h2>Words</h2>
+            <span id="wordCount">0</span>
+          </div>
+          <div class="word-lists" id="wordLists"></div>
+        </aside>
+      </section>
+    </main>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

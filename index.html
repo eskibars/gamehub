@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Local First Game Hub</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="hub-shell">
+      <section class="tabletop" aria-label="Local first game hub">
+        <header class="hub-header">
+          <div>
+            <p class="eyebrow">Play first. Sign in only when sharing needs storage.</p>
+            <h1>Local First Game Hub</h1>
+          </div>
+          <div class="hub-actions" aria-label="Hub controls">
+            <button class="icon-button" id="resetHub" type="button" aria-label="Reset table" title="Reset table">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 4v6h6"></path>
+                <path d="M20 11a8 8 0 1 0-2.3 5.7"></path>
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="table-grid">
+          <section class="game-board" aria-label="Game table">
+            <div class="felt-ring" aria-hidden="true"></div>
+            <div class="game-stack" id="gameStack"></div>
+          </section>
+
+          <aside class="side-panel" aria-label="Selected game">
+            <div class="status-strip">
+              <span id="gameStatus">Ready locally</span>
+              <span id="lastPlayed">No recent launch</span>
+            </div>
+
+            <div class="selected-art" id="selectedArt" aria-hidden="true"></div>
+            <p class="kicker" id="selectedType">Game</p>
+            <h2 id="selectedTitle">Bingo Card Builder</h2>
+            <p id="selectedDescription"></p>
+
+            <dl class="feature-list" id="featureList"></dl>
+
+            <div class="panel-actions">
+              <a class="launch-button" id="launchGame" href="/bingo/">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 12h14"></path>
+                  <path d="m13 6 6 6-6 6"></path>
+                </svg>
+                <span>Open</span>
+              </a>
+              <button class="secondary-button" id="markFavorite" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.1-5.6-2.9-5.6 2.9 1.1-6.1L3 9.6l6.2-.9L12 3z"></path>
+                </svg>
+                <span>Pin</span>
+              </button>
+            </div>
+          </aside>
+        </div>
+
+        <footer class="table-tools" aria-label="Game filters">
+          <button class="filter-pill is-active" type="button" data-filter="all">All</button>
+          <button class="filter-pill" type="button" data-filter="ready">Ready</button>
+          <button class="filter-pill" type="button" data-filter="score">Scorepads</button>
+          <button class="filter-pill" type="button" data-filter="board">Boards</button>
+          <button class="filter-pill" type="button" data-filter="cards">Cards</button>
+        </footer>
+      </section>
+    </main>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

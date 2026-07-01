@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Yahtzee Scorecard</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="score-shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Local-first scorekeeping</p>
+          <h1>Yahtzee Scorecard</h1>
+        </div>
+        <button class="small-button" id="resetGame" type="button">Reset</button>
+      </header>
+
+      <section class="setup-view" id="setupView">
+        <form class="setup-panel" id="setupForm">
+          <div class="section-heading">
+            <h2>Start Scorecard</h2>
+            <span id="playerCountLabel">2 players</span>
+          </div>
+
+          <div class="mode-row" role="radiogroup" aria-label="Game mode">
+            <label class="mode-card">
+              <input type="radio" name="mode" value="scores" checked>
+              <span>Scores Only</span>
+            </label>
+            <label class="mode-card">
+              <input type="radio" name="mode" value="dice">
+              <span>Roll Dice</span>
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Players</span>
+            <input id="playerCount" type="number" min="1" max="8" value="2">
+          </label>
+
+          <div class="player-editor" id="playerEditor"></div>
+
+          <button class="primary-button" type="submit">Start</button>
+        </form>
+      </section>
+
+      <section class="game-view" id="gameView" hidden>
+        <aside class="dice-panel" id="dicePanel" hidden>
+          <div class="section-heading">
+            <h2>Dice</h2>
+            <span id="rollStatus">3 rolls left</span>
+          </div>
+          <div class="dice-row" id="diceRow"></div>
+          <div class="dice-actions">
+            <button class="primary-button" id="rollDice" type="button">Roll Dice</button>
+            <button class="small-button" id="clearLocks" type="button">Clear Locks</button>
+          </div>
+        </aside>
+
+        <section class="scorecard-panel">
+          <div class="section-heading">
+            <h2>Scorecard</h2>
+            <div class="turn-indicator" id="turnIndicator">Player 1</div>
+          </div>
+          <div class="scorecard-wrap">
+            <table class="scorecard" id="scorecard"></table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
