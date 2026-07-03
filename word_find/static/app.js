@@ -60,7 +60,7 @@ function loadLocal() {
   try {
     const parsed = JSON.parse(stored);
     state.title = parsed.title || state.title;
-    state.size = Number(parsed.size) || state.size;
+    state.size = cleanGridSize(parsed.size);
     state.fillStyle = parsed.fillStyle || state.fillStyle;
     state.showAnswers = Boolean(parsed.showAnswers);
     state.wordsText = parsed.wordsText || state.wordsText;
@@ -69,15 +69,25 @@ function loadLocal() {
   }
 }
 
+function cleanGridSize(value) {
+  const parsed = Math.round(Number(value));
+  if (!Number.isFinite(parsed)) return 12;
+  return Math.min(Math.max(parsed, 5), 30);
+}
+
 function normalizeWords() {
   const seen = new Set();
   return state.wordsText
     .split(/\n+/)
-    .map((word) => word.toUpperCase().replace(/[^A-Z]/g, ""))
-    .filter(Boolean)
+    .map((word) => {
+      const label = word.toUpperCase().replace(/[^A-Z ]/g, "").replace(/\s+/g, " ").trim();
+      const compact = label.replace(/[^A-Z]/g, "");
+      return { label, compact };
+    })
+    .filter((word) => word.compact)
     .filter((word) => {
-      if (seen.has(word)) return false;
-      seen.add(word);
+      if (seen.has(word.compact)) return false;
+      seen.add(word.compact);
       return true;
     });
 }
@@ -146,40 +156,53 @@ function randomFillLetter(words) {
   return source[Math.floor(Math.random() * source.length)];
 }
 
-function buildPuzzle() {
+function buildPuzzle({ alertOnMissed = false } = {}) {
   const normalized = normalizeWords();
-  const usable = normalized.filter((word) => word.length <= state.size);
-  const tooLong = normalized.filter((word) => word.length > state.size);
-  const sorted = [...usable].sort((first, second) => second.length - first.length);
+  const usable = normalized.filter((word) => word.compact.length <= state.size);
+  const tooLong = normalized.filter((word) => word.compact.length > state.size);
+  const sorted = [...usable].sort((first, second) => second.compact.length - first.compact.length);
   let best = null;
 
-  for (let attempt = 0; attempt < 120; attempt += 1) {
+  for (let attempt = 0; attempt < 300; attempt += 1) {
     const grid = emptyGrid(state.size);
     const placements = [];
     const missed = [];
+    let overlapCount = 0;
 
     sorted.forEach((word) => {
-      const options = placementOptions(grid, word);
+      const options = placementOptions(grid, word.compact);
       if (!options.length) {
         missed.push(word);
         return;
       }
       options.sort((first, second) => second.score - first.score);
       const topScore = options[0].score;
-      const preferred = options.filter((option) => option.score >= Math.max(0, topScore - 1));
+      const preferred = topScore > 0 ? options.filter((option) => option.score === topScore) : options;
       const option = shuffle(preferred).at(0);
-      const cells = placeWord(grid, word, option);
+      const cells = placeWord(grid, word.compact, option);
+      overlapCount += option.score;
       placements.push({ word, cells });
     });
 
-    if (!best || placements.length > best.placements.length) best = { grid, placements, missed };
-    if (!missed.length) break;
+    const attemptResult = { grid, placements, missed, overlapCount };
+    if (
+      !best ||
+      placements.length > best.placements.length ||
+      (placements.length === best.placements.length && overlapCount > best.overlapCount)
+    ) {
+      best = attemptResult;
+    }
+    if (!missed.length && overlapCount > 0) break;
   }
 
   best.missed = [...new Set([...best.missed, ...tooLong])];
-  best.grid = best.grid.map((row) => row.map((letter) => letter || randomFillLetter(usable)));
+  best.grid = best.grid.map((row) => row.map((letter) => letter || randomFillLetter(usable.map((word) => word.compact))));
   state.puzzle = best;
   renderAll();
+
+  if (alertOnMissed && best.missed.length) {
+    window.alert(`Could not fit: ${best.missed.map((word) => word.label).join(", ")}. Try a larger grid size.`);
+  }
 }
 
 function renderGrid() {
@@ -201,12 +224,12 @@ function renderGrid() {
 
 function renderWordBank() {
   const words = normalizeWords();
-  const placed = new Set(state.puzzle?.placements.map((placement) => placement.word) || []);
+  const placed = new Set(state.puzzle?.placements.map((placement) => placement.word.compact) || []);
   els.wordBank.innerHTML = "";
   words.forEach((word) => {
     const item = document.createElement("li");
-    item.textContent = word;
-    if (state.puzzle && !placed.has(word)) item.classList.add("not-placed");
+    item.textContent = word.label;
+    if (state.puzzle && !placed.has(word.compact)) item.classList.add("not-placed");
     els.wordBank.append(item);
   });
 }
@@ -220,9 +243,14 @@ function updateMessage() {
   }
   const missed = state.puzzle.missed;
   if (missed.length) {
-    els.buildMessage.textContent = `${state.puzzle.placements.length} placed. Could not fit: ${missed.join(", ")}.`;
+    els.buildMessage.textContent = `${state.puzzle.placements.length} placed. Could not fit: ${missed
+      .map((word) => word.label)
+      .join(", ")}.`;
   } else {
-    els.buildMessage.textContent = `${state.puzzle.placements.length} words hidden across the grid.`;
+    const intersections = state.puzzle.overlapCount || 0;
+    els.buildMessage.textContent = `${state.puzzle.placements.length} words hidden with ${intersections} intersection${
+      intersections === 1 ? "" : "s"
+    }.`;
   }
 }
 
@@ -232,7 +260,7 @@ function renderAll() {
   els.fillStyle.value = state.fillStyle;
   els.showAnswers.checked = state.showAnswers;
   els.wordInput.value = state.wordsText;
-  els.previewTitle.textContent = state.title || "Untitled Word Find";
+  els.previewTitle.textContent = state.title.trim() ? state.title : "Untitled Word Find";
   els.previewStats.textContent = `${state.size} x ${state.size} puzzle`;
   renderGrid();
   renderWordBank();
@@ -241,15 +269,20 @@ function renderAll() {
 
 function bindEvents() {
   els.puzzleTitle.addEventListener("input", () => {
-    state.title = els.puzzleTitle.value.trim();
+    state.title = els.puzzleTitle.value;
     saveLocal();
     renderAll();
   });
 
   els.gridSize.addEventListener("change", () => {
-    state.size = Number(els.gridSize.value);
+    state.size = cleanGridSize(els.gridSize.value);
     saveLocal();
     buildPuzzle();
+  });
+
+  els.gridSize.addEventListener("input", () => {
+    state.size = cleanGridSize(els.gridSize.value);
+    saveLocal();
   });
 
   els.fillStyle.addEventListener("change", () => {
@@ -272,7 +305,7 @@ function bindEvents() {
   });
 
   els.wordInput.addEventListener("keydown", (event) => {
-    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") buildPuzzle();
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") buildPuzzle({ alertOnMissed: true });
   });
 
   els.clearWords.addEventListener("click", () => {
@@ -282,7 +315,7 @@ function bindEvents() {
     renderAll();
   });
 
-  els.buildPuzzle.addEventListener("click", buildPuzzle);
+  els.buildPuzzle.addEventListener("click", () => buildPuzzle({ alertOnMissed: true }));
   els.shufflePuzzle.addEventListener("click", buildPuzzle);
   els.printPuzzle.addEventListener("click", () => window.print());
 }

@@ -398,13 +398,41 @@ textarea {
   }
 
   .puzzle-sheet {
+    display: grid;
     max-width: none;
     min-height: 10in;
     border: 0;
     padding: 0.25in;
   }
 
+  .sheet-layout {
+    grid-template-columns: 1fr;
+    gap: 0.18in;
+  }
+
+  .letter-grid {
+    width: min(7.1in, 100%);
+    margin: 0 auto;
+  }
+
   .grid-cell {
     font-size: 13pt;
+  }
+
+  .word-bank {
+    border-top: 2px solid var(--line);
+    border-left: 0;
+    padding-top: 0.16in;
+    padding-left: 0;
+  }
+
+  .word-bank ul {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 0.22in;
+    row-gap: 0.05in;
+  }
+
+  .word-bank li {
+    font-size: 11pt;
   }
 }
