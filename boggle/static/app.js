@@ -239,6 +239,7 @@ function renderBoard() {
     const cell = document.createElement("div");
     cell.className = "letter-cell";
     cell.textContent = letter;
+    cell.style.setProperty("--tile-rotation", `${Math.floor(Math.random() * 4) * 90}deg`);
     els.letterBoard.append(cell);
   });
   els.letterBoard.hidden = state.game.status === "lobby";
