@@ -5,6 +5,7 @@ const state = {
   playerId: "",
   eventSource: null,
   clock: null,
+  entryMode: "choice",
 };
 
 const els = {
@@ -24,6 +25,8 @@ const els = {
   factBoard: document.querySelector("#factBoard"),
   factTimer: document.querySelector("#factTimer"),
   factStatus: document.querySelector("#factStatus"),
+  lobbyPanel: document.querySelector("#lobbyPanel"),
+  shareTools: document.querySelector("#shareTools"),
   nameForm: document.querySelector("#nameForm"),
   playerName: document.querySelector("#playerName"),
   lobbyActions: document.querySelector("#lobbyActions"),
@@ -32,10 +35,12 @@ const els = {
   playersList: document.querySelector("#playersList"),
   timerDisplay: document.querySelector("#timerDisplay"),
   gameMessage: document.querySelector("#gameMessage"),
+  boardArea: document.querySelector("#boardArea"),
   letterBoard: document.querySelector("#letterBoard"),
   wordForm: document.querySelector("#wordForm"),
   wordInput: document.querySelector("#wordInput"),
   wordCount: document.querySelector("#wordCount"),
+  wordsPanel: document.querySelector("#wordsPanel"),
   wordLists: document.querySelector("#wordLists"),
   newGameButton: document.querySelector("#newGameButton"),
 };
@@ -84,8 +89,9 @@ async function requestJson(url, options = {}) {
   return data;
 }
 
-function openGame(game) {
+function openGame(game, options = {}) {
   state.game = game;
+  state.entryMode = options.entryMode || state.entryMode;
   state.playerId = localStorage.getItem(playerStorageKey(game.code)) || state.playerId || "";
   els.setupView.hidden = true;
   els.gameView.hidden = false;
@@ -103,21 +109,21 @@ async function createGame(event) {
         timerSeconds: Number(els.timerSeconds.value),
       }),
     });
-    openGame(data.game);
+    openGame(data.game, { entryMode: "create" });
     els.connectionStatus.textContent = "Created";
   } catch (error) {
     els.connectionStatus.textContent = error.message;
   }
 }
 
-async function loadGame(code) {
+async function loadGame(code, options = {}) {
   if (!code) return;
   const savedPlayerId = localStorage.getItem(playerStorageKey(code)) || "";
   const suffix = savedPlayerId ? `?playerId=${encodeURIComponent(savedPlayerId)}` : "";
   try {
     const data = await requestJson(`/api/boggle/games/${code}${suffix}`);
     state.playerId = savedPlayerId;
-    openGame(data.game);
+    openGame(data.game, { entryMode: options.entryMode || "join" });
   } catch (error) {
     els.connectionStatus.textContent = error.message;
   }
@@ -125,7 +131,7 @@ async function loadGame(code) {
 
 async function joinByCode(event) {
   event.preventDefault();
-  await loadGame(parseShareInput(els.joinCode.value));
+  await loadGame(parseShareInput(els.joinCode.value), { entryMode: "join" });
 }
 
 async function joinPlayer(event) {
@@ -333,21 +339,29 @@ function render() {
   if (!state.game) return;
   const player = currentPlayer();
   const isHost = state.playerId && state.playerId === state.game.hostId;
+  const canInvite = state.entryMode === "create" || isHost;
   const allReady = state.game.players.length > 0 && state.game.players.every((item) => item.ready);
+  const inLobby = state.game.status === "lobby";
 
   els.shareCode.textContent = state.game.code;
   els.factBoard.textContent = `${state.game.size}x${state.game.size}`;
   els.factTimer.textContent = formatTime(state.game.timerSeconds);
   els.factStatus.textContent = state.game.status[0].toUpperCase() + state.game.status.slice(1);
-  els.nameForm.hidden = Boolean(player) || state.game.status !== "lobby";
-  els.lobbyActions.hidden = !player || state.game.status !== "lobby";
+  els.gameView.classList.toggle("is-lobby", inLobby);
+  els.shareTools.hidden = !canInvite;
+  els.newGameButton.hidden = !canInvite;
+  els.nameForm.hidden = Boolean(player) || !inLobby;
+  els.nameForm.querySelector("button").textContent = canInvite ? "Join as Host" : "Join Table";
+  els.lobbyActions.hidden = !player || !inLobby;
   els.readyButton.textContent = player?.ready ? "Unready" : "Ready";
   els.startButton.hidden = !isHost;
   els.startButton.disabled = !allReady;
+  els.boardArea.hidden = inLobby;
+  els.wordsPanel.hidden = inLobby;
   els.wordForm.hidden = state.game.status !== "active" || !player;
   els.wordInput.disabled = state.game.status !== "active" || !player;
 
-  if (state.game.status === "lobby") {
+  if (inLobby) {
     els.gameMessage.textContent = isHost ? "Start when everyone is ready." : "Waiting for the host.";
   } else if (state.game.status === "active") {
     els.gameMessage.textContent = "Find words. Press Enter to submit.";
@@ -387,6 +401,7 @@ function bindEvents() {
     els.gameView.hidden = true;
     state.game = null;
     state.playerId = "";
+    state.entryMode = "choice";
     els.connectionStatus.textContent = "Ready";
     entryControls.showMode("choice");
   });
@@ -395,4 +410,4 @@ function bindEvents() {
 bindEvents();
 const params = new URLSearchParams(window.location.search);
 const gameCode = params.get("game");
-if (gameCode) loadGame(gameCode.toUpperCase());
+if (gameCode) loadGame(gameCode.toUpperCase(), { entryMode: "join" });

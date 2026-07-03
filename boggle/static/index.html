@@ -67,12 +67,12 @@
       </section>
 
       <section class="game" id="gameView" hidden>
-        <aside class="panel table-panel">
+        <aside class="panel table-panel" id="lobbyPanel">
           <div class="section-heading">
             <h2>Table</h2>
             <button class="small-button" id="newGameButton" type="button">New</button>
           </div>
-          <div class="share-row">
+          <div class="share-row" id="shareTools">
             <strong id="shareCode">--------</strong>
             <button class="small-button" id="copyShare" type="button">Copy</button>
           </div>
@@ -101,7 +101,7 @@
           <div class="players" id="playersList"></div>
         </aside>
 
-        <section class="board-area">
+        <section class="board-area" id="boardArea" hidden>
           <div class="timer-bar">
             <div>
               <p class="eyebrow">Clock</p>
@@ -116,7 +116,7 @@
           </form>
         </section>
 
-        <aside class="panel words-panel">
+        <aside class="panel words-panel" id="wordsPanel" hidden>
           <div class="section-heading">
             <h2>Words</h2>
             <span id="wordCount">0</span>

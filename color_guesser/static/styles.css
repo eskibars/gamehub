@@ -163,6 +163,11 @@ h2 {
   gap: 10px;
 }
 
+.invite-panel {
+  display: grid;
+  gap: 10px;
+}
+
 .section-heading,
 .board-heading,
 .share-row {

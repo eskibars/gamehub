@@ -20,6 +20,7 @@ const state = {
   eventSource: null,
   makerSecrets: {},
   shareToken: "",
+  entryMode: "choice",
 };
 
 const els = {
@@ -39,6 +40,7 @@ const els = {
   maxRounds: document.querySelector("#maxRounds"),
   joinCode: document.querySelector("#joinCode"),
   connectionStatus: document.querySelector("#connectionStatus"),
+  invitePanel: document.querySelector("#invitePanel"),
   shareCode: document.querySelector("#shareCode"),
   copyShare: document.querySelector("#copyShare"),
   factPegs: document.querySelector("#factPegs"),
@@ -135,6 +137,7 @@ function showStartMode(mode) {
   }
   state.game = null;
   state.shareToken = "";
+  state.entryMode = mode || "choice";
   els.startView.hidden = false;
   els.collapsedActions.hidden = true;
   els.playView.hidden = true;
@@ -154,6 +157,7 @@ function statusText(status) {
 
 function openGame(game, options = {}) {
   state.game = game;
+  state.entryMode = options.entryMode || state.entryMode;
   state.shareToken = options.shareToken || state.shareToken;
   state.currentGuess = Array(game.pegCount).fill(game.colors[0]);
   state.selectedColor = game.colors[0];
@@ -250,7 +254,10 @@ function renderGuessControls() {
 }
 
 function renderGame() {
+  const canInvite = state.entryMode === "create" || Boolean(state.makerSecrets[state.game.code]);
   els.shareCode.textContent = state.game.code;
+  els.invitePanel.hidden = !canInvite;
+  els.newGameButton.hidden = !canInvite;
   els.factPegs.textContent = String(state.game.pegCount);
   els.factRounds.textContent = String(state.game.maxRounds);
   els.factStatus.textContent = statusText(state.game.status);
@@ -286,7 +293,7 @@ async function createGame(event) {
     els.connectionStatus.textContent = data.error || "Could not create game";
     return;
   }
-  openGame(data.game, { creatorSecret: data.creatorSecret, shareToken: data.shareToken });
+  openGame(data.game, { creatorSecret: data.creatorSecret, shareToken: data.shareToken, entryMode: "create" });
 }
 
 async function joinGame(event) {
@@ -318,7 +325,7 @@ async function loadGame(code) {
     els.connectionStatus.textContent = data.error || "Game not found";
     return;
   }
-  openGame(data.game);
+  openGame(data.game, { entryMode: "join" });
 }
 
 async function loadGameFromToken(token) {
@@ -332,7 +339,7 @@ async function loadGameFromToken(token) {
     els.connectionStatus.textContent = data.error || "Share link not valid";
     return;
   }
-  openGame(data.game, { shareToken: data.shareToken });
+  openGame(data.game, { shareToken: data.shareToken, entryMode: "join" });
 }
 
 async function submitGuess() {

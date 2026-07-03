@@ -115,6 +115,11 @@ h2 {
   align-items: start;
 }
 
+.game.is-lobby {
+  grid-template-columns: minmax(0, 720px);
+  justify-content: center;
+}
+
 .panel,
 .timer-bar {
   display: grid;
