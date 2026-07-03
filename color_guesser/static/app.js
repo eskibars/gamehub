@@ -53,6 +53,8 @@ const els = {
   submitGuess: document.querySelector("#submitGuess"),
 };
 
+let entryControls = null;
+
 function normalizeHex(color) {
   return color.toLowerCase();
 }
@@ -136,10 +138,7 @@ function showStartMode(mode) {
   els.startView.hidden = false;
   els.collapsedActions.hidden = true;
   els.playView.hidden = true;
-  els.choicePanel.hidden = false;
-  els.createForm.hidden = mode !== "create";
-  els.joinForm.hidden = mode !== "join";
-  if (mode === "join") els.joinCode.focus();
+  entryControls.showMode(mode || "choice");
 }
 
 function collapseStartControls() {
@@ -353,10 +352,16 @@ async function submitGuess() {
 }
 
 function bindEvents() {
+  entryControls = window.GameEntry.setup({
+    choicePanel: els.choicePanel,
+    createForm: els.createForm,
+    joinForm: els.joinForm,
+    showCreate: els.showCreate,
+    showJoin: els.showJoin,
+    joinInput: els.joinCode,
+  });
   els.createForm.addEventListener("submit", createGame);
   els.joinForm.addEventListener("submit", joinGame);
-  els.showCreate.addEventListener("click", () => showStartMode("create"));
-  els.showJoin.addEventListener("click", () => showStartMode("join"));
   els.newGameButton.addEventListener("click", () => showStartMode("create"));
   els.joinAnotherButton.addEventListener("click", () => showStartMode("join"));
   els.addColor.addEventListener("click", () => {

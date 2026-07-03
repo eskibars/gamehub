@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Color Guesser</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/shared/game-entry.css">
   </head>
   <body>
     <main class="game-shell">
@@ -17,16 +18,16 @@
         <p class="connection" id="connectionStatus">Ready</p>
       </header>
 
-      <section class="start-view" id="startView">
-        <section class="choice-panel" id="choicePanel">
+      <section class="start-view entry-view" id="startView">
+        <section class="entry-choice" id="choicePanel">
           <h2>Choose a Mode</h2>
-          <div class="choice-actions">
-            <button class="choice-button" id="showJoin" type="button">Join Game</button>
-            <button class="choice-button" id="showCreate" type="button">Create Game</button>
+          <div class="entry-actions">
+            <button class="entry-choice-button" id="showJoin" type="button">Join Game</button>
+            <button class="entry-choice-button" id="showCreate" type="button">Create Game</button>
           </div>
         </section>
 
-        <form class="setup-panel" id="createForm" hidden>
+        <form class="entry-panel" id="createForm" hidden>
           <div class="section-heading">
             <h2>Start Game</h2>
             <button class="small-button" id="addColor" type="button">Add Color</button>
@@ -50,7 +51,7 @@
           <button class="primary-button" type="submit">Create Share Link</button>
         </form>
 
-        <form class="join-panel" id="joinForm" hidden>
+        <form class="entry-panel" id="joinForm" hidden>
           <h2>Join Game</h2>
           <label class="field">
             <span>Share code or link</span>
@@ -103,6 +104,7 @@
       </section>
     </main>
 
+    <script src="/shared/game-entry.js" defer></script>
     <script src="app.js" defer></script>
   </body>
 </html>

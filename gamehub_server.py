@@ -26,6 +26,7 @@ BINGO_CARDS_FILE = BINGO_DATA_DIR / "cards.json"
 COLOR_GUESSER_STATIC_DIR = BASE_DIR / "color_guesser" / "static"
 YAHTZEE_STATIC_DIR = BASE_DIR / "yahtzee" / "static"
 BOGGLE_STATIC_DIR = BASE_DIR / "boggle" / "static"
+SHARED_STATIC_DIR = BASE_DIR / "shared"
 MAX_USER_BYTES = int(os.environ.get("BINGO_MAX_USER_BYTES", 5 * 1024 * 1024))
 COLOR_GAMES: dict[str, dict[str, Any]] = {}
 COLOR_GAME_SUBSCRIBERS: dict[str, list[queue.Queue[dict[str, Any]]]] = {}
@@ -405,6 +406,10 @@ def create_app() -> Flask:
     @app.get("/styles.css")
     def hub_styles():
         return send_from_directory(BASE_DIR, "styles.css")
+
+    @app.get("/shared/<path:filename>")
+    def shared_static(filename: str):
+        return send_from_directory(SHARED_STATIC_DIR, filename)
 
     @app.get("/bingo")
     def bingo_redirect():

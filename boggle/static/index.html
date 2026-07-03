@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Boggle Table</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/shared/game-entry.css">
   </head>
   <body>
     <main class="shell">
@@ -17,8 +18,16 @@
         <p class="connection" id="connectionStatus">Ready</p>
       </header>
 
-      <section class="setup" id="setupView">
-        <form class="panel" id="createForm">
+      <section class="setup entry-view" id="setupView">
+        <section class="entry-choice" id="choicePanel">
+          <h2>Choose a Mode</h2>
+          <div class="entry-actions">
+            <button class="entry-choice-button" id="showJoin" type="button">Join Game</button>
+            <button class="entry-choice-button" id="showCreate" type="button">Create Game</button>
+          </div>
+        </section>
+
+        <form class="entry-panel" id="createForm" hidden>
           <div class="section-heading">
             <h2>Create Game</h2>
           </div>
@@ -45,7 +54,7 @@
           <button class="primary-button" type="submit">Create Share Link</button>
         </form>
 
-        <form class="panel" id="joinByCodeForm">
+        <form class="entry-panel" id="joinByCodeForm" hidden>
           <div class="section-heading">
             <h2>Join Game</h2>
           </div>
@@ -117,6 +126,7 @@
       </section>
     </main>
 
+    <script src="/shared/game-entry.js" defer></script>
     <script src="app.js" defer></script>
   </body>
 </html>

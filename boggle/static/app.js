@@ -9,9 +9,12 @@ const state = {
 
 const els = {
   setupView: document.querySelector("#setupView"),
+  choicePanel: document.querySelector("#choicePanel"),
   gameView: document.querySelector("#gameView"),
   createForm: document.querySelector("#createForm"),
   joinByCodeForm: document.querySelector("#joinByCodeForm"),
+  showJoin: document.querySelector("#showJoin"),
+  showCreate: document.querySelector("#showCreate"),
   boardSize: document.querySelector("#boardSize"),
   timerSeconds: document.querySelector("#timerSeconds"),
   joinCode: document.querySelector("#joinCode"),
@@ -36,6 +39,8 @@ const els = {
   wordLists: document.querySelector("#wordLists"),
   newGameButton: document.querySelector("#newGameButton"),
 };
+
+let entryControls = null;
 
 function playerStorageKey(code) {
   return `${PLAYER_KEY_PREFIX}${code}`;
@@ -357,6 +362,14 @@ function render() {
 }
 
 function bindEvents() {
+  entryControls = window.GameEntry.setup({
+    choicePanel: els.choicePanel,
+    createForm: els.createForm,
+    joinForm: els.joinByCodeForm,
+    showCreate: els.showCreate,
+    showJoin: els.showJoin,
+    joinInput: els.joinCode,
+  });
   els.createForm.addEventListener("submit", createGame);
   els.joinByCodeForm.addEventListener("submit", joinByCode);
   els.nameForm.addEventListener("submit", joinPlayer);
@@ -375,6 +388,7 @@ function bindEvents() {
     state.game = null;
     state.playerId = "";
     els.connectionStatus.textContent = "Ready";
+    entryControls.showMode("choice");
   });
 }
 
