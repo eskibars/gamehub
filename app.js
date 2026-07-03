@@ -44,6 +44,15 @@ const icons = {
       <path d="M23 42a5 5 0 1 0 0 6"></path>
       <path d="M43 42v10h3a5 5 0 0 0 0-10h-3z"></path>
     </svg>`,
+  wordfind: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="9" y="9" width="46" height="46" rx="5"></rect>
+      <path d="M20 9v46M32 9v46M44 9v46M9 20h46M9 32h46M9 44h46"></path>
+      <path d="M18 18l28 28"></path>
+      <circle cx="18" cy="18" r="4"></circle>
+      <circle cx="46" cy="46" r="4"></circle>
+      <path d="M18 18h28"></path>
+    </svg>`,
 };
 
 const games = [
@@ -114,6 +123,23 @@ const games = [
       Players: "Group table",
     },
     icon: "letters",
+  },
+  {
+    id: "word-find",
+    title: "Word Find Creator",
+    type: "Puzzle maker",
+    status: "ready",
+    category: "board",
+    href: "/word-find/",
+    accent: "#a15a2f",
+    tilt: "-1.1deg",
+    description: "Build printable word-find puzzles from your own word list with overlapping hidden words in every direction.",
+    features: {
+      Mode: "Puzzle builder",
+      Storage: "Local browser",
+      Players: "Print or solve",
+    },
+    icon: "wordfind",
   },
   {
     id: "cards",

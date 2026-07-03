@@ -26,6 +26,7 @@ BINGO_CARDS_FILE = BINGO_DATA_DIR / "cards.json"
 COLOR_GUESSER_STATIC_DIR = BASE_DIR / "color_guesser" / "static"
 YAHTZEE_STATIC_DIR = BASE_DIR / "yahtzee" / "static"
 BOGGLE_STATIC_DIR = BASE_DIR / "boggle" / "static"
+WORD_FIND_STATIC_DIR = BASE_DIR / "word_find" / "static"
 SHARED_STATIC_DIR = BASE_DIR / "shared"
 MAX_USER_BYTES = int(os.environ.get("BINGO_MAX_USER_BYTES", 5 * 1024 * 1024))
 COLOR_GAMES: dict[str, dict[str, Any]] = {}
@@ -458,6 +459,18 @@ def create_app() -> Flask:
     @app.get("/boggle/<path:filename>")
     def boggle_static(filename: str):
         return send_from_directory(BOGGLE_STATIC_DIR, filename)
+
+    @app.get("/word-find")
+    def word_find_redirect():
+        return redirect("/word-find/")
+
+    @app.get("/word-find/")
+    def word_find_index():
+        return send_from_directory(WORD_FIND_STATIC_DIR, "index.html")
+
+    @app.get("/word-find/<path:filename>")
+    def word_find_static(filename: str):
+        return send_from_directory(WORD_FIND_STATIC_DIR, filename)
 
     @app.get("/share/<share_id>")
     def shared_card(share_id: str):

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Word Find Creator</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="builder">
+        <header class="topbar">
+          <a class="back-link" href="/">Game Hub</a>
+          <div>
+            <p class="eyebrow">Local-first puzzle maker</p>
+            <h1>Word Find Creator</h1>
+          </div>
+          <p class="save-status" id="saveStatus">Saved locally</p>
+        </header>
+
+        <section class="panel setup-panel" aria-label="Puzzle setup">
+          <label class="field title-field">
+            <span>Puzzle title</span>
+            <input id="puzzleTitle" type="text" maxlength="80" placeholder="Rainy Day Word Find">
+          </label>
+
+          <div class="settings-grid">
+            <label class="field">
+              <span>Grid size</span>
+              <select id="gridSize">
+                <option value="10">10 x 10</option>
+                <option value="12" selected>12 x 12</option>
+                <option value="14">14 x 14</option>
+                <option value="16">16 x 16</option>
+                <option value="18">18 x 18</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Fill letters</span>
+              <select id="fillStyle">
+                <option value="random" selected>Random letters</option>
+                <option value="word-heavy">Favor word letters</option>
+              </select>
+            </label>
+            <label class="toggle">
+              <input id="showAnswers" type="checkbox">
+              <span>Show answers</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel words-panel" aria-label="Word list">
+          <div class="section-heading">
+            <div>
+              <h2>Words</h2>
+              <p id="wordCount">0 words ready</p>
+            </div>
+            <button id="clearWords" class="button ghost" type="button">Clear</button>
+          </div>
+          <textarea id="wordInput" rows="12" spellcheck="false" placeholder="One word per line&#10;STORM&#10;UMBRELLA&#10;PUDDLE&#10;RAINCOAT"></textarea>
+          <div class="word-actions">
+            <button id="buildPuzzle" class="button primary" type="button">Build Puzzle</button>
+            <button id="shufflePuzzle" class="button" type="button">Shuffle</button>
+            <button id="printPuzzle" class="button" type="button">Print</button>
+          </div>
+          <p class="message" id="buildMessage" role="status"></p>
+        </section>
+      </section>
+
+      <aside class="preview-panel" aria-label="Puzzle preview">
+        <section class="puzzle-sheet" id="puzzleSheet">
+          <div class="sheet-header">
+            <h2 id="previewTitle">Rainy Day Word Find</h2>
+            <p id="previewStats">12 x 12 puzzle</p>
+          </div>
+          <div class="sheet-layout">
+            <div class="letter-grid" id="letterGrid" aria-label="Word find grid"></div>
+            <aside class="word-bank" aria-label="Word bank">
+              <h3>Word Bank</h3>
+              <ul id="wordBank"></ul>
+            </aside>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
