@@ -1,3 +1,8 @@
+.entry-view [hidden],
+[hidden] {
+  display: none !important;
+}
+
 .entry-view {
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
