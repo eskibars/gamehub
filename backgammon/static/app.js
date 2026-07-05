@@ -414,7 +414,7 @@ function renderBoard() {
   whiteOff.addEventListener("click", () => {
     if (whiteOffTarget) playMove("off");
   });
-  whiteOff.innerHTML = `<span>White off</span><div class="off-slot">${state.game.borneOff.white}</div>`;
+  whiteOff.innerHTML = `<span>White<br>off</span><div class="off-slot">${state.game.borneOff.white}</div>`;
   els.board.append(whiteOff);
 
   const blackOff = document.createElement("button");
@@ -423,7 +423,7 @@ function renderBoard() {
   blackOff.addEventListener("click", () => {
     if (blackOffTarget) playMove("off");
   });
-  blackOff.innerHTML = `<span>Black off</span><div class="off-slot">${state.game.borneOff.black}</div>`;
+  blackOff.innerHTML = `<span>Black<br>off</span><div class="off-slot">${state.game.borneOff.black}</div>`;
   els.board.append(blackOff);
 
   const rail = document.createElement("div");
@@ -431,8 +431,8 @@ function renderBoard() {
   const whiteBarTarget = state.selected?.from === "bar" && state.game.turn === "white";
   const blackBarTarget = state.selected?.from === "bar" && state.game.turn === "black";
   rail.innerHTML = `
-    <button class="bar-slot ${blackBarTarget ? "is-selected" : ""}" type="button" data-bar="black">Black bar<br>${state.game.bar.black}</button>
-    <button class="bar-slot ${whiteBarTarget ? "is-selected" : ""}" type="button" data-bar="white">White bar<br>${state.game.bar.white}</button>
+    <button class="bar-slot ${blackBarTarget ? "is-selected" : ""}" type="button" data-bar="black"><span>Black<br>bar</span><strong>${state.game.bar.black}</strong></button>
+    <button class="bar-slot ${whiteBarTarget ? "is-selected" : ""}" type="button" data-bar="white"><span>White<br>bar</span><strong>${state.game.bar.white}</strong></button>
   `;
   rail.querySelectorAll("[data-bar]").forEach((button) => {
     button.addEventListener("click", () => selectStart("bar"));
@@ -445,10 +445,10 @@ function renderBoard() {
   els.board.append(label);
 
   [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].forEach((index, offset) => {
-    renderPoint(index, offset < 6 ? offset + 2 : offset + 4, "top");
+    renderPoint(index, offset < 6 ? offset + 2 : offset + 3, "top");
   });
   [11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0].forEach((index, offset) => {
-    renderPoint(index, offset < 6 ? offset + 2 : offset + 4, "bottom");
+    renderPoint(index, offset < 6 ? offset + 2 : offset + 3, "bottom");
   });
 }
 

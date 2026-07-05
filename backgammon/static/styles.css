@@ -242,7 +242,7 @@ button:disabled {
 
 .board {
   display: grid;
-  grid-template-columns: 54px repeat(6, minmax(44px, 1fr)) 44px repeat(6, minmax(44px, 1fr)) 54px;
+  grid-template-columns: 52px repeat(6, minmax(0, 1fr)) 52px repeat(6, minmax(0, 1fr)) 52px;
   grid-template-rows: 54px minmax(220px, 1fr) 64px minmax(220px, 1fr) 54px;
   min-height: min(720px, calc(100vh - 150px));
   border: 12px solid var(--dark-wood);
@@ -256,41 +256,38 @@ button:disabled {
 
 .point {
   position: relative;
-  display: flex;
-  align-items: center;
+  display: grid;
+  justify-items: center;
   min-width: 0;
+  overflow: hidden;
   padding: 6px 3px;
   cursor: pointer;
 }
 
 .point.top {
   grid-row: 2;
-  flex-direction: column;
+  align-items: start;
 }
 
 .point.bottom {
   grid-row: 4;
-  flex-direction: column-reverse;
+  align-items: end;
 }
 
 .point::before {
   position: absolute;
-  left: 8%;
-  right: 8%;
+  inset: 0;
   content: "";
   pointer-events: none;
-  border-left: min(34px, 4.2vw) solid transparent;
-  border-right: min(34px, 4.2vw) solid transparent;
+  background: var(--triangle-color);
 }
 
 .point.top::before {
-  top: 0;
-  border-top: 205px solid var(--triangle-color);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
 }
 
 .point.bottom::before {
-  bottom: 0;
-  border-bottom: 205px solid var(--triangle-color);
+  clip-path: polygon(0 100%, 100% 100%, 50% 0);
 }
 
 .point.is-target {
@@ -309,7 +306,7 @@ button:disabled {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  width: 100%;
+  width: min(100%, 46px);
 }
 
 .bottom .checkers {
@@ -326,10 +323,8 @@ button:disabled {
 }
 
 .checker {
-  width: min(42px, 5vw);
-  height: min(42px, 5vw);
-  min-width: 30px;
-  min-height: 30px;
+  width: clamp(24px, 82%, 42px);
+  aspect-ratio: 1;
   font-size: 0.74rem;
   font-weight: 950;
 }
@@ -351,9 +346,11 @@ button:disabled {
   display: grid;
   place-items: center;
   gap: 4px;
+  border: 0;
   background: rgba(90, 52, 34, 0.46);
   color: #fffaf0;
   font-weight: 950;
+  text-align: center;
 }
 
 .rail {
@@ -375,13 +372,37 @@ button:disabled {
 .off-slot {
   display: grid;
   place-items: center;
-  width: 42px;
+  width: min(44px, 100%);
   min-height: 78px;
   border: 1px solid rgba(255, 250, 240, 0.24);
   border-radius: 6px;
   background: rgba(255, 250, 240, 0.12);
+  color: #fffaf0;
+  line-height: 1.05;
+  text-align: center;
 }
 
+.bar-slot {
+  gap: 6px;
+  padding: 6px 3px;
+  font-size: 0.78rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.bar-slot strong {
+  font-size: 1rem;
+}
+
+.bearoff > span {
+  display: block;
+  max-width: 100%;
+  color: #fffaf0;
+  font-size: 0.86rem;
+  line-height: 1.05;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.48);
+}
+
+.bearoff.is-target,
 .bar-slot.is-target,
 .off-slot.is-target {
   outline: 3px solid rgba(223, 180, 78, 0.72);
@@ -463,23 +484,13 @@ button:disabled {
   }
 
   .board {
-    grid-template-columns: 42px repeat(6, minmax(30px, 1fr)) 34px repeat(6, minmax(30px, 1fr)) 42px;
+    grid-template-columns: 40px repeat(6, minmax(0, 1fr)) 40px repeat(6, minmax(0, 1fr)) 40px;
     grid-template-rows: 42px minmax(180px, 1fr) 52px minmax(180px, 1fr) 42px;
     min-height: 540px;
     border-width: 8px;
   }
 
-  .point.top::before {
-    border-top-width: 160px;
-  }
-
-  .point.bottom::before {
-    border-bottom-width: 160px;
-  }
-
   .checker {
-    min-width: 24px;
-    min-height: 24px;
     font-size: 0.68rem;
   }
 
