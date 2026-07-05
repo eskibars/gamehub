@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Backgammon</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/shared/game-entry.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Rule-enforced race board</p>
+          <h1>Backgammon</h1>
+        </div>
+        <p class="connection" id="connectionStatus">Ready</p>
+      </header>
+
+      <section class="setup entry-view" id="setupView">
+        <section class="entry-choice" id="choicePanel">
+          <h2>Choose a Mode</h2>
+          <div class="entry-actions">
+            <button class="entry-choice-button" id="showLocal" type="button">Local Game</button>
+            <button class="entry-choice-button" id="showCreate" type="button">Create Remote</button>
+            <button class="entry-choice-button" id="showJoin" type="button">Join Remote</button>
+          </div>
+        </section>
+
+        <form class="entry-panel" id="createForm" hidden>
+          <div class="section-heading">
+            <h2>Create Remote Game</h2>
+          </div>
+          <button class="primary-button" type="submit">Create Sharing Code</button>
+        </form>
+
+        <form class="entry-panel" id="joinForm" hidden>
+          <div class="section-heading">
+            <h2>Join Remote Game</h2>
+          </div>
+          <label class="field">
+            <span>Share link or code</span>
+            <input id="joinCode" type="text" autocomplete="off" placeholder="Paste link or code">
+          </label>
+          <button class="secondary-button" type="submit">Open Game</button>
+        </form>
+      </section>
+
+      <section class="game-view" id="gameView" hidden>
+        <aside class="panel status-panel">
+          <div class="section-heading">
+            <h2>Table</h2>
+            <button class="small-button" id="newGameButton" type="button">New</button>
+          </div>
+
+          <div class="share-row" id="shareTools" hidden>
+            <strong id="shareCode">----------</strong>
+            <button class="small-button" id="copyShare" type="button">Copy</button>
+          </div>
+
+          <dl class="facts">
+            <dt>Mode</dt>
+            <dd id="factMode">Local</dd>
+            <dt>Turn</dt>
+            <dd id="factTurn">White</dd>
+            <dt>Dice</dt>
+            <dd id="factDice">Roll</dd>
+          </dl>
+
+          <section class="dice-panel">
+            <p class="eyebrow">Dice</p>
+            <div class="dice-row" id="diceRow"></div>
+            <button class="primary-button" id="rollButton" type="button">Roll Dice</button>
+          </section>
+
+          <section class="message-panel">
+            <p id="gameMessage">White rolls first.</p>
+            <button class="secondary-button" id="endTurnButton" type="button">End Turn</button>
+          </section>
+        </aside>
+
+        <section class="board-wrap">
+          <div class="board" id="board" aria-label="Backgammon board"></div>
+        </section>
+
+        <aside class="panel score-panel">
+          <div class="score-row">
+            <span class="player-dot white"></span>
+            <div>
+              <strong>White</strong>
+              <p id="whiteStats">15 on board</p>
+            </div>
+          </div>
+          <div class="score-row">
+            <span class="player-dot black"></span>
+            <div>
+              <strong>Black</strong>
+              <p id="blackStats">15 on board</p>
+            </div>
+          </div>
+          <div class="captured-grid">
+            <div>
+              <span>White bar</span>
+              <strong id="whiteBar">0</strong>
+            </div>
+            <div>
+              <span>Black bar</span>
+              <strong id="blackBar">0</strong>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

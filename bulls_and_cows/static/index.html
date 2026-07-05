@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Color Guesser</title>
+    <title>Bulls and Cows</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="/shared/game-entry.css">
   </head>
@@ -13,7 +13,7 @@
         <a class="back-link" href="/">Game Hub</a>
         <div>
           <p class="eyebrow">Anonymous token-link play</p>
-          <h1>Color Guesser</h1>
+          <h1>Bulls and Cows</h1>
         </div>
         <p class="connection" id="connectionStatus">Ready</p>
       </header>
@@ -46,7 +46,14 @@
             </label>
           </div>
 
-          <p class="auto-note">The hidden code is generated automatically when the game starts.</p>
+          <section class="secret-panel">
+            <div class="section-heading compact">
+              <h2>Code</h2>
+              <button class="small-button" id="randomizeSecret" type="button">Randomize</button>
+            </div>
+            <div class="palette" id="secretPalette"></div>
+            <div class="secret-slots" id="secretSlots"></div>
+          </section>
 
           <button class="primary-button" type="submit">Create Share Link</button>
         </form>
@@ -97,7 +104,7 @@
           <div class="guess-board" id="guessBoard"></div>
         </section>
 
-        <aside class="guess-panel">
+        <aside class="guess-panel" id="guessPanel">
           <h2>Guess</h2>
           <div class="palette" id="guessPalette"></div>
           <div class="guess-slots" id="guessSlots"></div>

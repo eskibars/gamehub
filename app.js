@@ -17,7 +17,7 @@ const icons = {
       <circle cx="36" cy="31" r="2.5"></circle>
       <circle cx="46" cy="43" r="2.5"></circle>
     </svg>`,
-  mastermind: `
+  bullsandcows: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="14" y="7" width="36" height="50" rx="5"></rect>
       <path d="M24 17h16M24 28h16M24 39h16"></path>
@@ -53,6 +53,17 @@ const icons = {
       <circle cx="46" cy="46" r="4"></circle>
       <path d="M18 18h28"></path>
     </svg>`,
+  backgammon: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="9" width="48" height="46" rx="4"></rect>
+      <path d="M32 9v46"></path>
+      <path d="M14 10l4 18 4-18M24 10l4 18 4-18M42 10l4 18 4-18"></path>
+      <path d="M14 54l4-18 4 18M34 54l4-18 4 18M44 54l4-18 4 18"></path>
+      <circle cx="22" cy="39" r="4"></circle>
+      <circle cx="22" cy="47" r="4"></circle>
+      <circle cx="42" cy="17" r="4"></circle>
+      <circle cx="42" cy="25" r="4"></circle>
+    </svg>`,
 };
 
 const games = [
@@ -74,15 +85,15 @@ const games = [
     icon: "bingo",
   },
   {
-    id: "yahtzee",
-    title: "Yahtzee Scorepad",
+    id: "yacht",
+    title: "Yacht Scorepad",
     type: "Score tracker",
     status: "ready",
     category: "score",
-    href: "/yahtzee/",
+    href: "/yacht/",
     accent: "#c84e4e",
     tilt: "1.4deg",
-    description: "Track scores for players, or roll five lockable dice and fill legal category scores.",
+    description: "Track scores for players, or roll five lockable dice and fill legal category scores, in a Yahtzee!-like game.",
     features: {
       Mode: "Scorepad or dice",
       Storage: "Local browser",
@@ -91,12 +102,12 @@ const games = [
     icon: "dice",
   },
   {
-    id: "mastermind",
-    title: "Color Guesser",
+    id: "bullsandcows",
+    title: "Bulls and Cows",
     type: "Board game",
     status: "ready",
     category: "board",
-    href: "/color-guesser/",
+    href: "/bulls-and-cows/",
     accent: "#6e5cb8",
     tilt: "-0.7deg",
     description: "A Mastermind-style code breaker with anonymous share codes and live server-sent updates.",
@@ -105,7 +116,7 @@ const games = [
       Storage: "In-memory share code",
       Players: "1-2",
     },
-    icon: "mastermind",
+    icon: "bullsandcows",
   },
   {
     id: "boggle",
@@ -140,6 +151,23 @@ const games = [
       Players: "Print or solve",
     },
     icon: "wordfind",
+  },
+  {
+    id: "backgammon",
+    title: "Backgammon",
+    type: "Board game",
+    status: "ready",
+    category: "board",
+    href: "/backgammon/",
+    accent: "#8d5735",
+    tilt: "1.2deg",
+    description: "Play locally with enforced moves and automated turns, or create a live sharing code with streamed dice and moves.",
+    features: {
+      Mode: "Local or remote",
+      Storage: "In-memory share code",
+      Players: "2",
+    },
+    icon: "backgammon",
   },
   {
     id: "cards",

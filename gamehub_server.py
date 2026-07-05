@@ -23,10 +23,11 @@ BASE_DIR = Path(__file__).resolve().parent
 BINGO_STATIC_DIR = BASE_DIR / "bingo" / "static"
 BINGO_DATA_DIR = BASE_DIR / "bingo" / "data"
 BINGO_CARDS_FILE = BINGO_DATA_DIR / "cards.json"
-COLOR_GUESSER_STATIC_DIR = BASE_DIR / "color_guesser" / "static"
-YAHTZEE_STATIC_DIR = BASE_DIR / "yahtzee" / "static"
+BULLS_AND_COWS_STATIC_DIR = BASE_DIR / "bulls_and_cows" / "static"
+YACHT_STATIC_DIR = BASE_DIR / "yacht" / "static"
 BOGGLE_STATIC_DIR = BASE_DIR / "boggle" / "static"
 WORD_FIND_STATIC_DIR = BASE_DIR / "word_find" / "static"
+BACKGAMMON_STATIC_DIR = BASE_DIR / "backgammon" / "static"
 SHARED_STATIC_DIR = BASE_DIR / "shared"
 MAX_USER_BYTES = int(os.environ.get("BINGO_MAX_USER_BYTES", 5 * 1024 * 1024))
 COLOR_GAMES: dict[str, dict[str, Any]] = {}
@@ -36,6 +37,9 @@ BOGGLE_GAMES: dict[str, dict[str, Any]] = {}
 BOGGLE_GAME_SUBSCRIBERS: dict[str, list[dict[str, Any]]] = {}
 BOGGLE_GAME_TIMERS: dict[str, threading.Timer] = {}
 BOGGLE_GAMES_LOCK = threading.Lock()
+BACKGAMMON_GAMES: dict[str, dict[str, Any]] = {}
+BACKGAMMON_GAME_SUBSCRIBERS: dict[str, list[queue.Queue[dict[str, Any]]]] = {}
+BACKGAMMON_GAMES_LOCK = threading.Lock()
 BOGGLE_LETTER_DISTRIBUTION = (
     "E" * 12
     + "A" * 9
@@ -100,8 +104,8 @@ def base64url_decode(data: str) -> bytes:
 
 def color_token_keys(secret_key: str) -> tuple[bytes, bytes]:
     secret_bytes = secret_key.encode("utf-8")
-    encryption_key = hashlib.sha256(b"color-guesser-encryption:" + secret_bytes).digest()
-    signing_key = hashlib.sha256(b"color-guesser-signing:" + secret_bytes).digest()
+    encryption_key = hashlib.sha256(b"bulls-and-cows-encryption:" + secret_bytes).digest()
+    signing_key = hashlib.sha256(b"bulls-and-cows-signing:" + secret_bytes).digest()
     return encryption_key, signing_key
 
 
@@ -326,6 +330,7 @@ def validate_boggle_game_payload(body: dict[str, Any]) -> tuple[dict[str, int] |
 
 def validate_color_game_payload(body: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
     colors = body.get("colors")
+    secret = body.get("secret")
     try:
         peg_count = int(body.get("pegCount") or 0)
         max_rounds = int(body.get("maxRounds") or 0)
@@ -344,8 +349,14 @@ def validate_color_game_payload(body: dict[str, Any]) -> tuple[dict[str, Any] | 
         return None, "Choose between 3 and 8 pegs."
     if max_rounds < 4 or max_rounds > 20:
         return None, "Choose between 4 and 20 rounds."
+    if secret is not None:
+        if not isinstance(secret, list):
+            return None, "Code must use one available color per peg."
+        secret = [str(color).strip() for color in secret]
+        if len(secret) != peg_count or any(color not in colors for color in secret):
+            return None, "Code must use one available color per peg."
 
-    return {"colors": colors, "pegCount": peg_count, "maxRounds": max_rounds}, None
+    return {"colors": colors, "pegCount": peg_count, "maxRounds": max_rounds, "secret": secret}, None
 
 
 def validate_color_token_payload(payload: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
@@ -378,6 +389,257 @@ def validate_color_token_payload(payload: dict[str, Any]) -> tuple[dict[str, Any
         return None, "Share token has invalid secret."
 
     return {"code": code, "colors": colors, "pegCount": peg_count, "maxRounds": max_rounds, "secret": secret}, None
+
+
+def initial_backgammon_points() -> list[dict[str, Any] | None]:
+    return [
+        {"color": "black", "count": 2},
+        None,
+        None,
+        None,
+        None,
+        {"color": "white", "count": 5},
+        None,
+        {"color": "white", "count": 3},
+        None,
+        None,
+        None,
+        {"color": "black", "count": 5},
+        {"color": "white", "count": 5},
+        None,
+        None,
+        None,
+        {"color": "black", "count": 3},
+        None,
+        {"color": "black", "count": 5},
+        None,
+        None,
+        None,
+        None,
+        {"color": "white", "count": 2},
+    ]
+
+
+def create_backgammon_game(code: str) -> dict[str, Any]:
+    now = utc_now()
+    return {
+        "code": code,
+        "mode": "remote",
+        "points": initial_backgammon_points(),
+        "bar": {"white": 0, "black": 0},
+        "borneOff": {"white": 0, "black": 0},
+        "turn": "white",
+        "dice": [],
+        "usedDice": [],
+        "rolled": False,
+        "winner": None,
+        "revision": 0,
+        "createdAt": now,
+        "updatedAt": now,
+    }
+
+
+def backgammon_opponent(color: str) -> str:
+    return "black" if color == "white" else "white"
+
+
+def backgammon_remaining_dice(game: dict[str, Any]) -> list[int]:
+    used = set(game["usedDice"])
+    return [die for index, die in enumerate(game["dice"]) if index not in used]
+
+
+def backgammon_all_in_home(game: dict[str, Any], color: str) -> bool:
+    if game["bar"][color] > 0:
+        return False
+    for index, point in enumerate(game["points"]):
+        if not point or point["color"] != color:
+            continue
+        if color == "white" and index > 5:
+            return False
+        if color == "black" and index < 18:
+            return False
+    return True
+
+
+def backgammon_can_oversize_bear_off(game: dict[str, Any], color: str, start: int) -> bool:
+    for index, point in enumerate(game["points"]):
+        if not point or point["color"] != color:
+            continue
+        if color == "white" and index > start:
+            return False
+        if color == "black" and index < start:
+            return False
+    return True
+
+
+def backgammon_destination(game: dict[str, Any], color: str, start: int | str, die: int) -> int | str | None:
+    if start == "bar":
+        return 24 - die if color == "white" else die - 1
+
+    destination = start - die if color == "white" else start + die
+    if 0 <= destination <= 23:
+        return destination
+    if not backgammon_all_in_home(game, color):
+        return None
+
+    exact = destination == -1 if color == "white" else destination == 24
+    if exact or backgammon_can_oversize_bear_off(game, color, start):
+        return "off"
+    return None
+
+
+def backgammon_destination_open(game: dict[str, Any], color: str, destination: int | str) -> bool:
+    if destination == "off":
+        return True
+    point = game["points"][destination]
+    return not point or point["color"] == color or point["count"] == 1
+
+
+def backgammon_legal_moves_from(game: dict[str, Any], start: int | str) -> list[dict[str, Any]]:
+    if not game["rolled"] or game.get("winner"):
+        return []
+    color = game["turn"]
+    if game["bar"][color] > 0 and start != "bar":
+        return []
+    if start == "bar":
+        if game["bar"][color] <= 0:
+            return []
+    else:
+        if not isinstance(start, int) or start < 0 or start > 23:
+            return []
+        point = game["points"][start]
+        if not point or point["color"] != color or point["count"] <= 0:
+            return []
+
+    moves = []
+    used = set(game["usedDice"])
+    for die_index, die in enumerate(game["dice"]):
+        if die_index in used:
+            continue
+        destination = backgammon_destination(game, color, start, int(die))
+        if destination is None or not backgammon_destination_open(game, color, destination):
+            continue
+        moves.append({"from": start, "to": destination, "die": int(die), "dieIndex": die_index})
+    return moves
+
+
+def backgammon_all_legal_moves(game: dict[str, Any]) -> list[dict[str, Any]]:
+    color = game["turn"]
+    starts: list[int | str]
+    if game["bar"][color] > 0:
+        starts = ["bar"]
+    else:
+        starts = [index for index, point in enumerate(game["points"]) if point and point["color"] == color]
+    moves: list[dict[str, Any]] = []
+    for start in starts:
+        moves.extend(backgammon_legal_moves_from(game, start))
+    return moves
+
+
+def advance_backgammon_turn(game: dict[str, Any]) -> None:
+    game["turn"] = backgammon_opponent(game["turn"])
+    game["dice"] = []
+    game["usedDice"] = []
+    game["rolled"] = False
+    game["revision"] += 1
+    game["updatedAt"] = utc_now()
+
+
+def apply_backgammon_move(game: dict[str, Any], move: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
+    start = move.get("from")
+    destination = move.get("to")
+    try:
+        die_index = int(move.get("dieIndex"))
+    except (TypeError, ValueError):
+        return None, "Move is missing a die."
+
+    if isinstance(start, str) and start != "bar":
+        return None, "Move starts from an invalid point."
+    if isinstance(start, (int, float)):
+        start = int(start)
+    if isinstance(destination, str) and destination != "off":
+        return None, "Move ends on an invalid point."
+    if isinstance(destination, (int, float)):
+        destination = int(destination)
+
+    legal_move = next(
+        (
+            item
+            for item in backgammon_legal_moves_from(game, start)
+            if item["to"] == destination and item["dieIndex"] == die_index
+        ),
+        None,
+    )
+    if not legal_move:
+        return None, "That move is not legal for the current dice."
+
+    color = game["turn"]
+    rival = backgammon_opponent(color)
+    if start == "bar":
+        game["bar"][color] -= 1
+    else:
+        point = game["points"][start]
+        point["count"] -= 1
+        if point["count"] == 0:
+            game["points"][start] = None
+
+    if destination == "off":
+        game["borneOff"][color] += 1
+    else:
+        target = game["points"][destination]
+        if not target:
+            game["points"][destination] = {"color": color, "count": 1}
+        elif target["color"] == color:
+            target["count"] += 1
+        else:
+            game["bar"][rival] += 1
+            game["points"][destination] = {"color": color, "count": 1}
+
+    game["usedDice"].append(die_index)
+    game["revision"] += 1
+    game["updatedAt"] = utc_now()
+    if game["borneOff"][color] >= 15:
+        game["winner"] = color
+        game["rolled"] = False
+    elif not backgammon_remaining_dice(game) or not backgammon_all_legal_moves(game):
+        advance_backgammon_turn(game)
+    return game, None
+
+
+def roll_backgammon_dice(game: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
+    if game["rolled"]:
+        return None, "Dice are already active."
+    if game.get("winner"):
+        return None, "This game is already finished."
+    first = random.SystemRandom().randint(1, 6)
+    second = random.SystemRandom().randint(1, 6)
+    game["dice"] = [first, first, first, first] if first == second else [first, second]
+    game["usedDice"] = []
+    game["rolled"] = True
+    game["revision"] += 1
+    game["updatedAt"] = utc_now()
+    if not backgammon_all_legal_moves(game):
+        advance_backgammon_turn(game)
+    return game, None
+
+
+def publish_backgammon_game(code: str, event_name: str = "game") -> None:
+    with BACKGAMMON_GAMES_LOCK:
+        game = BACKGAMMON_GAMES.get(code)
+        subscribers = list(BACKGAMMON_GAME_SUBSCRIBERS.get(code, []))
+
+    if not game:
+        return
+
+    for subscriber in subscribers:
+        subscriber.put({"event": event_name, "data": game})
+
+
+def backgammon_revision_matches(body: dict[str, Any], game: dict[str, Any]) -> bool:
+    try:
+        return int(body.get("revision", game["revision"])) == game["revision"]
+    except (TypeError, ValueError):
+        return False
 
 
 def create_app() -> Flask:
@@ -424,29 +686,29 @@ def create_app() -> Flask:
     def bingo_static(filename: str):
         return send_from_directory(BINGO_STATIC_DIR, filename)
 
-    @app.get("/color-guesser")
-    def color_guesser_redirect():
-        return redirect("/color-guesser/")
+    @app.get("/bulls-and-cows")
+    def bulls_and_cows_redirect():
+        return redirect("/bulls-and-cows/")
 
-    @app.get("/color-guesser/")
-    def color_guesser_index():
-        return send_from_directory(COLOR_GUESSER_STATIC_DIR, "index.html")
+    @app.get("/bulls-and-cows/")
+    def bulls_and_cows_index():
+        return send_from_directory(BULLS_AND_COWS_STATIC_DIR, "index.html")
 
-    @app.get("/color-guesser/<path:filename>")
-    def color_guesser_static(filename: str):
-        return send_from_directory(COLOR_GUESSER_STATIC_DIR, filename)
+    @app.get("/bulls-and-cows/<path:filename>")
+    def bulls_and_cows_static(filename: str):
+        return send_from_directory(BULLS_AND_COWS_STATIC_DIR, filename)
 
-    @app.get("/yahtzee")
-    def yahtzee_redirect():
-        return redirect("/yahtzee/")
+    @app.get("/yacht")
+    def yacht_redirect():
+        return redirect("/yacht/")
 
-    @app.get("/yahtzee/")
-    def yahtzee_index():
-        return send_from_directory(YAHTZEE_STATIC_DIR, "index.html")
+    @app.get("/yacht/")
+    def yacht_index():
+        return send_from_directory(YACHT_STATIC_DIR, "index.html")
 
-    @app.get("/yahtzee/<path:filename>")
-    def yahtzee_static(filename: str):
-        return send_from_directory(YAHTZEE_STATIC_DIR, filename)
+    @app.get("/yacht/<path:filename>")
+    def yacht_static(filename: str):
+        return send_from_directory(YACHT_STATIC_DIR, filename)
 
     @app.get("/boggle")
     def boggle_redirect():
@@ -471,6 +733,18 @@ def create_app() -> Flask:
     @app.get("/word-find/<path:filename>")
     def word_find_static(filename: str):
         return send_from_directory(WORD_FIND_STATIC_DIR, filename)
+
+    @app.get("/backgammon")
+    def backgammon_redirect():
+        return redirect("/backgammon/")
+
+    @app.get("/backgammon/")
+    def backgammon_index():
+        return send_from_directory(BACKGAMMON_STATIC_DIR, "index.html")
+
+    @app.get("/backgammon/<path:filename>")
+    def backgammon_static(filename: str):
+        return send_from_directory(BACKGAMMON_STATIC_DIR, filename)
 
     @app.get("/share/<share_id>")
     def shared_card(share_id: str):
@@ -590,7 +864,7 @@ def create_app() -> Flask:
                 return jsonify({"card": card["card"], "createdAt": card["createdAt"]})
         return jsonify({"error": "Shared card was not found."}), 404
 
-    @app.post("/api/color-guesser/games")
+    @app.post("/api/bulls-and-cows/games")
     def create_color_game():
         body = request.get_json(silent=True) or {}
         game_config, error = validate_color_game_payload(body)
@@ -604,7 +878,7 @@ def create_app() -> Flask:
             "colors": game_config["colors"],
             "pegCount": game_config["pegCount"],
             "maxRounds": game_config["maxRounds"],
-            "secret": random_color_secret(game_config["colors"], game_config["pegCount"]),
+            "secret": game_config["secret"] or random_color_secret(game_config["colors"], game_config["pegCount"]),
             "guesses": [],
             "status": "active",
             "createdAt": now,
@@ -620,11 +894,11 @@ def create_app() -> Flask:
                 "creatorSecret": game["secret"],
                 "game": color_game_public(game),
                 "shareToken": share_token,
-                "shareUrl": f"/color-guesser/?token={share_token}",
+                "shareUrl": f"/bulls-and-cows/?token={share_token}",
             }
         ), 201
 
-    @app.post("/api/color-guesser/games/from-token")
+    @app.post("/api/bulls-and-cows/games/from-token")
     def create_color_game_from_token():
         body = request.get_json(silent=True) or {}
         token = str(body.get("token") or "").strip()
@@ -654,9 +928,9 @@ def create_app() -> Flask:
                 COLOR_GAMES[game_config["code"]] = game
                 COLOR_GAME_SUBSCRIBERS.setdefault(game_config["code"], [])
 
-        return jsonify({"game": color_game_public(game), "shareToken": token, "shareUrl": f"/color-guesser/?token={token}"})
+        return jsonify({"game": color_game_public(game), "shareToken": token, "shareUrl": f"/bulls-and-cows/?token={token}"})
 
-    @app.get("/api/color-guesser/games/<code>")
+    @app.get("/api/bulls-and-cows/games/<code>")
     def get_color_game(code: str):
         with COLOR_GAMES_LOCK:
             game = COLOR_GAMES.get(code.upper())
@@ -664,7 +938,7 @@ def create_app() -> Flask:
                 return jsonify({"error": "Game was not found."}), 404
             return jsonify({"game": color_game_public(game)})
 
-    @app.post("/api/color-guesser/games/<code>/guesses")
+    @app.post("/api/bulls-and-cows/games/<code>/guesses")
     def add_color_guess(code: str):
         code = code.upper()
         body = request.get_json(silent=True) or {}
@@ -695,7 +969,7 @@ def create_app() -> Flask:
         publish_color_game(code)
         return jsonify({"game": public_game})
 
-    @app.get("/api/color-guesser/games/<code>/events")
+    @app.get("/api/bulls-and-cows/games/<code>/events")
     def color_game_events(code: str):
         code = code.upper()
         subscriber: queue.Queue[dict[str, Any]] = queue.Queue()
@@ -981,6 +1255,100 @@ def create_app() -> Flask:
             finally:
                 with BOGGLE_GAMES_LOCK:
                     subscribers = BOGGLE_GAME_SUBSCRIBERS.get(code, [])
+                    if subscriber in subscribers:
+                        subscribers.remove(subscriber)
+
+        return Response(stream_with_context(stream()), mimetype="text/event-stream")
+
+    @app.post("/api/backgammon/games")
+    def create_remote_backgammon_game():
+        code = uuid.uuid4().hex[:8].upper()
+        game = create_backgammon_game(code)
+        with BACKGAMMON_GAMES_LOCK:
+            BACKGAMMON_GAMES[code] = game
+            BACKGAMMON_GAME_SUBSCRIBERS.setdefault(code, [])
+        return jsonify({"game": game, "shareUrl": f"/backgammon/?game={code}"}), 201
+
+    @app.get("/api/backgammon/games/<code>")
+    def get_remote_backgammon_game(code: str):
+        code = code.upper()
+        with BACKGAMMON_GAMES_LOCK:
+            game = BACKGAMMON_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            return jsonify({"game": game})
+
+    @app.post("/api/backgammon/games/<code>/roll")
+    def roll_remote_backgammon_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        with BACKGAMMON_GAMES_LOCK:
+            game = BACKGAMMON_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if not backgammon_revision_matches(body, game):
+                return jsonify({"error": "The board changed. Try again."}), 409
+            game, error = roll_backgammon_dice(game)
+            if error:
+                return jsonify({"error": error}), 409
+        publish_backgammon_game(code)
+        return jsonify({"game": game})
+
+    @app.post("/api/backgammon/games/<code>/moves")
+    def move_remote_backgammon_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        with BACKGAMMON_GAMES_LOCK:
+            game = BACKGAMMON_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if not backgammon_revision_matches(body, game):
+                return jsonify({"error": "The board changed. Try again."}), 409
+            game, error = apply_backgammon_move(game, body)
+            if error:
+                return jsonify({"error": error}), 400
+        publish_backgammon_game(code)
+        return jsonify({"game": game})
+
+    @app.post("/api/backgammon/games/<code>/end-turn")
+    def end_remote_backgammon_turn(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        with BACKGAMMON_GAMES_LOCK:
+            game = BACKGAMMON_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if not backgammon_revision_matches(body, game):
+                return jsonify({"error": "The board changed. Try again."}), 409
+            if not game["rolled"] or game.get("winner"):
+                return jsonify({"error": "There is no active turn to end."}), 409
+            advance_backgammon_turn(game)
+        publish_backgammon_game(code)
+        return jsonify({"game": game})
+
+    @app.get("/api/backgammon/games/<code>/events")
+    def backgammon_game_events(code: str):
+        code = code.upper()
+        subscriber: queue.Queue[dict[str, Any]] = queue.Queue()
+        with BACKGAMMON_GAMES_LOCK:
+            game = BACKGAMMON_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            BACKGAMMON_GAME_SUBSCRIBERS.setdefault(code, []).append(subscriber)
+            initial_game = game
+
+        def stream():
+            yield sse_message("game", initial_game)
+            try:
+                while True:
+                    try:
+                        message = subscriber.get(timeout=25)
+                        yield sse_message(message["event"], message["data"])
+                    except queue.Empty:
+                        yield sse_message("ping", {"ok": True})
+            finally:
+                with BACKGAMMON_GAMES_LOCK:
+                    subscribers = BACKGAMMON_GAME_SUBSCRIBERS.get(code, [])
                     if subscriber in subscribers:
                         subscribers.remove(subscriber)
 

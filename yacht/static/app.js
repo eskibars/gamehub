@@ -1,4 +1,4 @@
-const STORAGE_KEY = "yahtzee-scorecard-v1";
+const STORAGE_KEY = "yacht-scorecard-v1";
 
 const CATEGORIES = [
   { id: "ones", label: "Ones", section: "upper" },
@@ -12,7 +12,7 @@ const CATEGORIES = [
   { id: "fullHouse", label: "Full House", section: "lower" },
   { id: "smallStraight", label: "Small Straight", section: "lower" },
   { id: "largeStraight", label: "Large Straight", section: "lower" },
-  { id: "yahtzee", label: "Yahtzee", section: "lower" },
+  { id: "yacht", label: "Yacht", section: "lower" },
   { id: "chance", label: "Chance", section: "lower" },
 ];
 
@@ -153,7 +153,7 @@ function suggestedScore(categoryId) {
   if (categoryId === "fullHouse") return values.includes(3) && values.includes(2) ? 25 : 0;
   if (categoryId === "smallStraight") return hasStraight(4) ? 30 : 0;
   if (categoryId === "largeStraight") return hasStraight(5) ? 40 : 0;
-  if (categoryId === "yahtzee") return values.includes(5) ? 50 : 0;
+  if (categoryId === "yacht") return values.includes(5) ? 50 : 0;
   return diceTotal();
 }
 

@@ -10,11 +10,12 @@ const DEFAULT_COLORS = [
   "#6fcf97",
   "#bb6bd9",
 ];
-const LOCAL_SECRET_KEY = "color-guesser-maker-secrets-v1";
+const LOCAL_SECRET_KEY = "bulls-and-cows-maker-secrets-v1";
 
 const state = {
   colors: DEFAULT_COLORS.slice(0, 6),
   selectedColor: DEFAULT_COLORS[0],
+  setupSecret: [],
   currentGuess: [],
   game: null,
   eventSource: null,
@@ -36,6 +37,9 @@ const els = {
   joinAnotherButton: document.querySelector("#joinAnotherButton"),
   addColor: document.querySelector("#addColor"),
   colorEditor: document.querySelector("#colorEditor"),
+  secretPalette: document.querySelector("#secretPalette"),
+  secretSlots: document.querySelector("#secretSlots"),
+  randomizeSecret: document.querySelector("#randomizeSecret"),
   pegCount: document.querySelector("#pegCount"),
   maxRounds: document.querySelector("#maxRounds"),
   joinCode: document.querySelector("#joinCode"),
@@ -50,6 +54,7 @@ const els = {
   secretPreview: document.querySelector("#secretPreview"),
   gameMessage: document.querySelector("#gameMessage"),
   guessBoard: document.querySelector("#guessBoard"),
+  guessPanel: document.querySelector("#guessPanel"),
   guessPalette: document.querySelector("#guessPalette"),
   guessSlots: document.querySelector("#guessSlots"),
   submitGuess: document.querySelector("#submitGuess"),
@@ -81,6 +86,17 @@ function clampSettings() {
   els.maxRounds.value = maxRounds;
   state.colors = state.colors.slice(0, 10);
   while (state.colors.length < 2) state.colors.push(DEFAULT_COLORS[state.colors.length]);
+  state.setupSecret = state.setupSecret.slice(0, pegCount).filter((color) => state.colors.includes(color));
+  while (state.setupSecret.length < pegCount) state.setupSecret.push(randomSetupColor());
+}
+
+function randomSetupColor() {
+  return state.colors[Math.floor(Math.random() * state.colors.length)];
+}
+
+function randomizeSetupSecret() {
+  clampSettings();
+  state.setupSecret = Array.from({ length: Number(els.pegCount.value) }, randomSetupColor);
 }
 
 function makePeg(color, className = "peg") {
@@ -104,7 +120,9 @@ function renderColorEditor() {
     colorInput.ariaLabel = `Color ${index + 1}`;
     colorInput.addEventListener("input", () => {
       const nextColor = normalizeHex(colorInput.value);
+      const previousColor = state.colors[index];
       state.colors[index] = nextColor;
+      state.setupSecret = state.setupSecret.map((color) => (color === previousColor ? nextColor : color));
       state.selectedColor = nextColor;
       renderSetup();
     });
@@ -116,7 +134,9 @@ function renderColorEditor() {
     remove.ariaLabel = `Remove color ${index + 1}`;
     remove.disabled = state.colors.length <= 2;
     remove.addEventListener("click", () => {
+      const removedColor = state.colors[index];
       state.colors.splice(index, 1);
+      state.setupSecret = state.setupSecret.map((color) => (color === removedColor ? state.colors[0] : color));
       state.selectedColor = state.colors[0];
       renderSetup();
     });
@@ -126,8 +146,37 @@ function renderColorEditor() {
   });
 }
 
+function renderSecretControls() {
+  els.secretPalette.innerHTML = "";
+  state.colors.forEach((color) => {
+    const swatch = document.createElement("button");
+    swatch.type = "button";
+    swatch.className = "swatch";
+    swatch.style.setProperty("--swatch-color", color);
+    swatch.classList.toggle("is-selected", color === state.selectedColor);
+    swatch.ariaLabel = `Select ${color}`;
+    swatch.addEventListener("click", () => {
+      state.selectedColor = color;
+      renderSecretControls();
+    });
+    els.secretPalette.append(swatch);
+  });
+
+  els.secretSlots.innerHTML = "";
+  state.setupSecret.forEach((color, index) => {
+    const slot = makePeg(color, "slot");
+    slot.title = `Code peg ${index + 1}`;
+    slot.addEventListener("click", () => {
+      state.setupSecret[index] = state.selectedColor;
+      renderSecretControls();
+    });
+    els.secretSlots.append(slot);
+  });
+}
+
 function renderSetup() {
   renderColorEditor();
+  renderSecretControls();
 }
 
 function showStartMode(mode) {
@@ -170,7 +219,7 @@ function openGame(game, options = {}) {
 
 function connectEvents(code) {
   if (state.eventSource) state.eventSource.close();
-  state.eventSource = new EventSource(`/api/color-guesser/games/${code}/events`);
+  state.eventSource = new EventSource(`/api/bulls-and-cows/games/${code}/events`);
   els.connectionStatus.textContent = "Live";
   state.eventSource.addEventListener("game", (event) => {
     state.game = JSON.parse(event.data);
@@ -255,9 +304,11 @@ function renderGuessControls() {
 
 function renderGame() {
   const canInvite = state.entryMode === "create" || Boolean(state.makerSecrets[state.game.code]);
+  const isHost = canInvite;
   els.shareCode.textContent = state.game.code;
   els.invitePanel.hidden = !canInvite;
   els.newGameButton.hidden = !canInvite;
+  els.guessPanel.hidden = isHost;
   els.factPegs.textContent = String(state.game.pegCount);
   els.factRounds.textContent = String(state.game.maxRounds);
   els.factStatus.textContent = statusText(state.game.status);
@@ -273,19 +324,20 @@ function renderGame() {
 
   renderSecretPreview();
   renderBoard();
-  renderGuessControls();
+  if (!isHost) renderGuessControls();
 }
 
 async function createGame(event) {
   event.preventDefault();
   clampSettings();
-  const response = await fetch("/api/color-guesser/games", {
+  const response = await fetch("/api/bulls-and-cows/games", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       colors: state.colors,
       pegCount: Number(els.pegCount.value),
       maxRounds: Number(els.maxRounds.value),
+      secret: state.setupSecret,
     }),
   });
   const data = await response.json();
@@ -319,7 +371,7 @@ function parseShareInput(value) {
 }
 
 async function loadGame(code) {
-  const response = await fetch(`/api/color-guesser/games/${code}`);
+  const response = await fetch(`/api/bulls-and-cows/games/${code}`);
   const data = await response.json();
   if (!response.ok) {
     els.connectionStatus.textContent = data.error || "Game not found";
@@ -329,7 +381,7 @@ async function loadGame(code) {
 }
 
 async function loadGameFromToken(token) {
-  const response = await fetch("/api/color-guesser/games/from-token", {
+  const response = await fetch("/api/bulls-and-cows/games/from-token", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token }),
@@ -344,7 +396,7 @@ async function loadGameFromToken(token) {
 
 async function submitGuess() {
   if (!state.game || state.game.status !== "active") return;
-  const response = await fetch(`/api/color-guesser/games/${state.game.code}/guesses`, {
+  const response = await fetch(`/api/bulls-and-cows/games/${state.game.code}/guesses`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ guess: state.currentGuess }),
@@ -378,10 +430,14 @@ function bindEvents() {
   });
   els.pegCount.addEventListener("change", renderSetup);
   els.maxRounds.addEventListener("change", clampSettings);
+  els.randomizeSecret.addEventListener("click", () => {
+    randomizeSetupSecret();
+    renderSetup();
+  });
   els.submitGuess.addEventListener("click", submitGuess);
   els.copyShare.addEventListener("click", async () => {
     const query = state.shareToken ? `token=${encodeURIComponent(state.shareToken)}` : `game=${state.game.code}`;
-    const url = new URL(`/color-guesser/?${query}`, window.location.origin).toString();
+    const url = new URL(`/bulls-and-cows/?${query}`, window.location.origin).toString();
     await navigator.clipboard?.writeText(url).catch(() => {});
     els.connectionStatus.textContent = "Copied";
   });
