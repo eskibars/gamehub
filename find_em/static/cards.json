@@ -1,0 +1,261 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "around-the-house",
+      "name": "Around the House",
+      "description": "Prompts for rooms, shelves, toys, clothes, and everyday routines.",
+      "accent": "#2f7d67",
+      "cards": [
+        {
+          "id": "house-purple",
+          "prompt": "Find something purple.",
+          "followOns": [
+            "What else can you find that is purple?",
+            "Is your item soft, hard, smooth, or bumpy?"
+          ]
+        },
+        {
+          "id": "house-bedtime",
+          "prompt": "Find something you use before bedtime.",
+          "followOns": [
+            "Do you use this at any other time of day?",
+            "Can you show how you use it?"
+          ]
+        },
+        {
+          "id": "house-letter-a",
+          "prompt": "Find something that starts with the letter A.",
+          "followOns": [
+            "Can you find anything else that starts with A?",
+            "What sound does A make in this word?"
+          ]
+        },
+        {
+          "id": "house-round",
+          "prompt": "Find something round.",
+          "followOns": [
+            "Can it roll?",
+            "Can you find something round that is smaller?"
+          ]
+        },
+        {
+          "id": "house-kitchen",
+          "prompt": "Find something from the kitchen.",
+          "followOns": [
+            "What do people use it for?",
+            "Is it safe for kids to use by themselves?"
+          ]
+        },
+        {
+          "id": "house-cozy",
+          "prompt": "Find something cozy.",
+          "followOns": [
+            "What makes it feel cozy?",
+            "Who else in the house might like it?"
+          ]
+        },
+        {
+          "id": "house-noisy",
+          "prompt": "Find something that can make a noise.",
+          "followOns": [
+            "Can you make a quiet sound with it?",
+            "What does the sound remind you of?"
+          ]
+        },
+        {
+          "id": "house-help",
+          "prompt": "Find something that helps clean up.",
+          "followOns": [
+            "What mess does it help with?",
+            "Can you find another cleaning helper?"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "things-in-the-park",
+      "name": "Things in the Park",
+      "description": "Outdoor prompts for playgrounds, paths, plants, and open spaces.",
+      "accent": "#3c76b7",
+      "cards": [
+        {
+          "id": "park-tall",
+          "prompt": "Find something taller than you.",
+          "followOns": [
+            "Is it taller than a grown-up too?",
+            "What do you think is at the very top?"
+          ]
+        },
+        {
+          "id": "park-leaf",
+          "prompt": "Find a leaf with an interesting shape.",
+          "followOns": [
+            "Can you find a different shaped leaf?",
+            "How many points or bumps does it have?"
+          ]
+        },
+        {
+          "id": "park-sit",
+          "prompt": "Find something people can sit on.",
+          "followOns": [
+            "How many people could sit there together?",
+            "Is it warm, cool, rough, or smooth?"
+          ]
+        },
+        {
+          "id": "park-shadow",
+          "prompt": "Find a shadow.",
+          "followOns": [
+            "Can you make the shadow change shape?",
+            "Where is the light coming from?"
+          ]
+        },
+        {
+          "id": "park-yellow",
+          "prompt": "Find something yellow.",
+          "followOns": [
+            "Is the yellow bright or pale?",
+            "Can you find something yellow that is alive?"
+          ]
+        },
+        {
+          "id": "park-climb",
+          "prompt": "Find something made for climbing.",
+          "followOns": [
+            "What should you check before climbing?",
+            "Can you climb it slowly and safely?"
+          ]
+        },
+        {
+          "id": "park-tiny",
+          "prompt": "Find something tiny.",
+          "followOns": [
+            "How did you notice it?",
+            "Can you find something even tinier?"
+          ]
+        },
+        {
+          "id": "park-path",
+          "prompt": "Find something that shows where to walk.",
+          "followOns": [
+            "Where does it lead?",
+            "What could happen if everyone walked a different way?"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "car-trip",
+      "name": "Car Trip",
+      "description": "Prompts for looking out windows, listening, and noticing travel details.",
+      "accent": "#b95f49",
+      "cards": [
+        {
+          "id": "car-red",
+          "prompt": "Find something red outside the car.",
+          "followOns": [
+            "Was it moving or still?",
+            "Can you find another red thing before the next corner?"
+          ]
+        },
+        {
+          "id": "car-sign",
+          "prompt": "Find a sign with a word on it.",
+          "followOns": [
+            "Can you spot any letters you know?",
+            "What do you think the sign is telling people?"
+          ]
+        },
+        {
+          "id": "car-wheels",
+          "prompt": "Find something with wheels.",
+          "followOns": [
+            "How many wheels can you see?",
+            "Is it faster or slower than our car?"
+          ]
+        },
+        {
+          "id": "car-cloud",
+          "prompt": "Find a cloud shaped like something.",
+          "followOns": [
+            "What does it look like?",
+            "Does the shape change while you watch it?"
+          ]
+        },
+        {
+          "id": "car-number",
+          "prompt": "Find the number 3.",
+          "followOns": [
+            "Can you find a different number?",
+            "Where did you spot it?"
+          ]
+        },
+        {
+          "id": "car-animal",
+          "prompt": "Find an animal or a picture of an animal.",
+          "followOns": [
+            "What sound does that animal make?",
+            "Where do you think it lives?"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "at-the-shops",
+      "name": "At the Shops",
+      "description": "Prompts for grocery aisles, errands, labels, colors, and counting.",
+      "accent": "#8a64b8",
+      "cards": [
+        {
+          "id": "shops-fruit",
+          "prompt": "Find a fruit.",
+          "followOns": [
+            "What color is it?",
+            "Have you eaten this fruit before?"
+          ]
+        },
+        {
+          "id": "shops-cold",
+          "prompt": "Find something that needs to stay cold.",
+          "followOns": [
+            "Where does it live at home?",
+            "What might happen if it got warm?"
+          ]
+        },
+        {
+          "id": "shops-count-five",
+          "prompt": "Find five of the same thing.",
+          "followOns": [
+            "Can you count them out loud?",
+            "Are they all exactly the same?"
+          ]
+        },
+        {
+          "id": "shops-heavy",
+          "prompt": "Find something that looks heavy.",
+          "followOns": [
+            "How could someone carry it safely?",
+            "Can you find something that looks light?"
+          ]
+        },
+        {
+          "id": "shops-label",
+          "prompt": "Find something with a picture on the label.",
+          "followOns": [
+            "What is the picture showing?",
+            "Does the picture help you know what is inside?"
+          ]
+        },
+        {
+          "id": "shops-square",
+          "prompt": "Find something shaped like a square or rectangle.",
+          "followOns": [
+            "Can you trace the corners in the air?",
+            "Can you find a different shape nearby?"
+          ]
+        }
+      ]
+    }
+  ]
+}

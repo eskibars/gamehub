@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Table Tools</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="tools-shell">
+      <header class="app-header">
+        <a class="back-link" href="/" aria-label="Back to game hub">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 12H5"></path>
+            <path d="m11 18-6-6 6-6"></path>
+          </svg>
+          <span>Hub</span>
+        </a>
+        <div>
+          <p class="eyebrow">Local table helpers</p>
+          <h1>Table Tools</h1>
+        </div>
+      </header>
+
+      <section class="tool-grid" aria-label="Game tools">
+        <article class="tool-panel timer-panel">
+          <header class="panel-header">
+            <div>
+              <p class="eyebrow">Timer</p>
+              <h2>Clock</h2>
+            </div>
+            <div class="segmented-control" aria-label="Timer display type">
+              <button class="segment is-active" id="digitalMode" type="button" data-view="digital">Digital</button>
+              <button class="segment" id="sandMode" type="button" data-view="sand">Sand</button>
+            </div>
+          </header>
+
+          <div class="timer-display digital-view" id="timerDisplay" aria-live="polite">
+            <div class="sandglass" id="sandglass" aria-hidden="true">
+              <div class="sand-bulb top"><span id="topSand"></span></div>
+              <div class="sand-neck"></div>
+              <div class="sand-bulb bottom"><span id="bottomSand"></span></div>
+            </div>
+            <div class="time-readout" id="timeReadout">05:00</div>
+            <div class="timer-status" id="timerStatus">Ready</div>
+          </div>
+
+          <div class="preset-row" aria-label="Timer presets">
+            <button class="preset-button" type="button" data-seconds="60">1m</button>
+            <button class="preset-button" type="button" data-seconds="180">3m</button>
+            <button class="preset-button is-active" type="button" data-seconds="300">5m</button>
+            <button class="preset-button" type="button" data-seconds="600">10m</button>
+          </div>
+
+          <form class="settings-grid" id="timerForm">
+            <label>
+              <span>Minutes</span>
+              <input id="minutesInput" type="number" inputmode="numeric" min="0" max="999" value="5">
+            </label>
+            <label>
+              <span>Seconds</span>
+              <input id="secondsInput" type="number" inputmode="numeric" min="0" max="59" value="0">
+            </label>
+            <button class="secondary-button" type="submit">Set</button>
+          </form>
+
+          <div class="action-row">
+            <button class="primary-button" id="startPauseTimer" type="button">Start</button>
+            <button class="secondary-button" id="resetTimer" type="button">Reset</button>
+          </div>
+        </article>
+
+        <article class="tool-panel dice-panel">
+          <header class="panel-header">
+            <div>
+              <p class="eyebrow">Dice</p>
+              <h2>Roller</h2>
+            </div>
+            <button class="icon-button" id="clearHistory" type="button" aria-label="Clear roll history" title="Clear roll history">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 6h18"></path>
+                <path d="M8 6V4h8v2"></path>
+                <path d="m19 6-.8 14H5.8L5 6"></path>
+                <path d="M10 11v5"></path>
+                <path d="M14 11v5"></path>
+              </svg>
+            </button>
+          </header>
+
+          <div class="dice-total" aria-live="polite">
+            <span>Total</span>
+            <strong id="diceTotal">0</strong>
+          </div>
+
+          <form class="settings-grid dice-settings" id="diceForm">
+            <label>
+              <span>Dice</span>
+              <input id="diceCount" type="number" inputmode="numeric" min="1" max="30" value="2">
+            </label>
+            <label>
+              <span>Sides</span>
+              <input id="diceSides" type="number" inputmode="numeric" min="2" max="1000" value="6">
+            </label>
+            <label>
+              <span>Modifier</span>
+              <input id="diceModifier" type="number" inputmode="numeric" min="-999" max="999" value="0">
+            </label>
+            <button class="primary-button" type="submit">Roll</button>
+          </form>
+
+          <div class="dice-tray" id="diceTray" aria-label="Dice results"></div>
+
+          <section class="history-panel" aria-label="Roll history">
+            <h3>History</h3>
+            <ol id="rollHistory"></ol>
+          </section>
+        </article>
+      </section>
+    </main>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

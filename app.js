@@ -33,6 +33,15 @@ const icons = {
       <path d="M32 30c2.8-5.1 10.2-5.1 13 0-2.8 5.1-10.2 5.1-13 0z"></path>
       <circle cx="38.5" cy="30" r="2"></circle>
     </svg>`,
+  tools: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="22" cy="22" r="12"></circle>
+      <path d="M22 14v8l5 4"></path>
+      <rect x="34" y="31" width="19" height="19" rx="4"></rect>
+      <circle cx="40" cy="37" r="1.6"></circle>
+      <circle cx="47" cy="44" r="1.6"></circle>
+      <path d="M16 42h12M19 35h6M19 49h6"></path>
+    </svg>`,
   letters: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="10" y="10" width="18" height="18" rx="3"></rect>
@@ -63,6 +72,14 @@ const icons = {
       <circle cx="22" cy="47" r="4"></circle>
       <circle cx="42" cy="17" r="4"></circle>
       <circle cx="42" cy="25" r="4"></circle>
+    </svg>`,
+  findem: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="13" y="8" width="38" height="50" rx="5"></rect>
+      <path d="M21 18h22M21 27h14"></path>
+      <circle cx="37" cy="38" r="8"></circle>
+      <path d="m43 44 6 6"></path>
+      <path d="M23 42h6"></path>
     </svg>`,
 };
 
@@ -170,21 +187,38 @@ const games = [
     icon: "backgammon",
   },
   {
-    id: "cards",
-    title: "Table Card Tools",
-    type: "Support tools",
-    status: "soon",
+    id: "find-em",
+    title: "Find 'em",
+    type: "Question cards",
+    status: "ready",
     category: "cards",
-    href: "",
-    accent: "#266f5f",
-    tilt: "1deg",
-    description: "Simple decks, turn order, prompts, timers, and draw piles for games that only need a little help.",
+    href: "/find-em/",
+    accent: "#c19638",
+    tilt: "-0.4deg",
+    description: "Draw randomized prompt cards from editable JSON decks for kid-friendly finding and follow-up questions.",
     features: {
-      Mode: "Utility tray",
-      Storage: "Local presets",
+      Mode: "Prompt deck",
+      Storage: "Static JSON and local browser",
+      Players: "Family group",
+    },
+    icon: "findem",
+  },
+  {
+    id: "tools",
+    title: "Table Tools",
+    type: "Support tools",
+    status: "ready",
+    category: "tools",
+    href: "/tools/",
+    accent: "#7b6333",
+    tilt: "1deg",
+    description: "Run a digital or sand-style timer, then roll any mix of dice with configurable count and sides.",
+    features: {
+      Mode: "Timer and dice",
+      Storage: "Local preferences",
       Players: "Flexible",
     },
-    icon: "cards",
+    icon: "tools",
   },
 ];
 

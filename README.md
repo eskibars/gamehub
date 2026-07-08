@@ -9,10 +9,10 @@ Python/Flask stack and keeps play usable without login wherever possible.
 python3 app.py
 ```
 
-Then open `http://127.0.0.1:5001`.
+Then open `http://127.0.0.1:25001`.
 
-The ready tools are Bingo Card Builder, Color Guesser, and Yahtzee Scorepad.
-Planned slots are in place for general table card tools.
+The ready tools are Bingo Card Builder, Color Guesser, Yahtzee Scorepad,
+Boggle Table, Word Find Creator, Backgammon, Find 'em, and Table Tools.
 
 ## Local-first storage
 
@@ -29,6 +29,14 @@ running.
 Yahtzee Scorepad stores its current game in browser storage. It can run as a
 manual scorecard for players bringing their own dice, or as a dice roller with
 lockable dice and suggested category scores.
+
+Table Tools stores timer and dice preferences in browser storage. It includes
+digital and sand-style countdown timers with custom durations, plus a dice
+roller with configurable dice count, sides, modifier, and roll history.
+
+Find 'em loads kid-friendly prompt cards from `find_em/static/cards.json`,
+randomizes the selected deck in the browser, and keeps the game shell available
+offline after the first visit.
 
 ## Legacy Bingo command
 

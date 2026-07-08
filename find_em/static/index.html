@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Find 'em</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="find-shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Question cards</p>
+          <h1>Find 'em</h1>
+        </div>
+        <button class="icon-button" id="resetGame" type="button" aria-label="Reset game" title="Reset game">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 4v6h6"></path>
+            <path d="M20 11a8 8 0 1 0-2.3 5.7"></path>
+          </svg>
+        </button>
+      </header>
+
+      <section class="game-layout" aria-label="Find 'em cards">
+        <aside class="deck-panel" aria-label="Decks">
+          <div class="panel-heading">
+            <h2>Decks</h2>
+            <span id="deckCount">0 cards</span>
+          </div>
+          <div class="category-list" id="categoryList"></div>
+          <button class="secondary-button" id="shuffleDeck" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M16 3h5v5"></path>
+              <path d="M4 20 21 3"></path>
+              <path d="M21 16v5h-5"></path>
+              <path d="M15 15l6 6"></path>
+              <path d="M4 4l5 5"></path>
+            </svg>
+            <span>Shuffle</span>
+          </button>
+        </aside>
+
+        <section class="card-stage">
+          <div class="progress-row">
+            <span id="categoryLabel">Loading</span>
+            <span id="cardProgress">0 of 0</span>
+          </div>
+
+          <article class="find-card" id="findCard">
+            <div class="card-topline">
+              <span id="cardCategory">Find 'em</span>
+              <span id="cardNumber">Card</span>
+            </div>
+            <p class="prompt" id="cardPrompt">Loading cards...</p>
+            <div class="follow-ons" id="followOns" aria-label="Follow-on questions"></div>
+          </article>
+
+          <div class="card-actions" aria-label="Card controls">
+            <button class="nav-button" id="previousCard" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m15 18-6-6 6-6"></path>
+              </svg>
+              <span>Back</span>
+            </button>
+            <button class="primary-button" id="nextCard" type="button">
+              <span>Next Card</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14"></path>
+                <path d="m13 6 6 6-6 6"></path>
+              </svg>
+            </button>
+          </div>
+        </section>
+
+        <aside class="found-panel" aria-label="Recently drawn cards">
+          <div class="panel-heading">
+            <h2>Found</h2>
+            <span id="foundCount">0</span>
+          </div>
+          <ol class="found-list" id="foundList"></ol>
+        </aside>
+      </section>
+    </main>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

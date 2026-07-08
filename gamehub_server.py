@@ -28,6 +28,8 @@ YACHT_STATIC_DIR = BASE_DIR / "yacht" / "static"
 BOGGLE_STATIC_DIR = BASE_DIR / "boggle" / "static"
 WORD_FIND_STATIC_DIR = BASE_DIR / "word_find" / "static"
 BACKGAMMON_STATIC_DIR = BASE_DIR / "backgammon" / "static"
+FIND_EM_STATIC_DIR = BASE_DIR / "find_em" / "static"
+TOOLS_STATIC_DIR = BASE_DIR / "tools" / "static"
 SHARED_STATIC_DIR = BASE_DIR / "shared"
 MAX_USER_BYTES = int(os.environ.get("BINGO_MAX_USER_BYTES", 5 * 1024 * 1024))
 COLOR_GAMES: dict[str, dict[str, Any]] = {}
@@ -745,6 +747,30 @@ def create_app() -> Flask:
     @app.get("/backgammon/<path:filename>")
     def backgammon_static(filename: str):
         return send_from_directory(BACKGAMMON_STATIC_DIR, filename)
+
+    @app.get("/find-em")
+    def find_em_redirect():
+        return redirect("/find-em/")
+
+    @app.get("/find-em/")
+    def find_em_index():
+        return send_from_directory(FIND_EM_STATIC_DIR, "index.html")
+
+    @app.get("/find-em/<path:filename>")
+    def find_em_static(filename: str):
+        return send_from_directory(FIND_EM_STATIC_DIR, filename)
+
+    @app.get("/tools")
+    def tools_redirect():
+        return redirect("/tools/")
+
+    @app.get("/tools/")
+    def tools_index():
+        return send_from_directory(TOOLS_STATIC_DIR, "index.html")
+
+    @app.get("/tools/<path:filename>")
+    def tools_static(filename: str):
+        return send_from_directory(TOOLS_STATIC_DIR, filename)
 
     @app.get("/share/<share_id>")
     def shared_card(share_id: str):
