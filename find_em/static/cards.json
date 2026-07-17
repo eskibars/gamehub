@@ -1515,7 +1515,7 @@
           "id": "park-leaf",
           "prompt": "Find a leaf with an interesting shape.",
           "followOns": [
-            "Can you find a different shaped leaf?",
+            "Can you find a differently shaped leaf?",
             "How many points or bumps does it have?"
           ]
         },
@@ -1565,6 +1565,1934 @@
           "followOns": [
             "Where does it lead?",
             "What could happen if everyone walked a different way?"
+          ]
+        },
+        {
+          "id": "park-red",
+          "prompt": "Find something red.",
+          "followOns": [
+            "Is it natural or made by people?",
+            "Can you find two different shades of red?"
+          ]
+        },
+        {
+          "id": "park-blue",
+          "prompt": "Find something blue.",
+          "followOns": [
+            "Does the blue remind you of the sky or the sea?",
+            "Can you find a darker blue?"
+          ]
+        },
+        {
+          "id": "park-green",
+          "prompt": "Find three different shades of green.",
+          "followOns": [
+            "Which green is the darkest?",
+            "Why do you think so many park things are green?"
+          ]
+        },
+        {
+          "id": "park-purple",
+          "prompt": "Find something purple.",
+          "followOns": [
+            "Is it growing or was it made?",
+            "What other colors are beside it?"
+          ]
+        },
+        {
+          "id": "park-orange",
+          "prompt": "Find something orange.",
+          "followOns": [
+            "Is it easy or difficult to spot?",
+            "What fruit has a similar color?"
+          ]
+        },
+        {
+          "id": "park-white",
+          "prompt": "Find something white.",
+          "followOns": [
+            "Does it look bright in the sunlight?",
+            "Can you find something nearby that is black?"
+          ]
+        },
+        {
+          "id": "park-black",
+          "prompt": "Find something black.",
+          "followOns": [
+            "Is it shiny or dull?",
+            "Does it feel warmer than nearby lighter-colored things?"
+          ]
+        },
+        {
+          "id": "park-many-colors",
+          "prompt": "Find something with at least three colors.",
+          "followOns": [
+            "Can you name all the colors?",
+            "Which color covers the biggest part?"
+          ]
+        },
+        {
+          "id": "park-brightest",
+          "prompt": "Find the brightest-colored thing you can see.",
+          "followOns": [
+            "Why do you think it was made so bright?",
+            "Would it be easy to see from far away?"
+          ]
+        },
+        {
+          "id": "park-camouflage",
+          "prompt": "Find something that blends into its surroundings.",
+          "followOns": [
+            "What colors help it hide?",
+            "Would it be easier to see somewhere else?"
+          ]
+        },
+        {
+          "id": "park-circle",
+          "prompt": "Find something shaped like a circle.",
+          "followOns": [
+            "Is it a perfect circle?",
+            "Can you find another circle nearby?"
+          ]
+        },
+        {
+          "id": "park-triangle",
+          "prompt": "Find something shaped like a triangle.",
+          "followOns": [
+            "How many corners does it have?",
+            "Is the triangle pointing up, down, or sideways?"
+          ]
+        },
+        {
+          "id": "park-square",
+          "prompt": "Find something shaped like a square.",
+          "followOns": [
+            "Are all four sides about the same length?",
+            "Can you find a rectangle too?"
+          ]
+        },
+        {
+          "id": "park-rectangle",
+          "prompt": "Find something shaped like a rectangle.",
+          "followOns": [
+            "Which sides are longer?",
+            "What do you think it is used for?"
+          ]
+        },
+        {
+          "id": "park-oval",
+          "prompt": "Find something shaped like an oval.",
+          "followOns": [
+            "Is it more like an egg or a stretched circle?",
+            "Can you trace its shape in the air?"
+          ]
+        },
+        {
+          "id": "park-star-shape",
+          "prompt": "Find something with a star-like shape.",
+          "followOns": [
+            "How many points can you count?",
+            "Is the shape natural or made by people?"
+          ]
+        },
+        {
+          "id": "park-spiral",
+          "prompt": "Find a spiral or curling shape.",
+          "followOns": [
+            "Does it curl inward or outward?",
+            "Can you draw the shape in the air?"
+          ]
+        },
+        {
+          "id": "park-straight-line",
+          "prompt": "Find a very straight line.",
+          "followOns": [
+            "Was it made by people or nature?",
+            "Can you find a curved line nearby?"
+          ]
+        },
+        {
+          "id": "park-curved",
+          "prompt": "Find something with a curved edge.",
+          "followOns": [
+            "Which way does it curve?",
+            "Would it roll if it were loose?"
+          ]
+        },
+        {
+          "id": "park-symmetrical",
+          "prompt": "Find something that looks the same on both sides.",
+          "followOns": [
+            "Where would you draw the middle line?",
+            "What is different on the two sides?"
+          ]
+        },
+        {
+          "id": "park-pattern",
+          "prompt": "Find a repeating pattern.",
+          "followOns": [
+            "What part repeats?",
+            "Can you predict what comes next?"
+          ]
+        },
+        {
+          "id": "park-zigzag",
+          "prompt": "Find a zigzag shape.",
+          "followOns": [
+            "How many turns does it make?",
+            "Can you walk a pretend zigzag path?"
+          ]
+        },
+        {
+          "id": "park-biggest",
+          "prompt": "Find the biggest thing in the park.",
+          "followOns": [
+            "How could you measure it?",
+            "Is it bigger than your home?"
+          ]
+        },
+        {
+          "id": "park-smallest-visible",
+          "prompt": "Find the smallest thing you can see without picking it up.",
+          "followOns": [
+            "What helped you notice it?",
+            "Would a magnifying glass help?"
+          ]
+        },
+        {
+          "id": "park-long",
+          "prompt": "Find something very long.",
+          "followOns": [
+            "Is it longer than ten of your footsteps?",
+            "Where does it begin and end?"
+          ]
+        },
+        {
+          "id": "park-short",
+          "prompt": "Find something shorter than your hand.",
+          "followOns": [
+            "Is it shorter than your finger too?",
+            "What might it look like close up?"
+          ]
+        },
+        {
+          "id": "park-wide",
+          "prompt": "Find something wider than your arms can stretch.",
+          "followOns": [
+            "How many children would it take to reach across it?",
+            "Is it wider at the top or bottom?"
+          ]
+        },
+        {
+          "id": "park-narrow",
+          "prompt": "Find a narrow space.",
+          "followOns": [
+            "What could fit through it?",
+            "What would be too wide to fit?"
+          ]
+        },
+        {
+          "id": "park-heavy",
+          "prompt": "Find something that looks heavy.",
+          "followOns": [
+            "What makes you think it is heavy?",
+            "How do you think it was moved here?"
+          ]
+        },
+        {
+          "id": "park-lightweight",
+          "prompt": "Find something that looks very light.",
+          "followOns": [
+            "Could the wind move it?",
+            "What makes it look light?"
+          ]
+        },
+        {
+          "id": "park-old",
+          "prompt": "Find something that looks old.",
+          "followOns": [
+            "What clues show its age?",
+            "What do you think it looked like when it was new?"
+          ]
+        },
+        {
+          "id": "park-new",
+          "prompt": "Find something that looks new.",
+          "followOns": [
+            "What makes it look new?",
+            "Do you think it replaced something older?"
+          ]
+        },
+        {
+          "id": "park-high",
+          "prompt": "Find something high above the ground.",
+          "followOns": [
+            "How do you think it got there?",
+            "What can you see underneath it?"
+          ]
+        },
+        {
+          "id": "park-low",
+          "prompt": "Find something growing close to the ground.",
+          "followOns": [
+            "Why might staying low help it?",
+            "Is anything hiding underneath it?"
+          ]
+        },
+        {
+          "id": "park-tree-trunk",
+          "prompt": "Find a tree trunk with interesting bark.",
+          "followOns": [
+            "Does the bark look smooth, cracked, or peeling?",
+            "Can you describe the pattern without touching it?"
+          ]
+        },
+        {
+          "id": "park-tree-branches",
+          "prompt": "Find a tree with lots of branches.",
+          "followOns": [
+            "Which branch looks the thickest?",
+            "What animals might use those branches?"
+          ]
+        },
+        {
+          "id": "park-tree-hole",
+          "prompt": "Find a hole or hollow in a tree.",
+          "followOns": [
+            "What animal might use it as a home?",
+            "What could keep the inside dry?"
+          ]
+        },
+        {
+          "id": "park-tree-roots",
+          "prompt": "Find tree roots you can see.",
+          "followOns": [
+            "Which direction are they growing?",
+            "What jobs do roots do for a tree?"
+          ]
+        },
+        {
+          "id": "park-young-tree",
+          "prompt": "Find a young tree.",
+          "followOns": [
+            "How can you tell it is young?",
+            "What will it need to grow?"
+          ]
+        },
+        {
+          "id": "park-old-tree",
+          "prompt": "Find the oldest-looking tree.",
+          "followOns": [
+            "What might this park have looked like when it was small?",
+            "How many people would it take to circle its trunk?"
+          ]
+        },
+        {
+          "id": "park-evergreen",
+          "prompt": "Find a tree that keeps lots of leaves all year.",
+          "followOns": [
+            "What shape are its leaves?",
+            "How is it different from nearby trees?"
+          ]
+        },
+        {
+          "id": "park-fallen-leaf",
+          "prompt": "Find a fallen leaf.",
+          "followOns": [
+            "What colors can you see in it?",
+            "Why do you think it fell?"
+          ]
+        },
+        {
+          "id": "park-leaf-veins",
+          "prompt": "Find a leaf with visible veins.",
+          "followOns": [
+            "Where do the smaller veins join the larger ones?",
+            "What do you think the veins carry?"
+          ]
+        },
+        {
+          "id": "park-leaf-sizes",
+          "prompt": "Find one large leaf and one small leaf.",
+          "followOns": [
+            "How many small leaves would cover the large one?",
+            "Do they come from the same kind of plant?"
+          ]
+        },
+        {
+          "id": "park-leaf-edges",
+          "prompt": "Find a leaf with a jagged edge.",
+          "followOns": [
+            "How many little points can you count?",
+            "Can you find a leaf with a smooth edge?"
+          ]
+        },
+        {
+          "id": "park-flower",
+          "prompt": "Find a flower without picking it.",
+          "followOns": [
+            "How many petals can you count?",
+            "What might visit this flower?"
+          ]
+        },
+        {
+          "id": "park-flower-colors",
+          "prompt": "Find two flowers with different colors.",
+          "followOns": [
+            "What is similar about their shapes?",
+            "Which one would be easier for an insect to spot?"
+          ]
+        },
+        {
+          "id": "park-flower-bud",
+          "prompt": "Find a flower bud that has not opened yet.",
+          "followOns": [
+            "What do you think it will look like when it opens?",
+            "How is it protected while closed?"
+          ]
+        },
+        {
+          "id": "park-grass",
+          "prompt": "Find two places where the grass looks different.",
+          "followOns": [
+            "Which patch is longer or greener?",
+            "Why might they be different?"
+          ]
+        },
+        {
+          "id": "park-seed",
+          "prompt": "Find a seed or seed pod on the ground.",
+          "followOns": [
+            "How might it travel somewhere new?",
+            "What plant do you think it came from?"
+          ]
+        },
+        {
+          "id": "park-winged-seed",
+          "prompt": "Find a seed that looks like it could fly.",
+          "followOns": [
+            "What part acts like a wing?",
+            "Which direction might the wind carry it?"
+          ]
+        },
+        {
+          "id": "park-pinecone",
+          "prompt": "Find a cone or cone-shaped seed case.",
+          "followOns": [
+            "Is it open or tightly closed?",
+            "What might be hidden between its scales?"
+          ]
+        },
+        {
+          "id": "park-stick",
+          "prompt": "Find a fallen stick with an unusual shape.",
+          "followOns": [
+            "What does its shape remind you of?",
+            "How many smaller branches does it have?"
+          ]
+        },
+        {
+          "id": "park-rock",
+          "prompt": "Find an interesting rock without moving it.",
+          "followOns": [
+            "What colors or patterns can you see?",
+            "Does it look smooth or rough?"
+          ]
+        },
+        {
+          "id": "park-pebbles",
+          "prompt": "Find a place with lots of small stones.",
+          "followOns": [
+            "Are they all the same color?",
+            "Why do you think they were placed there?"
+          ]
+        },
+        {
+          "id": "park-soil",
+          "prompt": "Find a patch of visible soil.",
+          "followOns": [
+            "Does it look dry, damp, sandy, or muddy?",
+            "What might be living underneath it?"
+          ]
+        },
+        {
+          "id": "park-moss",
+          "prompt": "Find moss or another soft-looking plant.",
+          "followOns": [
+            "Is it growing in sun or shade?",
+            "Why might it like that spot?"
+          ]
+        },
+        {
+          "id": "park-fungus",
+          "prompt": "Find a mushroom or fungus without touching it.",
+          "followOns": [
+            "What shape and color is it?",
+            "Why is it safest to look without touching?"
+          ]
+        },
+        {
+          "id": "park-vine",
+          "prompt": "Find a plant that climbs or trails.",
+          "followOns": [
+            "What is it using for support?",
+            "Which direction is it growing?"
+          ]
+        },
+        {
+          "id": "park-thorns",
+          "prompt": "Find a prickly-looking plant from a safe distance.",
+          "followOns": [
+            "How might the prickles protect it?",
+            "What animals might still be able to visit it?"
+          ]
+        },
+        {
+          "id": "park-plant-smell",
+          "prompt": "Find a plant with a noticeable smell without picking it.",
+          "followOns": [
+            "Does it smell sweet, fresh, spicy, or earthy?",
+            "Why might a plant have a strong smell?"
+          ]
+        },
+        {
+          "id": "park-bird",
+          "prompt": "Find a bird.",
+          "followOns": [
+            "What is the bird doing?",
+            "What colors can you see on it?"
+          ]
+        },
+        {
+          "id": "park-two-birds",
+          "prompt": "Find two birds doing different things.",
+          "followOns": [
+            "Which bird is moving faster?",
+            "Do you think they are the same kind?"
+          ]
+        },
+        {
+          "id": "park-bird-song",
+          "prompt": "Listen for a bird call.",
+          "followOns": [
+            "Can you copy its rhythm?",
+            "Does the sound come from high or low?"
+          ]
+        },
+        {
+          "id": "park-bird-nest",
+          "prompt": "Look for a bird nest from a respectful distance.",
+          "followOns": [
+            "What materials can you see in it?",
+            "Why should we avoid getting too close?"
+          ]
+        },
+        {
+          "id": "park-bird-walk",
+          "prompt": "Find a bird walking or hopping.",
+          "followOns": [
+            "Does it move with both feet together or one at a time?",
+            "What might it be looking for?"
+          ]
+        },
+        {
+          "id": "park-bird-flying",
+          "prompt": "Watch a bird fly.",
+          "followOns": [
+            "Does it flap constantly or glide?",
+            "Where do you think it is going?"
+          ]
+        },
+        {
+          "id": "park-insect",
+          "prompt": "Find an insect without touching it.",
+          "followOns": [
+            "How many legs can you see?",
+            "How is it moving?"
+          ]
+        },
+        {
+          "id": "park-ant",
+          "prompt": "Find an ant or an ant trail.",
+          "followOns": [
+            "Which direction are the ants traveling?",
+            "What might they be carrying home?"
+          ]
+        },
+        {
+          "id": "park-butterfly",
+          "prompt": "Look for a butterfly or moth.",
+          "followOns": [
+            "What pattern is on its wings?",
+            "Which plants does it visit?"
+          ]
+        },
+        {
+          "id": "park-bee",
+          "prompt": "Watch for a bee from a safe distance.",
+          "followOns": [
+            "Which flowers does it visit?",
+            "What useful job is it doing?"
+          ]
+        },
+        {
+          "id": "park-spiderweb",
+          "prompt": "Find a spiderweb without touching it.",
+          "followOns": [
+            "Can you see a pattern in the web?",
+            "How might the web help the spider?"
+          ]
+        },
+        {
+          "id": "park-animal-track",
+          "prompt": "Look for an animal footprint or track.",
+          "followOns": [
+            "Which direction was the animal moving?",
+            "What animal might have made it?"
+          ]
+        },
+        {
+          "id": "park-animal-home",
+          "prompt": "Find a place that could be an animal home.",
+          "followOns": [
+            "What animal could fit inside?",
+            "How would the home protect it?"
+          ]
+        },
+        {
+          "id": "park-feather",
+          "prompt": "Spot a feather on the ground without handling it.",
+          "followOns": [
+            "What colors can you see?",
+            "What kind of bird might it have come from?"
+          ]
+        },
+        {
+          "id": "park-moving-animal",
+          "prompt": "Find an animal that is moving.",
+          "followOns": [
+            "Is it walking, hopping, crawling, swimming, or flying?",
+            "Why might it be moving?"
+          ]
+        },
+        {
+          "id": "park-hidden-animal",
+          "prompt": "Look for an animal using camouflage.",
+          "followOns": [
+            "What helped it blend in?",
+            "How did you finally notice it?"
+          ]
+        },
+        {
+          "id": "park-animal-food",
+          "prompt": "Find something a park animal might eat.",
+          "followOns": [
+            "Which animal might eat it?",
+            "How would the animal find it?"
+          ]
+        },
+        {
+          "id": "park-water",
+          "prompt": "Find water in the park.",
+          "followOns": [
+            "Is it moving or still?",
+            "What might use this water?"
+          ]
+        },
+        {
+          "id": "park-puddle",
+          "prompt": "Find a puddle without stepping into it.",
+          "followOns": [
+            "What can you see reflected in it?",
+            "What will happen to it after the sun comes out?"
+          ]
+        },
+        {
+          "id": "park-reflection",
+          "prompt": "Find a reflection.",
+          "followOns": [
+            "Is the reflection clear or wobbly?",
+            "What makes it change?"
+          ]
+        },
+        {
+          "id": "park-drain",
+          "prompt": "Find where rainwater can drain away.",
+          "followOns": [
+            "Where do you think the water goes?",
+            "Why are drains useful?"
+          ]
+        },
+        {
+          "id": "park-bridge",
+          "prompt": "Find something that helps people cross over or through.",
+          "followOns": [
+            "What is it crossing?",
+            "What materials is it made from?"
+          ]
+        },
+        {
+          "id": "park-wet-dry",
+          "prompt": "Find one wet place and one dry place.",
+          "followOns": [
+            "Why is one wetter than the other?",
+            "Which one will change first?"
+          ]
+        },
+        {
+          "id": "park-cloud",
+          "prompt": "Find a cloud with an interesting shape.",
+          "followOns": [
+            "What does it remind you of?",
+            "Is the cloud moving quickly or slowly?"
+          ]
+        },
+        {
+          "id": "park-cloud-types",
+          "prompt": "Find two clouds that look different.",
+          "followOns": [
+            "Which one looks fluffier?",
+            "Which one looks more likely to bring rain?"
+          ]
+        },
+        {
+          "id": "park-wind",
+          "prompt": "Find something being moved by the wind.",
+          "followOns": [
+            "Which direction is it moving?",
+            "Is the wind gentle or strong?"
+          ]
+        },
+        {
+          "id": "park-sunny-spot",
+          "prompt": "Find a sunny spot.",
+          "followOns": [
+            "How does it feel compared with the shade?",
+            "What plants are growing there?"
+          ]
+        },
+        {
+          "id": "park-shady-spot",
+          "prompt": "Find a shady spot.",
+          "followOns": [
+            "What is making the shade?",
+            "Why might an animal choose to rest there?"
+          ]
+        },
+        {
+          "id": "park-temperature",
+          "prompt": "Find one surface that feels warm and one that feels cool.",
+          "followOns": [
+            "Which one has been in the sun?",
+            "Which material changed temperature most?"
+          ]
+        },
+        {
+          "id": "park-weather-clue",
+          "prompt": "Find a clue about today's weather.",
+          "followOns": [
+            "What does the clue tell you?",
+            "Could the weather change later?"
+          ]
+        },
+        {
+          "id": "park-rainbow",
+          "prompt": "Look for rainbow colors.",
+          "followOns": [
+            "How many rainbow colors can you find?",
+            "Are they all on one object or many?"
+          ]
+        },
+        {
+          "id": "park-quiet-sound",
+          "prompt": "Listen for the quietest sound you can hear.",
+          "followOns": [
+            "What is making it?",
+            "Would you hear it if people were talking?"
+          ]
+        },
+        {
+          "id": "park-loud-sound",
+          "prompt": "Listen for a loud sound.",
+          "followOns": [
+            "Was the sound natural or made by people?",
+            "Did it last a long or short time?"
+          ]
+        },
+        {
+          "id": "park-three-sounds",
+          "prompt": "Close your eyes and notice three different sounds.",
+          "followOns": [
+            "Which sound was closest?",
+            "Which sound was farthest away?"
+          ]
+        },
+        {
+          "id": "park-rustling",
+          "prompt": "Listen for a rustling sound.",
+          "followOns": [
+            "What do you think is making it?",
+            "Does the sound change when the wind changes?"
+          ]
+        },
+        {
+          "id": "park-rhythm",
+          "prompt": "Find a sound with a repeating rhythm.",
+          "followOns": [
+            "Can you tap the rhythm?",
+            "Does it stay steady or change?"
+          ]
+        },
+        {
+          "id": "park-echo",
+          "prompt": "Find a place where your voice sounds different.",
+          "followOns": [
+            "Can you hear an echo?",
+            "What nearby surfaces might be reflecting the sound?"
+          ]
+        },
+        {
+          "id": "park-faraway-sound",
+          "prompt": "Listen for something happening far away.",
+          "followOns": [
+            "How can you tell it is far away?",
+            "Can you guess which direction it is coming from?"
+          ]
+        },
+        {
+          "id": "park-human-sound",
+          "prompt": "Listen for a sound made by a person.",
+          "followOns": [
+            "What activity are they doing?",
+            "How is it different from the natural sounds?"
+          ]
+        },
+        {
+          "id": "park-smooth",
+          "prompt": "Find something that looks smooth.",
+          "followOns": [
+            "What makes it look smooth?",
+            "Can you find something rough nearby?"
+          ]
+        },
+        {
+          "id": "park-rough",
+          "prompt": "Find something that looks rough.",
+          "followOns": [
+            "What pattern can you see on its surface?",
+            "Why might a rough surface be useful?"
+          ]
+        },
+        {
+          "id": "park-bumpy",
+          "prompt": "Find something bumpy.",
+          "followOns": [
+            "Are the bumps large or small?",
+            "Do they form a pattern?"
+          ]
+        },
+        {
+          "id": "park-soft",
+          "prompt": "Find something that looks soft.",
+          "followOns": [
+            "What makes you think it is soft?",
+            "Would it still be soft if it were wet?"
+          ]
+        },
+        {
+          "id": "park-shiny",
+          "prompt": "Find something shiny.",
+          "followOns": [
+            "What light is it reflecting?",
+            "Can you see any colors in the shine?"
+          ]
+        },
+        {
+          "id": "park-dull",
+          "prompt": "Find something with no shine.",
+          "followOns": [
+            "How is its surface different from a shiny one?",
+            "Is it easier or harder to see in bright light?"
+          ]
+        },
+        {
+          "id": "park-cracked",
+          "prompt": "Find a cracked surface.",
+          "followOns": [
+            "What might have caused the cracks?",
+            "Do the cracks form a pattern?"
+          ]
+        },
+        {
+          "id": "park-peeling",
+          "prompt": "Find something that is peeling or flaking.",
+          "followOns": [
+            "What layer can you see underneath?",
+            "Was it caused by weather, age, or growth?"
+          ]
+        },
+        {
+          "id": "park-made-of-wood",
+          "prompt": "Find something made of wood.",
+          "followOns": [
+            "How can you tell it is wood?",
+            "Was it once part of a tree?"
+          ]
+        },
+        {
+          "id": "park-made-of-metal",
+          "prompt": "Find something made of metal.",
+          "followOns": [
+            "Why might metal be useful here?",
+            "Is it shiny, painted, or rusty?"
+          ]
+        },
+        {
+          "id": "park-made-of-stone",
+          "prompt": "Find something made of stone.",
+          "followOns": [
+            "Does it look natural or carefully shaped?",
+            "Why is stone useful outdoors?"
+          ]
+        },
+        {
+          "id": "park-made-of-plastic",
+          "prompt": "Find something made of plastic.",
+          "followOns": [
+            "Why might plastic have been chosen?",
+            "What should happen to it when it is no longer useful?"
+          ]
+        },
+        {
+          "id": "park-rust",
+          "prompt": "Find something rusty.",
+          "followOns": [
+            "What color is the rust?",
+            "Why do you think the metal changed?"
+          ]
+        },
+        {
+          "id": "park-fence",
+          "prompt": "Find a fence or barrier.",
+          "followOns": [
+            "What do you think it protects?",
+            "Can you see through it?"
+          ]
+        },
+        {
+          "id": "park-gate",
+          "prompt": "Find a gate or entrance.",
+          "followOns": [
+            "How does it open?",
+            "Why might the park need a gate?"
+          ]
+        },
+        {
+          "id": "park-sign",
+          "prompt": "Find a sign.",
+          "followOns": [
+            "What is the sign telling people?",
+            "Which pictures, letters, or symbols help explain it?"
+          ]
+        },
+        {
+          "id": "park-rule",
+          "prompt": "Find a park rule.",
+          "followOns": [
+            "Why do you think that rule exists?",
+            "Who does the rule help protect?"
+          ]
+        },
+        {
+          "id": "park-map",
+          "prompt": "Find a map or information board.",
+          "followOns": [
+            "Can you work out where you are?",
+            "What place would you like to find next?"
+          ]
+        },
+        {
+          "id": "park-bin",
+          "prompt": "Find a rubbish or recycling bin.",
+          "followOns": [
+            "What belongs in it?",
+            "Why is it important to keep rubbish out of nature?"
+          ]
+        },
+        {
+          "id": "park-drinking-fountain",
+          "prompt": "Find somewhere people can get drinking water.",
+          "followOns": [
+            "How does the water come out?",
+            "Why is drinking water useful in a park?"
+          ]
+        },
+        {
+          "id": "park-light",
+          "prompt": "Find a light used after dark.",
+          "followOns": [
+            "What area does it light up?",
+            "How might it know when to turn on?"
+          ]
+        },
+        {
+          "id": "park-bench",
+          "prompt": "Find a bench in an interesting location.",
+          "followOns": [
+            "What can someone see while sitting there?",
+            "Why do you think the bench was placed there?"
+          ]
+        },
+        {
+          "id": "park-table",
+          "prompt": "Find a table people can use.",
+          "followOns": [
+            "What activities could happen there?",
+            "How many people could gather around it?"
+          ]
+        },
+        {
+          "id": "park-shelter",
+          "prompt": "Find a sheltered place.",
+          "followOns": [
+            "What weather would it protect people from?",
+            "What materials make the shelter strong?"
+          ]
+        },
+        {
+          "id": "park-stairs",
+          "prompt": "Find some stairs.",
+          "followOns": [
+            "How many steps are there?",
+            "Is there another way to reach the same place?"
+          ]
+        },
+        {
+          "id": "park-ramp",
+          "prompt": "Find a ramp.",
+          "followOns": [
+            "Who might find the ramp useful?",
+            "Is it steep or gentle?"
+          ]
+        },
+        {
+          "id": "park-accessible",
+          "prompt": "Find something that makes the park easier for more people to use.",
+          "followOns": [
+            "Who might it help?",
+            "What other helpful features could the park have?"
+          ]
+        },
+        {
+          "id": "park-repair",
+          "prompt": "Find something that has been repaired.",
+          "followOns": [
+            "How can you tell it was repaired?",
+            "Why was repairing it better than throwing it away?"
+          ]
+        },
+        {
+          "id": "park-playground",
+          "prompt": "Find a piece of playground equipment.",
+          "followOns": [
+            "What movement is it designed for?",
+            "What safety features can you see?"
+          ]
+        },
+        {
+          "id": "park-slide",
+          "prompt": "Find a slide.",
+          "followOns": [
+            "Why do people move faster going down?",
+            "What should you check before sliding?"
+          ]
+        },
+        {
+          "id": "park-swing",
+          "prompt": "Find a swing.",
+          "followOns": [
+            "What makes it move back and forth?",
+            "When does it move fastest?"
+          ]
+        },
+        {
+          "id": "park-seesaw",
+          "prompt": "Find something that balances.",
+          "followOns": [
+            "What happens when one side is heavier?",
+            "Where is the middle balance point?"
+          ]
+        },
+        {
+          "id": "park-spinner",
+          "prompt": "Find something made for spinning.",
+          "followOns": [
+            "What makes it spin faster?",
+            "What helps it slow down?"
+          ]
+        },
+        {
+          "id": "park-monkey-bars",
+          "prompt": "Find something you can move across using your hands.",
+          "followOns": [
+            "Which muscles do you use?",
+            "How can you check that it is safe before starting?"
+          ]
+        },
+        {
+          "id": "park-balance",
+          "prompt": "Find something designed for balancing.",
+          "followOns": [
+            "Where should you look while balancing?",
+            "Does moving slowly make it easier?"
+          ]
+        },
+        {
+          "id": "park-soft-ground",
+          "prompt": "Find soft ground beneath playground equipment.",
+          "followOns": [
+            "What material is it made from?",
+            "Why is soft ground helpful?"
+          ]
+        },
+        {
+          "id": "park-fast-slow",
+          "prompt": "Find one activity you can do quickly and one you should do slowly.",
+          "followOns": [
+            "Why is the slower activity safer?",
+            "Can you demonstrate both speeds?"
+          ]
+        },
+        {
+          "id": "park-up-down",
+          "prompt": "Find something that moves up and down.",
+          "followOns": [
+            "What makes it move?",
+            "Does it move the same distance each way?"
+          ]
+        },
+        {
+          "id": "park-back-forth",
+          "prompt": "Find something that moves back and forth.",
+          "followOns": [
+            "What is its turning point?",
+            "Can you predict when it will change direction?"
+          ]
+        },
+        {
+          "id": "park-count-trees",
+          "prompt": "Count five trees.",
+          "followOns": [
+            "Do they all look like the same kind?",
+            "Which one has the widest trunk?"
+          ]
+        },
+        {
+          "id": "park-count-benches",
+          "prompt": "Count the benches you can see.",
+          "followOns": [
+            "How many people could sit on all of them?",
+            "Which bench is closest?"
+          ]
+        },
+        {
+          "id": "park-count-steps",
+          "prompt": "Count how many steps it takes to reach a nearby landmark.",
+          "followOns": [
+            "Would a grown-up take more or fewer steps?",
+            "How many steps might it take to walk back?"
+          ]
+        },
+        {
+          "id": "park-count-petals",
+          "prompt": "Count the petals on a flower without picking it.",
+          "followOns": [
+            "Do nearby flowers have the same number?",
+            "Is the number odd or even?"
+          ]
+        },
+        {
+          "id": "park-count-posts",
+          "prompt": "Count a row of posts or fence sections.",
+          "followOns": [
+            "Are the spaces between them equal?",
+            "How many would there be if one more were added?"
+          ]
+        },
+        {
+          "id": "park-group-of-three",
+          "prompt": "Find a group of three things.",
+          "followOns": [
+            "What makes them a group?",
+            "Can you find another group of three?"
+          ]
+        },
+        {
+          "id": "park-group-of-ten",
+          "prompt": "Find ten of the same kind of thing.",
+          "followOns": [
+            "Can you count them in groups of two?",
+            "Can you count them backward?"
+          ]
+        },
+        {
+          "id": "park-more-less",
+          "prompt": "Find two groups and decide which has more.",
+          "followOns": [
+            "How many more does the larger group have?",
+            "Can you make the groups equal?"
+          ]
+        },
+        {
+          "id": "park-even-number",
+          "prompt": "Find an even number of something.",
+          "followOns": [
+            "Can you divide them into pairs?",
+            "What number would you have after adding two more?"
+          ]
+        },
+        {
+          "id": "park-odd-number",
+          "prompt": "Find an odd number of something.",
+          "followOns": [
+            "What happens when you try to make pairs?",
+            "How could you make the number even?"
+          ]
+        },
+        {
+          "id": "park-measure-footsteps",
+          "prompt": "Measure something using your footsteps.",
+          "followOns": [
+            "How many footsteps long is it?",
+            "Would someone with bigger feet get the same answer?"
+          ]
+        },
+        {
+          "id": "park-hand-span",
+          "prompt": "Find something about one hand-span wide.",
+          "followOns": [
+            "Is your hand-span the same as a grown-up's?",
+            "What else could you measure this way?"
+          ]
+        },
+        {
+          "id": "park-estimate",
+          "prompt": "Guess how many of something you can see, then count to check.",
+          "followOns": [
+            "Was your estimate too high or too low?",
+            "What helped you make your guess?"
+          ]
+        },
+        {
+          "id": "park-half",
+          "prompt": "Find something that looks divided into two halves.",
+          "followOns": [
+            "Are the halves equal?",
+            "Where is the dividing line?"
+          ]
+        },
+        {
+          "id": "park-letter",
+          "prompt": "Find a letter you recognize.",
+          "followOns": [
+            "What sound can that letter make?",
+            "Can you find the same letter somewhere else?"
+          ]
+        },
+        {
+          "id": "park-name-letter",
+          "prompt": "Find the first letter of your name.",
+          "followOns": [
+            "Is it uppercase or lowercase?",
+            "What other words begin with that letter?"
+          ]
+        },
+        {
+          "id": "park-word",
+          "prompt": "Find a word you can read.",
+          "followOns": [
+            "What does the word mean?",
+            "Why was it written here?"
+          ]
+        },
+        {
+          "id": "park-number",
+          "prompt": "Find a number.",
+          "followOns": [
+            "What might the number be telling people?",
+            "What number comes before and after it?"
+          ]
+        },
+        {
+          "id": "park-symbol",
+          "prompt": "Find a symbol that communicates without words.",
+          "followOns": [
+            "What do you think it means?",
+            "Would people who speak another language understand it?"
+          ]
+        },
+        {
+          "id": "park-arrow",
+          "prompt": "Find an arrow.",
+          "followOns": [
+            "Which direction is it pointing?",
+            "What does it want people to do?"
+          ]
+        },
+        {
+          "id": "park-rhyme",
+          "prompt": "Find something whose name rhymes with another word.",
+          "followOns": [
+            "What word does it rhyme with?",
+            "Can you think of a second rhyme?"
+          ]
+        },
+        {
+          "id": "park-starts-with-b",
+          "prompt": "Find something whose name starts with B.",
+          "followOns": [
+            "What sound does B make?",
+            "Can you find another B word?"
+          ]
+        },
+        {
+          "id": "park-syllables",
+          "prompt": "Choose a park object and clap the beats in its name.",
+          "followOns": [
+            "How many syllables did you hear?",
+            "Can you find a word with more syllables?"
+          ]
+        },
+        {
+          "id": "park-describe-without-name",
+          "prompt": "Choose something and describe it without saying its name.",
+          "followOns": [
+            "Can someone guess what you chose?",
+            "Which clue was most helpful?"
+          ]
+        },
+        {
+          "id": "park-hop",
+          "prompt": "Find a safe place to hop five times.",
+          "followOns": [
+            "Can you hop on the other foot?",
+            "Which foot is easier to balance on?"
+          ]
+        },
+        {
+          "id": "park-skip",
+          "prompt": "Find a clear path where you can practise skipping.",
+          "followOns": [
+            "Can you skip slowly and then quickly?",
+            "How is skipping different from running?"
+          ]
+        },
+        {
+          "id": "park-tiptoe",
+          "prompt": "Tiptoe quietly toward a nearby landmark.",
+          "followOns": [
+            "What helps you stay quiet?",
+            "Which muscles help you balance?"
+          ]
+        },
+        {
+          "id": "park-giant-steps",
+          "prompt": "Take five giant steps in a clear space.",
+          "followOns": [
+            "How far did you travel?",
+            "How many tiny steps would cover the same distance?"
+          ]
+        },
+        {
+          "id": "park-tiny-steps",
+          "prompt": "Take ten tiny steps.",
+          "followOns": [
+            "Did you travel farther or less far than expected?",
+            "How many tiny steps equal one giant step?"
+          ]
+        },
+        {
+          "id": "park-balance-one-foot",
+          "prompt": "Stand on one foot in a safe, flat place.",
+          "followOns": [
+            "How long can you balance?",
+            "Does stretching out your arms help?"
+          ]
+        },
+        {
+          "id": "park-follow-line",
+          "prompt": "Follow a safe line or edge on the ground.",
+          "followOns": [
+            "Is the line straight or curved?",
+            "Where does it lead?"
+          ]
+        },
+        {
+          "id": "park-move-like-bird",
+          "prompt": "Move across an open space like a bird.",
+          "followOns": [
+            "Which kind of bird are you pretending to be?",
+            "Would that bird flap, hop, run, or glide?"
+          ]
+        },
+        {
+          "id": "park-move-like-insect",
+          "prompt": "Pretend to move like an insect.",
+          "followOns": [
+            "How many legs does your insect have?",
+            "Would it move quickly or slowly?"
+          ]
+        },
+        {
+          "id": "park-freeze",
+          "prompt": "Choose a park shape and freeze your body in that shape.",
+          "followOns": [
+            "Can someone guess your shape?",
+            "Can you make the shape using only your arms?"
+          ]
+        },
+        {
+          "id": "park-copy-tree",
+          "prompt": "Copy the shape of a tree with your body.",
+          "followOns": [
+            "How will you make the trunk and branches?",
+            "Can you sway like the tree in the wind?"
+          ]
+        },
+        {
+          "id": "park-shadow-pose",
+          "prompt": "Make a funny pose with your shadow.",
+          "followOns": [
+            "Can you make your shadow look taller?",
+            "Can two people join their shadows together?"
+          ]
+        },
+        {
+          "id": "park-safe-running",
+          "prompt": "Find a clear place where running is safe.",
+          "followOns": [
+            "What obstacles did you check for?",
+            "Where should you slow down?"
+          ]
+        },
+        {
+          "id": "park-obstacle-route",
+          "prompt": "Create a simple route around three safe landmarks.",
+          "followOns": [
+            "In what order will you visit them?",
+            "Can you complete the route in reverse?"
+          ]
+        },
+        {
+          "id": "park-favorite-place",
+          "prompt": "Find your favorite place in the park.",
+          "followOns": [
+            "What makes it your favorite?",
+            "What would make it even better?"
+          ]
+        },
+        {
+          "id": "park-best-view",
+          "prompt": "Find a place with a good view.",
+          "followOns": [
+            "What is the farthest thing you can see?",
+            "What changes when you crouch down?"
+          ]
+        },
+        {
+          "id": "park-secret-place",
+          "prompt": "Find a place that feels hidden without leaving the path or play area.",
+          "followOns": [
+            "What makes it feel hidden?",
+            "What story could happen there?"
+          ]
+        },
+        {
+          "id": "park-imaginary-castle",
+          "prompt": "Find something that could be part of an imaginary castle.",
+          "followOns": [
+            "Would it be a tower, bridge, gate, or wall?",
+            "Who lives in your castle?"
+          ]
+        },
+        {
+          "id": "park-imaginary-creature",
+          "prompt": "Find a shape that looks like an imaginary creature.",
+          "followOns": [
+            "What is the creature called?",
+            "What special ability does it have?"
+          ]
+        },
+        {
+          "id": "park-face",
+          "prompt": "Find something that looks like a face.",
+          "followOns": [
+            "What makes the eyes, nose, and mouth?",
+            "What expression does the face have?"
+          ]
+        },
+        {
+          "id": "park-letter-shape",
+          "prompt": "Find something shaped like a letter.",
+          "followOns": [
+            "Which letter does it resemble?",
+            "Can you make the same letter with your body?"
+          ]
+        },
+        {
+          "id": "park-number-shape",
+          "prompt": "Find something shaped like a number.",
+          "followOns": [
+            "Which number does it resemble?",
+            "Can you find the number written somewhere too?"
+          ]
+        },
+        {
+          "id": "park-miniature-world",
+          "prompt": "Find a place that could become a miniature world.",
+          "followOns": [
+            "Who would live there?",
+            "What would they use as houses and roads?"
+          ]
+        },
+        {
+          "id": "park-story-start",
+          "prompt": "Choose something in the park to begin a story.",
+          "followOns": [
+            "Who is the main character?",
+            "What surprising thing happens next?"
+          ]
+        },
+        {
+          "id": "park-magic-object",
+          "prompt": "Find something that could be magical in a pretend story.",
+          "followOns": [
+            "What power does it have?",
+            "What words activate its magic?"
+          ]
+        },
+        {
+          "id": "park-treasure",
+          "prompt": "Find something ordinary that could be pretend treasure.",
+          "followOns": [
+            "Why is it valuable in your story?",
+            "Who might be searching for it?"
+          ]
+        },
+        {
+          "id": "park-dinosaur-clue",
+          "prompt": "Find something that reminds you of dinosaurs.",
+          "followOns": [
+            "Does it look like a footprint, tooth, scale, or bone?",
+            "Which dinosaur might have left it?"
+          ]
+        },
+        {
+          "id": "park-space-station",
+          "prompt": "Find something that could be part of a pretend space station.",
+          "followOns": [
+            "What job does it perform?",
+            "Which planet is the station orbiting?"
+          ]
+        },
+        {
+          "id": "park-vehicle",
+          "prompt": "Find something that could become a pretend vehicle.",
+          "followOns": [
+            "Where could it travel?",
+            "How would you steer it?"
+          ]
+        },
+        {
+          "id": "park-art-frame",
+          "prompt": "Use your hands to frame a beautiful park view.",
+          "followOns": [
+            "What did you include inside your frame?",
+            "What would you title the picture?"
+          ]
+        },
+        {
+          "id": "park-nature-art",
+          "prompt": "Find a naturally arranged scene that looks like art.",
+          "followOns": [
+            "Which colors and shapes make it interesting?",
+            "How might the scene change tomorrow?"
+          ]
+        },
+        {
+          "id": "park-helpful-person",
+          "prompt": "Notice someone helping another person.",
+          "followOns": [
+            "What helpful action did you see?",
+            "How could you be helpful in the park?"
+          ]
+        },
+        {
+          "id": "park-sharing",
+          "prompt": "Find something park visitors need to share.",
+          "followOns": [
+            "How can people take turns fairly?",
+            "What could happen if someone never shared it?"
+          ]
+        },
+        {
+          "id": "park-taking-turns",
+          "prompt": "Find a place where people take turns.",
+          "followOns": [
+            "How can you tell whose turn is next?",
+            "What makes taking turns fair?"
+          ]
+        },
+        {
+          "id": "park-kind-action",
+          "prompt": "Think of one kind thing you could do in the park.",
+          "followOns": [
+            "Who would it help?",
+            "How might it make them feel?"
+          ]
+        },
+        {
+          "id": "park-care-for-nature",
+          "prompt": "Find one way people care for the park.",
+          "followOns": [
+            "What evidence can you see?",
+            "What else could visitors do to help?"
+          ]
+        },
+        {
+          "id": "park-litter",
+          "prompt": "Look for litter without touching anything unsafe.",
+          "followOns": [
+            "Where should it have been placed?",
+            "How can litter affect animals?"
+          ]
+        },
+        {
+          "id": "park-protected-area",
+          "prompt": "Find an area people are asked not to enter.",
+          "followOns": [
+            "What might be protected there?",
+            "How does staying out help?"
+          ]
+        },
+        {
+          "id": "park-garden-care",
+          "prompt": "Find evidence that someone cares for the plants.",
+          "followOns": [
+            "Can you see watering, mulch, stakes, or pruning?",
+            "Which job do you think was done most recently?"
+          ]
+        },
+        {
+          "id": "park-mulch",
+          "prompt": "Find mulch around a plant or tree.",
+          "followOns": [
+            "What materials is it made from?",
+            "How might mulch help the soil?"
+          ]
+        },
+        {
+          "id": "park-tree-support",
+          "prompt": "Find a young tree supported by stakes or ties.",
+          "followOns": [
+            "Why does the tree need support?",
+            "When might the supports be removed?"
+          ]
+        },
+        {
+          "id": "park-safe-boundary",
+          "prompt": "Find something that helps keep people safe.",
+          "followOns": [
+            "What danger does it help prevent?",
+            "Would it work without people following the rules?"
+          ]
+        },
+        {
+          "id": "park-emergency-info",
+          "prompt": "Find information that could help in an emergency.",
+          "followOns": [
+            "What information does it provide?",
+            "Why is it placed where people can see it?"
+          ]
+        },
+        {
+          "id": "park-change-over-time",
+          "prompt": "Find something that will look different in another season.",
+          "followOns": [
+            "How might it change?",
+            "What would make the change happen?"
+          ]
+        },
+        {
+          "id": "park-before-after-rain",
+          "prompt": "Find something that changes when it rains.",
+          "followOns": [
+            "What would it look or feel like when wet?",
+            "How long would it take to dry?"
+          ]
+        },
+        {
+          "id": "park-growth",
+          "prompt": "Find something that is growing.",
+          "followOns": [
+            "What does it need to continue growing?",
+            "How could you tell if it grew by next week?"
+          ]
+        },
+        {
+          "id": "park-decay",
+          "prompt": "Find something natural that is slowly breaking down.",
+          "followOns": [
+            "What signs of change can you see?",
+            "How might it eventually help the soil?"
+          ]
+        },
+        {
+          "id": "park-nature-human",
+          "prompt": "Find a place where nature and something human-made meet.",
+          "followOns": [
+            "Which one was there first?",
+            "How are they affecting each other?"
+          ]
+        },
+        {
+          "id": "park-sun-direction",
+          "prompt": "Work out which direction the sun is shining from.",
+          "followOns": [
+            "Which way are the shadows pointing?",
+            "Will the shadows point the same way later?"
+          ]
+        },
+        {
+          "id": "park-shadow-length",
+          "prompt": "Compare the lengths of two shadows.",
+          "followOns": [
+            "Which shadow is longer?",
+            "What makes one shadow longer than the other?"
+          ]
+        },
+        {
+          "id": "park-near-far",
+          "prompt": "Choose one nearby object and one faraway object.",
+          "followOns": [
+            "How can you tell which is farther away?",
+            "Which one appears smaller?"
+          ]
+        },
+        {
+          "id": "park-above-below",
+          "prompt": "Find one thing above another.",
+          "followOns": [
+            "What is directly underneath it?",
+            "Could their positions ever switch?"
+          ]
+        },
+        {
+          "id": "park-between",
+          "prompt": "Find something positioned between two other things.",
+          "followOns": [
+            "What is on each side?",
+            "Is it exactly in the middle?"
+          ]
+        },
+        {
+          "id": "park-inside-outside",
+          "prompt": "Find something inside another thing.",
+          "followOns": [
+            "What is surrounding it?",
+            "Could it be removed without changing either object?"
+          ]
+        },
+        {
+          "id": "park-left-right",
+          "prompt": "Choose a landmark and name what is to its left and right.",
+          "followOns": [
+            "Would left and right change if you turned around?",
+            "What is directly in front of it?"
+          ]
+        },
+        {
+          "id": "park-closest",
+          "prompt": "Find the closest tree, bench, or sign.",
+          "followOns": [
+            "How many steps away is it?",
+            "Which similar object is the next closest?"
+          ]
+        },
+        {
+          "id": "park-farthest",
+          "prompt": "Find the farthest park object you can identify.",
+          "followOns": [
+            "How do you know what it is from far away?",
+            "How long might it take to walk there?"
+          ]
+        },
+        {
+          "id": "park-different-perspective",
+          "prompt": "Look at the same object while standing and crouching.",
+          "followOns": [
+            "What became easier to see?",
+            "How would it look to a tiny insect?"
+          ]
+        },
+        {
+          "id": "park-memory-five",
+          "prompt": "Look around, then turn away and name five things you saw.",
+          "followOns": [
+            "Which detail was easiest to remember?",
+            "Can you remember where each thing was?"
+          ]
+        },
+        {
+          "id": "park-missing-detail",
+          "prompt": "Study an object for ten seconds, then describe it without looking.",
+          "followOns": [
+            "Which details did you remember?",
+            "What did you forget when you looked again?"
+          ]
+        },
+        {
+          "id": "park-spot-the-difference",
+          "prompt": "Find two similar things and spot three differences.",
+          "followOns": [
+            "Which difference was easiest to notice?",
+            "Which difference was the most surprising?"
+          ]
+        },
+        {
+          "id": "park-same-and-different",
+          "prompt": "Find two things that are alike in one way and different in another.",
+          "followOns": [
+            "What do they have in common?",
+            "What is their biggest difference?"
+          ]
+        },
+        {
+          "id": "park-sort-colors",
+          "prompt": "Choose five visible things and sort them by color.",
+          "followOns": [
+            "Which color group has the most?",
+            "Could any item belong in two groups?"
+          ]
+        },
+        {
+          "id": "park-sort-size",
+          "prompt": "Choose three things and order them from smallest to largest.",
+          "followOns": [
+            "How did you compare them?",
+            "Would the order change if you measured weight instead?"
+          ]
+        },
+        {
+          "id": "park-natural-made",
+          "prompt": "Find one natural thing and one human-made thing.",
+          "followOns": [
+            "What materials are they made from?",
+            "How can you tell which is which?"
+          ]
+        },
+        {
+          "id": "park-living-nonliving",
+          "prompt": "Find one living thing and one nonliving thing.",
+          "followOns": [
+            "What does the living thing need?",
+            "Was the nonliving thing ever part of something alive?"
+          ]
+        },
+        {
+          "id": "park-needs-sunlight",
+          "prompt": "Find something that needs sunlight.",
+          "followOns": [
+            "How does sunlight help it?",
+            "What might happen if it stayed in darkness?"
+          ]
+        },
+        {
+          "id": "park-needs-water",
+          "prompt": "Find something that needs water.",
+          "followOns": [
+            "Where does it get water in the park?",
+            "What signs might show that it is thirsty?"
+          ]
+        },
+        {
+          "id": "park-moving-still",
+          "prompt": "Find one moving thing and one still thing.",
+          "followOns": [
+            "What is making the moving thing move?",
+            "Could the still thing begin moving?"
+          ]
+        },
+        {
+          "id": "park-useful-design",
+          "prompt": "Find something cleverly designed.",
+          "followOns": [
+            "What problem does its design solve?",
+            "How would you improve it?"
+          ]
+        },
+        {
+          "id": "park-strong-structure",
+          "prompt": "Find a structure that needs to be strong.",
+          "followOns": [
+            "Which parts support its weight?",
+            "What shape helps make it strong?"
+          ]
+        },
+        {
+          "id": "park-fastener",
+          "prompt": "Find something holding two pieces together.",
+          "followOns": [
+            "Is it a screw, bolt, knot, clip, or something else?",
+            "Why does it need to stay firmly attached?"
+          ]
+        },
+        {
+          "id": "park-wheels",
+          "prompt": "Find something with wheels.",
+          "followOns": [
+            "How many wheels does it have?",
+            "Why are wheels useful for it?"
+          ]
+        },
+        {
+          "id": "park-lever",
+          "prompt": "Find something that works like a lever.",
+          "followOns": [
+            "Where does it pivot?",
+            "What happens when you push one end?"
+          ]
+        },
+        {
+          "id": "park-slope",
+          "prompt": "Find a slope.",
+          "followOns": [
+            "Which direction is downhill?",
+            "What would roll down it most easily?"
+          ]
+        },
+        {
+          "id": "park-friction",
+          "prompt": "Find one surface that would be easy to slide on and one that would be difficult.",
+          "followOns": [
+            "Which surface has more grip?",
+            "Why is grip important on paths and playgrounds?"
+          ]
+        },
+        {
+          "id": "park-balance-point",
+          "prompt": "Find something with a clear middle or balance point.",
+          "followOns": [
+            "What would happen if one side became heavier?",
+            "How could you test your idea safely?"
+          ]
+        },
+        {
+          "id": "park-final-favorite",
+          "prompt": "Choose the most interesting thing you found today.",
+          "followOns": [
+            "What made it stand out?",
+            "What new question do you have about it?"
           ]
         }
       ]
