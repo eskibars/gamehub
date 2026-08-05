@@ -47,72 +47,40 @@
         </form>
       </section>
 
-      <section class="game" id="gameView" hidden>
-        <aside class="panel lobby-panel" id="lobbyPanel">
-          <div class="section-heading">
-            <h2>Table</h2>
-            <button class="small-button" id="newGameButton" type="button">New</button>
+      <section class="play-area" id="playArea" hidden>
+        <div class="play-heading">
+          <div class="play-status">
+            <p class="eyebrow">Opponent</p>
+            <h2 id="opponentName">—</h2>
           </div>
-          <div class="share-row" id="shareTools" hidden>
-            <strong id="shareCode">--------</strong>
-            <button class="small-button" id="copyShare" type="button">Copy</button>
+          <p class="game-message" id="gameMessage">Ask your first question.</p>
+          <div class="play-actions">
+            <button class="secondary-button" id="guessModeButton" type="button">Make a final guess</button>
           </div>
-          <dl class="facts">
-            <dt>Mode</dt>
-            <dd>Remote</dd>
-            <dt>Status</dt>
-            <dd id="factStatus">Lobby</dd>
-            <dt>Pool</dt>
-            <dd id="factPool">24</dd>
-          </dl>
-          <form class="name-form" id="nameForm">
-            <label class="field">
-              <span>Your name</span>
-              <input id="playerName" type="text" maxlength="24" autocomplete="nickname" placeholder="Your name">
-            </label>
-            <button class="secondary-button" type="submit">Join Table</button>
-          </form>
-          <div class="lobby-actions" id="lobbyActions" hidden>
-            <button class="primary-button" id="readyButton" type="button">Ready</button>
-            <button class="secondary-button" id="startButton" type="button">Start</button>
-          </div>
-          <p class="lobby-message" id="lobbyMessage">Waiting for an opponent…</p>
-        </aside>
+        </div>
 
-        <section class="play-area" id="playArea" hidden>
-          <div class="play-heading">
-            <div>
-              <p class="eyebrow">Opponent</p>
-              <h2 id="opponentName">—</h2>
-            </div>
-            <div class="status-block">
-              <p class="eyebrow">You</p>
-              <h2 id="playerNameDisplay">—</h2>
-            </div>
-            <div class="play-actions">
-              <button class="secondary-button" id="guessModeButton" type="button">Make a final guess</button>
-            </div>
-            <p class="game-message" id="gameMessage">Ask your first question.</p>
-          </div>
-
+        <div class="board-wrap">
           <div class="board" id="board" aria-label="Character board"></div>
-        </section>
+        </div>
 
-        <aside class="panel side-panel" id="sidePanel" hidden>
-          <section class="your-character" id="yourCharacter">
+        <div class="bottom-row">
+          <section class="your-character" aria-label="Your secret character">
             <p class="eyebrow">Your secret character</p>
             <div class="your-character-portrait" id="yourCharacterPortrait" aria-hidden="true"></div>
-            <p class="hint small">Tap a card below to flip it up or down as you eliminate candidates.</p>
           </section>
 
-          <section class="questions">
-            <div class="section-heading compact">
-              <h2>Ask a question</h2>
-            </div>
-            <div class="question-grid" id="questionGrid"></div>
+          <section class="ask-panel" aria-label="Ask a question">
+            <div class="ask-display" id="askDisplay"></div>
+            <form class="ask-form" id="askForm">
+              <label class="ask-label" for="askInput">Ask a yes/no question</label>
+              <div class="ask-input-row">
+                <input id="askInput" type="text" maxlength="140" placeholder="Is your character wearing a hat?" autocomplete="off">
+                <button class="small-button" type="submit">Ask</button>
+              </div>
+            </form>
           </section>
 
-          <section class="chat">
+          <section class="chat" aria-label="Chat">
             <div class="section-heading compact">
               <h2>Chat</h2>
               <span id="chatCount" class="count">0</span>
@@ -123,7 +91,38 @@
               <button class="small-button" type="submit">Send</button>
             </form>
           </section>
-        </aside>
+        </div>
+      </section>
+
+      <section class="lobby-panel" id="lobbyPanel" hidden>
+        <div class="section-heading">
+          <h2>Table</h2>
+          <button class="small-button" id="newGameButton" type="button">New</button>
+        </div>
+        <div class="share-row" id="shareTools" hidden>
+          <strong id="shareCode">--------</strong>
+          <button class="small-button" id="copyShare" type="button">Copy</button>
+        </div>
+        <dl class="facts">
+          <dt>Mode</dt>
+          <dd>Remote</dd>
+          <dt>Status</dt>
+          <dd id="factStatus">Lobby</dd>
+          <dt>Pool</dt>
+          <dd id="factPool">24</dd>
+        </dl>
+        <form class="name-form" id="nameForm">
+          <label class="field">
+            <span>Your name</span>
+            <input id="playerName" type="text" maxlength="24" autocomplete="nickname" placeholder="Your name">
+          </label>
+          <button class="secondary-button" type="submit">Join Table</button>
+        </form>
+        <div class="lobby-actions" id="lobbyActions" hidden>
+          <button class="primary-button" id="readyButton" type="button">Ready</button>
+          <button class="secondary-button" id="startButton" type="button">Start</button>
+        </div>
+        <p class="lobby-message" id="lobbyMessage">Waiting for an opponent…</p>
       </section>
 
       <div class="modal-backdrop" id="modalBackdrop" hidden>

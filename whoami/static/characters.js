@@ -510,32 +510,9 @@
     return root;
   }
 
-  // ----- Question templates -----
-  // Each question has an id, label, and a `test` function that takes a character.
-  // The client uses this list to render the question buttons, and the server
-  // never sees the test function — questions are relayed as label + id only.
-  const QUESTIONS = [
-    { id: "kind-human", label: "Is your character a person?", test: (c) => c.kind === "human" },
-    { id: "kind-cat", label: "Is your character a cat?", test: (c) => c.kind === "cat" },
-    { id: "kind-dog", label: "Is your character a dog?", test: (c) => c.kind === "dog" },
-    { id: "person-hat", label: "Does your character wear a hat?", test: (c) => c.kind === "human" && c.traits.hat !== "none" },
-    { id: "person-glasses", label: "Does your character wear glasses?", test: (c) => c.kind === "human" && c.traits.glasses !== "none" },
-    { id: "person-facial-hair", label: "Does your character have facial hair?", test: (c) => c.kind === "human" && c.traits.facialHair !== "none" },
-    { id: "person-long-hair", label: "Does your character have long hair?", test: (c) => c.kind === "human" && (c.traits.hairStyle === "long" || c.traits.hairStyle === "ponytail") },
-    { id: "person-bald", label: "Is your character bald?", test: (c) => c.kind === "human" && (c.traits.hairStyle === "none" || c.traits.hairStyle === "buzz") },
-    { id: "person-lipstick", label: "Is your character wearing lipstick?", test: (c) => c.kind === "human" && c.traits.lipstick },
-    { id: "person-earrings", label: "Is your character wearing earrings?", test: (c) => c.kind === "human" && c.traits.earrings },
-    { id: "person-smile", label: "Is your character smiling?", test: (c) => c.kind === "human" && c.traits.expression === "smile" },
-    { id: "animal-collar", label: "Is your character wearing a collar?", test: (c) => c.kind !== "human" && c.traits.collar },
-    { id: "animal-collar-tag", label: "Does your character have a collar tag?", test: (c) => c.kind !== "human" && c.traits.collarTag },
-    { id: "cat-stripes", label: "Does your character have stripes?", test: (c) => c.kind === "cat" && c.traits.pattern === "stripes" },
-    { id: "dog-floppy-ears", label: "Does your dog have floppy ears?", test: (c) => c.kind === "dog" && c.traits.earStyle === "floppy" },
-  ];
-
   // ----- Exports -----
   global.WhoAmI = {
     generatePool,
     renderPortrait,
-    QUESTIONS,
   };
 })(window);

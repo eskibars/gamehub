@@ -1,7 +1,7 @@
 // app.js
 // Main client for "Who Am I?". Talks to the Flask server through the REST
 // API and an SSE stream, holds the local board state (which cards are
-// flipped down) and renders the lobby, board, chat, and question panel.
+// flipped down) and renders the lobby, board, chat, and ask/answer panel.
 
 const STORAGE_PLAYER_KEY = "whoami-player-v1";
 const STORAGE_FLIPPED_KEY = "whoami-flipped-v1";
@@ -13,7 +13,6 @@ const state = {
   pool: [],
   eliminated: new Set(),
   guessedThisRound: false,
-  lastQuestionId: null,
   eventSource: null,
   entryMode: "choice",
   showReveal: false,
@@ -24,7 +23,6 @@ const state = {
 const els = {
   setupView: document.querySelector("#setupView"),
   choicePanel: document.querySelector("#choicePanel"),
-  gameView: document.querySelector("#gameView"),
   createForm: document.querySelector("#createForm"),
   joinForm: document.querySelector("#joinForm"),
   showJoin: document.querySelector("#showJoin"),
@@ -46,14 +44,13 @@ const els = {
   newGameButton: document.querySelector("#newGameButton"),
   playArea: document.querySelector("#playArea"),
   opponentName: document.querySelector("#opponentName"),
-  playerNameDisplay: document.querySelector("#playerNameDisplay"),
   gameMessage: document.querySelector("#gameMessage"),
   guessModeButton: document.querySelector("#guessModeButton"),
   board: document.querySelector("#board"),
-  sidePanel: document.querySelector("#sidePanel"),
-  yourCharacter: document.querySelector("#yourCharacter"),
   yourCharacterPortrait: document.querySelector("#yourCharacterPortrait"),
-  questionGrid: document.querySelector("#questionGrid"),
+  askDisplay: document.querySelector("#askDisplay"),
+  askForm: document.querySelector("#askForm"),
+  askInput: document.querySelector("#askInput"),
   chatLog: document.querySelector("#chatLog"),
   chatForm: document.querySelector("#chatForm"),
   chatInput: document.querySelector("#chatInput"),
@@ -121,14 +118,6 @@ function saveFlipped(code, set) {
   }
 }
 
-function clearFlipped(code) {
-  try {
-    localStorage.removeItem(flippedStorageKey(code));
-  } catch {
-    /* ignore */
-  }
-}
-
 async function requestJson(url, options = {}) {
   const response = await fetch(url, {
     ...options,
@@ -180,7 +169,6 @@ function rebuildPool() {
     return;
   }
   state.pool = window.WhoAmI.generatePool(state.game.seed, state.game.count);
-  // Trim eliminated entries that don't exist in the current pool.
   const validIndices = new Set(state.pool.map((c) => c.index));
   state.eliminated = new Set([...state.eliminated].filter((i) => validIndices.has(i)));
   if (state.game.code) saveFlipped(state.game.code, state.eliminated);
@@ -201,7 +189,6 @@ function adoptGame(game, options = {}) {
   }
   rebuildPool();
   els.setupView.hidden = true;
-  els.gameView.hidden = false;
   if (state.eventSource) state.eventSource.close();
   state.eventSource = null;
   connectEvents();
@@ -306,14 +293,26 @@ async function sendChat(event) {
   }
 }
 
-async function askQuestion(question) {
+async function sendAsk(event) {
+  event.preventDefault();
   if (!state.game || !state.playerId) return;
+  const text = els.askInput.value.trim();
+  if (!text) return;
+  // If there is an unanswered question aimed at us, force the user to answer
+  // it first rather than stacking more questions on top.
+  const pendingForMe = (state.game.events || []).find(
+    (e) => e.type === "question" && e.askerId !== state.playerId && !e.answer
+  );
+  if (pendingForMe) {
+    els.connectionStatus.textContent = "Answer the open question first";
+    return;
+  }
   try {
     const data = await requestJson(`/api/whoami/games/${state.game.code}/questions`, {
       method: "POST",
-      body: JSON.stringify({ playerId: state.playerId, questionId: question.id, label: question.label }),
+      body: JSON.stringify({ playerId: state.playerId, label: text }),
     });
-    state.lastQuestionId = data.event.id;
+    els.askInput.value = "";
     adoptGame(data.game);
   } catch (error) {
     els.connectionStatus.textContent = error.message;
@@ -357,7 +356,6 @@ function connectEvents() {
   els.connectionStatus.textContent = "Live";
   const handler = (event) => {
     const game = JSON.parse(event.data);
-    const wasInLobby = state.game?.status === "lobby";
     const wasRevealed = state.showReveal;
     adoptGame(game);
     if (event.type === "started" && !wasRevealed) {
@@ -365,9 +363,6 @@ function connectEvents() {
     }
     if (event.type === "guess" && game.status === "finished") {
       showResultModal(game);
-    }
-    if (event.type === "guess" && wasInLobby === false) {
-      // Stay responsive on guesses in active games.
     }
   };
   ["game", "joined", "started", "question", "answer", "guess", "chat"].forEach((name) => {
@@ -391,8 +386,6 @@ function renderLobby() {
   els.nameForm.hidden = Boolean(me) || !inLobby;
   els.lobbyActions.hidden = !me || !inLobby;
   els.readyButton.textContent = me?.ready ? "Unready" : "Ready";
-  // Either player can start once both are ready, so neither gets stuck if the
-  // host has to step away.
   els.startButton.hidden = false;
   els.startButton.disabled = !allReady;
   const slots = state.game.players.length;
@@ -482,59 +475,90 @@ function toggleCard(index) {
 function renderYourCharacter() {
   els.yourCharacterPortrait.innerHTML = "";
   if (state.game.yourSecretIndex == null) {
-    els.yourCharacter.hidden = true;
     return;
   }
   const me = state.pool[state.game.yourSecretIndex];
   if (!me) {
-    els.yourCharacter.hidden = true;
     return;
   }
-  els.yourCharacter.hidden = false;
   els.yourCharacterPortrait.append(window.WhoAmI.renderPortrait(me, { className: "your-portrait-svg" }));
 }
 
-function renderQuestions() {
-  els.questionGrid.innerHTML = "";
-  const me = currentPlayer();
-  if (!me || state.game.status !== "active") {
-    els.questionGrid.classList.add("is-empty");
-    els.questionGrid.textContent = "Questions unlock when the game starts.";
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[c]));
+}
+
+function renderAsks() {
+  els.askDisplay.innerHTML = "";
+  const events = (state.game.events || []).filter((e) => e.type === "question");
+  if (!events.length) {
+    const empty = document.createElement("p");
+    empty.className = "ask-empty";
+    empty.textContent = "No questions yet. Type one below to start.";
+    els.askDisplay.append(empty);
     return;
   }
-  els.questionGrid.classList.remove("is-empty");
-  els.questionGrid.innerHTML = "";
-  const lastQuestion = [...state.game.events].reverse().find((e) => e.type === "question");
-  const awaitingMine = lastQuestion && lastQuestion.askerId !== state.playerId && !lastQuestion.answer;
-  if (awaitingMine) {
-    const prompt = document.createElement("div");
-    prompt.className = "question-prompt";
-    prompt.innerHTML = `<strong>${escapeHtml(lastQuestion.askerName)} asks:</strong> ${escapeHtml(lastQuestion.label)}`;
-    const buttons = document.createElement("div");
-    buttons.className = "question-buttons";
-    const yes = document.createElement("button");
-    yes.type = "button";
-    yes.className = "primary-button";
-    yes.textContent = "Yes";
-    yes.addEventListener("click", () => answerQuestion(lastQuestion.id, "yes"));
-    const no = document.createElement("button");
-    no.type = "button";
-    no.className = "secondary-button";
-    no.textContent = "No";
-    no.addEventListener("click", () => answerQuestion(lastQuestion.id, "no"));
-    buttons.append(yes, no);
-    prompt.append(buttons);
-    els.questionGrid.append(prompt);
-    return;
-  }
-  window.WhoAmI.QUESTIONS.forEach((question) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "question-button";
-    button.textContent = question.label;
-    button.addEventListener("click", () => askQuestion(question));
-    els.questionGrid.append(button);
+  // Newest first so the live question sits at the top.
+  const ordered = [...events].reverse();
+  ordered.forEach((event) => {
+    const row = document.createElement("div");
+    const fromMe = event.askerId === state.playerId;
+    row.className = `ask-row${fromMe ? " is-mine" : " is-theirs"}`;
+
+    const meta = document.createElement("div");
+    meta.className = "ask-meta";
+    meta.textContent = fromMe ? "You asked" : `${event.askerName} asked you`;
+    row.append(meta);
+
+    const text = document.createElement("div");
+    text.className = "ask-text";
+    text.textContent = event.label;
+    row.append(text);
+
+    if (event.answer) {
+      const pill = document.createElement("span");
+      pill.className = `ask-answer answer-${event.answer}`;
+      pill.textContent = event.answer.toUpperCase();
+      row.append(pill);
+      const answerer = document.createElement("div");
+      answerer.className = "ask-meta";
+      answerer.textContent = `Answered by ${event.answeredByName || "opponent"}`;
+      row.append(answerer);
+    } else if (!fromMe) {
+      // Open question for me to answer.
+      const pending = document.createElement("div");
+      pending.className = "ask-pending";
+      pending.textContent = "Waiting for your answer";
+      row.append(pending);
+      const actions = document.createElement("div");
+      actions.className = "ask-actions";
+      const yes = document.createElement("button");
+      yes.type = "button";
+      yes.className = "primary-button";
+      yes.textContent = "Yes";
+      yes.addEventListener("click", () => answerQuestion(event.id, "yes"));
+      const no = document.createElement("button");
+      no.type = "button";
+      no.className = "secondary-button";
+      no.textContent = "No";
+      no.addEventListener("click", () => answerQuestion(event.id, "no"));
+      actions.append(yes, no);
+      row.append(actions);
+    } else {
+      const pending = document.createElement("div");
+      pending.className = "ask-pending";
+      pending.textContent = "Waiting for opponent to answer";
+      row.append(pending);
+    }
+    els.askDisplay.append(row);
   });
+  els.askDisplay.scrollTop = 0;
 }
 
 function renderChat() {
@@ -568,22 +592,22 @@ function renderEventFeed() {
     els.gameMessage.textContent = "Ask your first question.";
     return;
   }
-  const latest = events[events.length - 1];
-  if (latest.type === "system") {
-    els.gameMessage.textContent = latest.text;
-  } else if (latest.type === "question") {
-    if (latest.askerId === state.playerId) {
-      els.gameMessage.textContent = latest.answer
-        ? `${latest.answeredByName} answered: ${latest.answer.toUpperCase()}.`
-        : `You asked: ${latest.label}`;
+  const last = events[events.length - 1];
+  if (last.type === "system") {
+    els.gameMessage.textContent = last.text;
+  } else if (last.type === "question") {
+    if (last.askerId === state.playerId) {
+      els.gameMessage.textContent = last.answer
+        ? `${last.answeredByName} answered: ${last.answer.toUpperCase()}.`
+        : `You asked: "${last.label}"`;
     } else {
-      els.gameMessage.textContent = latest.answer
-        ? `You answered ${latest.answer.toUpperCase()} to ${latest.askerName}.`
-        : `${latest.askerName} is asking a question.`;
+      els.gameMessage.textContent = last.answer
+        ? `You answered ${last.answer.toUpperCase()} to ${last.askerName}.`
+        : `${last.askerName} is asking: "${last.label}"`;
     }
-  } else if (latest.type === "guess") {
-    const correctWord = latest.correct ? "guessed right" : "guessed wrong";
-    els.gameMessage.textContent = `${latest.guesserName} ${correctWord} about ${latest.targetName}'s character.`;
+  } else if (last.type === "guess") {
+    const correctWord = last.correct ? "guessed correctly" : "guessed wrong";
+    els.gameMessage.textContent = `${last.guesserName} ${correctWord} about ${last.targetName}'s character.`;
   }
 }
 
@@ -591,22 +615,30 @@ function renderPlayArea() {
   if (!state.game) return;
   const inPlay = state.game.status !== "lobby";
   els.playArea.hidden = !inPlay;
-  els.sidePanel.hidden = !inPlay;
+  els.lobbyPanel.hidden = inPlay;
   if (!inPlay) {
     state.guessMode = false;
     return;
   }
   els.opponentName.textContent = opponentName();
-  els.playerNameDisplay.textContent = state.game.yourName || currentPlayer()?.name || "You";
   if (state.game.status !== "active") {
     state.guessMode = false;
   }
   if (els.guessModeButton) {
     els.guessModeButton.disabled = state.game.status !== "active" || state.guessedThisRound;
   }
+  if (els.askInput) {
+    const openForMe = (state.game.events || []).some(
+      (e) => e.type === "question" && e.askerId !== state.playerId && !e.answer
+    );
+    els.askInput.disabled = state.game.status !== "active" || openForMe;
+    els.askInput.placeholder = openForMe
+      ? "Answer the question above first"
+      : "Is your character wearing a hat?";
+  }
   renderBoard();
   renderYourCharacter();
-  renderQuestions();
+  renderAsks();
   renderChat();
   renderEventFeed();
 }
@@ -614,8 +646,9 @@ function renderPlayArea() {
 function render() {
   if (!state.game) return;
   const inLobby = state.game.status === "lobby";
-  els.lobbyPanel.hidden = !inLobby;
   if (inLobby) {
+    els.playArea.hidden = true;
+    els.lobbyPanel.hidden = false;
     renderLobby();
   } else {
     renderPlayArea();
@@ -654,16 +687,6 @@ function showResultModal(game) {
   els.resultBody.textContent = body;
   els.resultBackdrop.hidden = false;
   state.guessedThisRound = false;
-}
-
-function escapeHtml(text) {
-  return String(text).replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  }[c]));
 }
 
 // ----- Modals -----
@@ -713,7 +736,7 @@ function openGuessModal(index) {
   els.guessBackdrop.hidden = false;
 }
 
-// ----- Long-press / right-click for "Make final guess" -----
+// Right-click / long-press as a power-user shortcut for the final guess.
 function bindBoardGestures() {
   let pressTimer = null;
   let pressTarget = null;
@@ -744,7 +767,6 @@ function bindBoardGestures() {
   ["touchend", "touchmove", "touchcancel"].forEach((evt) => {
     els.board.addEventListener(evt, cancelPress, { passive: true });
   });
-  // Add a help hint to the game message about how to make a final guess.
 }
 
 function showStartMode(mode) {
@@ -757,7 +779,8 @@ function showStartMode(mode) {
   state.eliminated = new Set();
   state.entryMode = mode || "choice";
   els.setupView.hidden = false;
-  els.gameView.hidden = true;
+  els.playArea.hidden = true;
+  els.lobbyPanel.hidden = true;
   els.modalBackdrop.hidden = true;
   els.guessBackdrop.hidden = true;
   els.resultBackdrop.hidden = true;
@@ -784,6 +807,7 @@ function bindEvents() {
     state.guessMode = !state.guessMode;
     renderBoard();
   });
+  els.askForm.addEventListener("submit", sendAsk);
   els.chatForm.addEventListener("submit", sendChat);
   els.copyShare.addEventListener("click", async () => {
     if (!state.game) return;

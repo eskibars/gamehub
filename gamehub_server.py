@@ -1657,11 +1657,10 @@ def create_app() -> Flask:
     def whoami_ask_question(code: str):
         code = code.upper()
         body = request.get_json(silent=True) or {}
-        question_id = str(body.get("questionId") or "").strip()
         question_label = str(body.get("label") or "").strip()
         player_id = str(body.get("playerId") or "").strip()
-        if not question_id or not question_label:
-            return jsonify({"error": "Question is missing its id or label."}), 400
+        if not question_label:
+            return jsonify({"error": "Question is empty."}), 400
         if len(question_label) > 140:
             return jsonify({"error": "Question is too long."}), 400
         with WHOAMI_GAMES_LOCK:
@@ -1678,7 +1677,6 @@ def create_app() -> Flask:
                 "type": "question",
                 "askerId": player_id,
                 "askerName": asker["name"],
-                "questionId": question_id,
                 "label": question_label,
                 "answer": None,
                 "answeredById": None,
