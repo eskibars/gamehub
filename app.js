@@ -81,6 +81,15 @@ const icons = {
       <path d="m43 44 6 6"></path>
       <path d="M23 42h6"></path>
     </svg>`,
+  whoami: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="28" r="14"></circle>
+      <path d="M18 27c0-7 6-13 14-13s14 6 14 13"></path>
+      <circle cx="26" cy="28" r="2"></circle>
+      <circle cx="38" cy="28" r="2"></circle>
+      <path d="M26 35q6 4 12 0"></path>
+      <path d="M14 50c4-6 12-8 18-8s14 2 18 8"></path>
+    </svg>`,
 };
 
 const games = [
@@ -202,6 +211,23 @@ const games = [
       Players: "Family group",
     },
     icon: "findem",
+  },
+  {
+    id: "whoami",
+    title: "Who Am I?",
+    type: "Two-player board",
+    status: "ready",
+    category: "board",
+    href: "/whoami/",
+    accent: "#c84e3a",
+    tilt: "1.6deg",
+    description: "Guess the secret character your opponent picked. Both players share a board of procedurally-generated people, cats, and dogs, then ask yes/no questions to narrow it down.",
+    features: {
+      Mode: "Live character guessing",
+      Storage: "In-memory share code",
+      Players: "2",
+    },
+    icon: "whoami",
   },
   {
     id: "tools",

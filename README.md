@@ -12,7 +12,8 @@ python3 app.py
 Then open `http://127.0.0.1:25001`.
 
 The ready tools are Bingo Card Builder, Color Guesser, Yahtzee Scorepad,
-Boggle Table, Word Find Creator, Backgammon, Find 'em, and Table Tools.
+Boggle Table, Word Find Creator, Backgammon, Find 'em, Table Tools, and
+Who Am I? — a Guess Who-style character guessing game.
 
 ## Local-first storage
 
@@ -37,6 +38,12 @@ roller with configurable dice count, sides, modifier, and roll history.
 Find 'em loads kid-friendly prompt cards from `find_em/static/cards.json`,
 randomizes the selected deck in the browser, and keeps the game shell available
 offline after the first visit.
+
+Who Am I? is a remote-by-default Guess Who clone. A share code spins up a
+flask-side game that only stores the random seed, the player's secret
+character index, and a small chat log. Both clients regenerate the same
+24-character pool (a mix of people, cats, and dogs) from the seed, so the
+server never ships the portraits themselves.
 
 ## Legacy Bingo command
 

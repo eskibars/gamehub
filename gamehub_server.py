@@ -30,6 +30,7 @@ WORD_FIND_STATIC_DIR = BASE_DIR / "word_find" / "static"
 BACKGAMMON_STATIC_DIR = BASE_DIR / "backgammon" / "static"
 FIND_EM_STATIC_DIR = BASE_DIR / "find_em" / "static"
 TOOLS_STATIC_DIR = BASE_DIR / "tools" / "static"
+WHOAMI_STATIC_DIR = BASE_DIR / "whoami" / "static"
 SHARED_STATIC_DIR = BASE_DIR / "shared"
 MAX_USER_BYTES = int(os.environ.get("BINGO_MAX_USER_BYTES", 5 * 1024 * 1024))
 COLOR_GAMES: dict[str, dict[str, Any]] = {}
@@ -42,6 +43,14 @@ BOGGLE_GAMES_LOCK = threading.Lock()
 BACKGAMMON_GAMES: dict[str, dict[str, Any]] = {}
 BACKGAMMON_GAME_SUBSCRIBERS: dict[str, list[queue.Queue[dict[str, Any]]]] = {}
 BACKGAMMON_GAMES_LOCK = threading.Lock()
+WHOAMI_GAMES: dict[str, dict[str, Any]] = {}
+WHOAMI_GAME_SUBSCRIBERS: dict[str, list[queue.Queue[dict[str, Any]]]] = {}
+WHOAMI_GAMES_LOCK = threading.Lock()
+WHOAMI_MIN_PLAYERS = 2
+WHOAMI_MAX_PLAYERS = 2
+WHOAMI_POOL_SIZE = 24
+WHOAMI_MAX_CHAT = 60
+WHOAMI_MAX_EVENTS = 30
 BOGGLE_LETTER_DISTRIBUTION = (
     "E" * 12
     + "A" * 9
@@ -772,6 +781,18 @@ def create_app() -> Flask:
     def tools_static(filename: str):
         return send_from_directory(TOOLS_STATIC_DIR, filename)
 
+    @app.get("/whoami")
+    def whoami_redirect():
+        return redirect("/whoami/")
+
+    @app.get("/whoami/")
+    def whoami_index():
+        return send_from_directory(WHOAMI_STATIC_DIR, "index.html")
+
+    @app.get("/whoami/<path:filename>")
+    def whoami_static(filename: str):
+        return send_from_directory(WHOAMI_STATIC_DIR, filename)
+
     @app.get("/share/<share_id>")
     def shared_card(share_id: str):
         return redirect(f"/bingo/?share={share_id}")
@@ -1375,6 +1396,411 @@ def create_app() -> Flask:
             finally:
                 with BACKGAMMON_GAMES_LOCK:
                     subscribers = BACKGAMMON_GAME_SUBSCRIBERS.get(code, [])
+                    if subscriber in subscribers:
+                        subscribers.remove(subscriber)
+
+        return Response(stream_with_context(stream()), mimetype="text/event-stream")
+
+    def whoami_player_view(game: dict[str, Any], player_id: str | None) -> dict[str, Any]:
+        players = [
+            {
+                "id": pid,
+                "name": info["name"],
+                "ready": info["ready"],
+                "connectedAt": info["connectedAt"],
+                "isHost": info.get("isHost", False),
+            }
+            for pid, info in game["players"].items()
+        ]
+        players.sort(key=lambda item: item["connectedAt"])
+        view = {
+            "code": game["code"],
+            "seed": game["seed"],
+            "count": game["count"],
+            "status": game["status"],
+            "players": players,
+            "messages": game["messages"],
+            "events": game["events"],
+            "winnerId": game.get("winnerId"),
+            "winReason": game.get("winReason"),
+            "createdAt": game["createdAt"],
+            "updatedAt": game["updatedAt"],
+        }
+        if player_id and player_id in game["players"]:
+            info = game["players"][player_id]
+            view["playerId"] = player_id
+            view["yourSecretIndex"] = info.get("secretIndex")
+            view["youAreHost"] = info.get("isHost", False)
+            view["yourName"] = info["name"]
+            # Expose only the opponent's id/name so the client can label UI.
+            opponents = [
+                {"id": other_id, "name": other["name"]}
+                for other_id, other in game["players"].items()
+                if other_id != player_id
+            ]
+            view["opponents"] = opponents
+        return view
+
+    def whoami_pick_secrets(seed: int, count: int, player_ids: list[str]) -> dict[str, int]:
+        rng = random.Random(seed)
+        # Use the same PRNG sequence the client uses, then jump past
+        # `count` characters before sampling two distinct secret indices
+        # so the picker does not bias the first character in the pool.
+        for _ in range(count * 7):
+            rng.random()
+        order = list(range(count))
+        rng.shuffle(order)
+        return {pid: order[index] for index, pid in enumerate(player_ids)}
+
+    def whoami_append_event(game: dict[str, Any], event: dict[str, Any]) -> None:
+        game["events"].append(event)
+        if len(game["events"]) > WHOAMI_MAX_EVENTS:
+            del game["events"][: len(game["events"]) - WHOAMI_MAX_EVENTS]
+        game["updatedAt"] = utc_now()
+
+    def whoami_append_message(game: dict[str, Any], message: dict[str, Any]) -> None:
+        game["messages"].append(message)
+        if len(game["messages"]) > WHOAMI_MAX_CHAT:
+            del game["messages"][: len(game["messages"]) - WHOAMI_MAX_CHAT]
+        game["updatedAt"] = utc_now()
+
+    def whoami_publish(code: str, event_name: str = "game") -> None:
+        with WHOAMI_GAMES_LOCK:
+            game = WHOAMI_GAMES.get(code)
+            subscribers = list(WHOAMI_GAME_SUBSCRIBERS.get(code, []))
+        if not game:
+            return
+        for subscriber in subscribers:
+            player_id = subscriber.get("playerId")
+            subscriber["queue"].put(
+                {"event": event_name, "data": whoami_player_view(game, player_id)}
+            )
+
+    def whoami_get_player(code: str, player_id: str) -> tuple[dict[str, Any] | None, str | None, dict[str, Any] | None]:
+        with WHOAMI_GAMES_LOCK:
+            game = WHOAMI_GAMES.get(code)
+            if not game:
+                return None, "Game was not found.", None
+            if player_id not in game["players"]:
+                return None, "Player was not found.", None
+            return game, None, game["players"][player_id]
+
+    @app.post("/api/whoami/games")
+    def create_whoami_game():
+        now = utc_now()
+        code = uuid.uuid4().hex[:8].upper()
+        # Seed range 1..2**31-2; 0 is reserved as "no seed" by some clients.
+        seed = secrets.randbelow(2**31 - 1) + 1
+        game: dict[str, Any] = {
+            "code": code,
+            "seed": seed,
+            "count": WHOAMI_POOL_SIZE,
+            "status": "lobby",
+            "players": {},
+            "messages": [],
+            "events": [],
+            "winnerId": None,
+            "winReason": None,
+            "createdAt": now,
+            "updatedAt": now,
+        }
+        with WHOAMI_GAMES_LOCK:
+            WHOAMI_GAMES[code] = game
+            WHOAMI_GAME_SUBSCRIBERS.setdefault(code, [])
+        return jsonify({"game": whoami_player_view(game, None), "shareUrl": f"/whoami/?game={code}"}), 201
+
+    @app.get("/api/whoami/games/<code>")
+    def get_whoami_game(code: str):
+        code = code.upper()
+        player_id = str(request.args.get("playerId") or "").strip() or None
+        with WHOAMI_GAMES_LOCK:
+            game = WHOAMI_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            return jsonify({"game": whoami_player_view(game, player_id)})
+
+    @app.post("/api/whoami/games/<code>/players")
+    def join_whoami_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        name = str(body.get("name") or "").strip()
+        provided_id = str(body.get("playerId") or "").strip()
+        if not name:
+            return jsonify({"error": "Name is required."}), 400
+        if len(name) > 24:
+            return jsonify({"error": "Name must be 24 characters or fewer."}), 400
+
+        now = utc_now()
+        with WHOAMI_GAMES_LOCK:
+            game = WHOAMI_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "lobby":
+                return jsonify({"error": "This game has already started."}), 409
+            if provided_id and provided_id in game["players"]:
+                player = game["players"][provided_id]
+                player["name"] = name
+                player_id = provided_id
+            else:
+                if len(game["players"]) >= WHOAMI_MAX_PLAYERS:
+                    return jsonify({"error": "This game is full."}), 409
+                player_id = secrets.token_urlsafe(8)
+                is_host = not game["players"]
+                game["players"][player_id] = {
+                    "id": player_id,
+                    "name": name,
+                    "ready": False,
+                    "connectedAt": now,
+                    "secretIndex": None,
+                    "isHost": is_host,
+                }
+            game["updatedAt"] = now
+
+        whoami_publish(code, "joined")
+        with WHOAMI_GAMES_LOCK:
+            return jsonify({"game": whoami_player_view(WHOAMI_GAMES[code], player_id), "playerId": player_id})
+
+    @app.post("/api/whoami/games/<code>/players/<player_id>/ready")
+    def whoami_set_ready(code: str, player_id: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        ready = bool(body.get("ready", True))
+        with WHOAMI_GAMES_LOCK:
+            game = WHOAMI_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "lobby":
+                return jsonify({"error": "Ready can only change before the game starts."}), 409
+            player = game["players"].get(player_id)
+            if not player:
+                return jsonify({"error": "Player was not found."}), 404
+            player["ready"] = ready
+            game["updatedAt"] = utc_now()
+
+        whoami_publish(code)
+        with WHOAMI_GAMES_LOCK:
+            return jsonify({"game": whoami_player_view(WHOAMI_GAMES[code], player_id)})
+
+    @app.post("/api/whoami/games/<code>/start")
+    def whoami_start_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with WHOAMI_GAMES_LOCK:
+            game = WHOAMI_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "lobby":
+                return jsonify({"error": "This game has already started."}), 409
+            if player_id and player_id not in game["players"]:
+                return jsonify({"error": "Player was not found."}), 404
+            if len(game["players"]) < WHOAMI_MIN_PLAYERS:
+                return jsonify({"error": "Wait for an opponent to join."}), 409
+            if any(not info["ready"] for info in game["players"].values()):
+                return jsonify({"error": "Both players must be ready first."}), 409
+
+            player_ids = list(game["players"].keys())
+            secrets_for_players = whoami_pick_secrets(game["seed"], game["count"], player_ids)
+            for pid, secret_index in secrets_for_players.items():
+                game["players"][pid]["secretIndex"] = secret_index
+                game["players"][pid]["ready"] = False
+            game["status"] = "active"
+            game["updatedAt"] = utc_now()
+            whoami_append_event(
+                game,
+                {
+                    "type": "system",
+                    "text": "The game has started. Ask your first question!",
+                    "at": utc_now(),
+                },
+            )
+
+        whoami_publish(code, "started")
+        with WHOAMI_GAMES_LOCK:
+            return jsonify({"game": whoami_player_view(WHOAMI_GAMES[code], player_id or None)})
+
+    @app.post("/api/whoami/games/<code>/messages")
+    def whoami_send_message(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        text = str(body.get("text") or "").strip()
+        player_id = str(body.get("playerId") or "").strip()
+        if not text:
+            return jsonify({"error": "Message is empty."}), 400
+        if len(text) > 240:
+            return jsonify({"error": "Message is too long (240 characters max)."}), 400
+        with WHOAMI_GAMES_LOCK:
+            game = WHOAMI_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] == "lobby":
+                return jsonify({"error": "Chat opens once the game starts."}), 409
+            player = game["players"].get(player_id)
+            if not player:
+                return jsonify({"error": "Player was not found."}), 404
+            whoami_append_message(
+                game,
+                {
+                    "id": secrets.token_urlsafe(6),
+                    "fromId": player_id,
+                    "fromName": player["name"],
+                    "text": text,
+                    "at": utc_now(),
+                },
+            )
+
+        whoami_publish(code, "chat")
+        with WHOAMI_GAMES_LOCK:
+            return jsonify({"game": whoami_player_view(WHOAMI_GAMES[code], player_id)})
+
+    @app.post("/api/whoami/games/<code>/questions")
+    def whoami_ask_question(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        question_id = str(body.get("questionId") or "").strip()
+        question_label = str(body.get("label") or "").strip()
+        player_id = str(body.get("playerId") or "").strip()
+        if not question_id or not question_label:
+            return jsonify({"error": "Question is missing its id or label."}), 400
+        if len(question_label) > 140:
+            return jsonify({"error": "Question is too long."}), 400
+        with WHOAMI_GAMES_LOCK:
+            game = WHOAMI_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "Questions can only be asked during an active game."}), 409
+            asker = game["players"].get(player_id)
+            if not asker:
+                return jsonify({"error": "Player was not found."}), 404
+            event = {
+                "id": secrets.token_urlsafe(6),
+                "type": "question",
+                "askerId": player_id,
+                "askerName": asker["name"],
+                "questionId": question_id,
+                "label": question_label,
+                "answer": None,
+                "answeredById": None,
+                "answeredByName": None,
+                "at": utc_now(),
+            }
+            whoami_append_event(game, event)
+
+        whoami_publish(code, "question")
+        with WHOAMI_GAMES_LOCK:
+            return jsonify({"game": whoami_player_view(WHOAMI_GAMES[code], player_id), "event": event})
+
+    @app.post("/api/whoami/games/<code>/answers")
+    def whoami_answer_question(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        event_id = str(body.get("eventId") or "").strip()
+        answer = body.get("answer")
+        player_id = str(body.get("playerId") or "").strip()
+        if answer not in {"yes", "no"}:
+            return jsonify({"error": "Answer must be yes or no."}), 400
+        with WHOAMI_GAMES_LOCK:
+            game = WHOAMI_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "The game is not active."}), 409
+            event = next((item for item in game["events"] if item.get("id") == event_id and item.get("type") == "question"), None)
+            if not event:
+                return jsonify({"error": "Question has expired."}), 404
+            if event.get("answer") is not None:
+                return jsonify({"error": "That question already has an answer."}), 409
+            if event["askerId"] == player_id:
+                return jsonify({"error": "The asker cannot answer their own question."}), 400
+            responder = game["players"].get(player_id)
+            if not responder:
+                return jsonify({"error": "Player was not found."}), 404
+            event["answer"] = answer
+            event["answeredById"] = player_id
+            event["answeredByName"] = responder["name"]
+            game["updatedAt"] = utc_now()
+
+        whoami_publish(code, "answer")
+        with WHOAMI_GAMES_LOCK:
+            return jsonify({"game": whoami_player_view(WHOAMI_GAMES[code], player_id)})
+
+    @app.post("/api/whoami/games/<code>/guess")
+    def whoami_make_guess(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        try:
+            guess_index = int(body.get("characterIndex"))
+        except (TypeError, ValueError):
+            return jsonify({"error": "Pick a character to guess."}), 400
+        player_id = str(body.get("playerId") or "").strip()
+        with WHOAMI_GAMES_LOCK:
+            game = WHOAMI_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "The game is not active."}), 409
+            if guess_index < 0 or guess_index >= game["count"]:
+                return jsonify({"error": "That character is not in the pool."}), 400
+            guesser = game["players"].get(player_id)
+            if not guesser:
+                return jsonify({"error": "Player was not found."}), 404
+            opponent_id = next((pid for pid in game["players"] if pid != player_id), None)
+            if not opponent_id:
+                return jsonify({"error": "Waiting on an opponent."}), 409
+            opponent_secret = game["players"][opponent_id]["secretIndex"]
+            correct = opponent_secret is not None and opponent_secret == guess_index
+            whoami_append_event(
+                game,
+                {
+                    "id": secrets.token_urlsafe(6),
+                    "type": "guess",
+                    "guesserId": player_id,
+                    "guesserName": guesser["name"],
+                    "targetId": opponent_id,
+                    "targetName": game["players"][opponent_id]["name"],
+                    "characterIndex": guess_index,
+                    "correct": correct,
+                    "at": utc_now(),
+                },
+            )
+            if correct:
+                game["status"] = "finished"
+                game["winnerId"] = player_id
+                game["winReason"] = "correct_guess"
+                game["updatedAt"] = utc_now()
+            else:
+                game["updatedAt"] = utc_now()
+
+        whoami_publish(code, "guess")
+        with WHOAMI_GAMES_LOCK:
+            return jsonify({"game": whoami_player_view(WHOAMI_GAMES[code], player_id)})
+
+    @app.get("/api/whoami/games/<code>/events")
+    def whoami_game_events(code: str):
+        code = code.upper()
+        player_id = str(request.args.get("playerId") or "").strip() or None
+        event_queue: queue.Queue[dict[str, Any]] = queue.Queue()
+        subscriber = {"queue": event_queue, "playerId": player_id}
+        with WHOAMI_GAMES_LOCK:
+            game = WHOAMI_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            WHOAMI_GAME_SUBSCRIBERS.setdefault(code, []).append(subscriber)
+            initial_game = whoami_player_view(game, player_id)
+
+        def stream():
+            yield sse_message("game", initial_game)
+            try:
+                while True:
+                    try:
+                        message = event_queue.get(timeout=25)
+                        yield sse_message(message["event"], message["data"])
+                    except queue.Empty:
+                        yield sse_message("ping", {"ok": True})
+            finally:
+                with WHOAMI_GAMES_LOCK:
+                    subscribers = WHOAMI_GAME_SUBSCRIBERS.get(code, [])
                     if subscriber in subscribers:
                         subscribers.remove(subscriber)
 

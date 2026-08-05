@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Who Am I? — Guess Who clone</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/shared/game-entry.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Two-player character guessing</p>
+          <h1>Who Am I?</h1>
+        </div>
+        <p class="connection" id="connectionStatus">Ready</p>
+      </header>
+
+      <section class="setup entry-view" id="setupView">
+        <section class="entry-choice" id="choicePanel">
+          <h2>Choose a Mode</h2>
+          <div class="entry-actions">
+            <button class="entry-choice-button" id="showJoin" type="button">Join Game</button>
+            <button class="entry-choice-button" id="showCreate" type="button">Create Game</button>
+          </div>
+        </section>
+
+        <form class="entry-panel" id="createForm" hidden>
+          <div class="section-heading">
+            <h2>Create Game</h2>
+          </div>
+          <p class="hint">You will get a share code to send to a friend. The board has 24 randomly-generated characters, and you each get a secret one to defend.</p>
+          <button class="primary-button" type="submit">Create Share Code</button>
+        </form>
+
+        <form class="entry-panel" id="joinForm" hidden>
+          <div class="section-heading">
+            <h2>Join Game</h2>
+          </div>
+          <label class="field">
+            <span>Share link or code</span>
+            <input id="joinCode" type="text" autocomplete="off" placeholder="Paste a link or short code">
+          </label>
+          <button class="primary-button" type="submit">Open Game</button>
+        </form>
+      </section>
+
+      <section class="game" id="gameView" hidden>
+        <aside class="panel lobby-panel" id="lobbyPanel">
+          <div class="section-heading">
+            <h2>Table</h2>
+            <button class="small-button" id="newGameButton" type="button">New</button>
+          </div>
+          <div class="share-row" id="shareTools" hidden>
+            <strong id="shareCode">--------</strong>
+            <button class="small-button" id="copyShare" type="button">Copy</button>
+          </div>
+          <dl class="facts">
+            <dt>Mode</dt>
+            <dd>Remote</dd>
+            <dt>Status</dt>
+            <dd id="factStatus">Lobby</dd>
+            <dt>Pool</dt>
+            <dd id="factPool">24</dd>
+          </dl>
+          <form class="name-form" id="nameForm">
+            <label class="field">
+              <span>Your name</span>
+              <input id="playerName" type="text" maxlength="24" autocomplete="nickname" placeholder="Your name">
+            </label>
+            <button class="secondary-button" type="submit">Join Table</button>
+          </form>
+          <div class="lobby-actions" id="lobbyActions" hidden>
+            <button class="primary-button" id="readyButton" type="button">Ready</button>
+            <button class="secondary-button" id="startButton" type="button">Start</button>
+          </div>
+          <p class="lobby-message" id="lobbyMessage">Waiting for an opponent…</p>
+        </aside>
+
+        <section class="play-area" id="playArea" hidden>
+          <div class="play-heading">
+            <div>
+              <p class="eyebrow">Opponent</p>
+              <h2 id="opponentName">—</h2>
+            </div>
+            <div class="status-block">
+              <p class="eyebrow">You</p>
+              <h2 id="playerNameDisplay">—</h2>
+            </div>
+            <div class="play-actions">
+              <button class="secondary-button" id="guessModeButton" type="button">Make a final guess</button>
+            </div>
+            <p class="game-message" id="gameMessage">Ask your first question.</p>
+          </div>
+
+          <div class="board" id="board" aria-label="Character board"></div>
+        </section>
+
+        <aside class="panel side-panel" id="sidePanel" hidden>
+          <section class="your-character" id="yourCharacter">
+            <p class="eyebrow">Your secret character</p>
+            <div class="your-character-portrait" id="yourCharacterPortrait" aria-hidden="true"></div>
+            <p class="hint small">Tap a card below to flip it up or down as you eliminate candidates.</p>
+          </section>
+
+          <section class="questions">
+            <div class="section-heading compact">
+              <h2>Ask a question</h2>
+            </div>
+            <div class="question-grid" id="questionGrid"></div>
+          </section>
+
+          <section class="chat">
+            <div class="section-heading compact">
+              <h2>Chat</h2>
+              <span id="chatCount" class="count">0</span>
+            </div>
+            <div class="chat-log" id="chatLog" aria-live="polite"></div>
+            <form class="chat-form" id="chatForm">
+              <input id="chatInput" type="text" maxlength="240" placeholder="Say something nice" autocomplete="off">
+              <button class="small-button" type="submit">Send</button>
+            </form>
+          </section>
+        </aside>
+      </section>
+
+      <div class="modal-backdrop" id="modalBackdrop" hidden>
+        <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+          <h2 id="modalTitle">Your character</h2>
+          <div class="modal-portrait" id="modalPortrait" aria-hidden="true"></div>
+          <p id="modalBody">Memorize this character. The other player will be trying to guess which one is yours.</p>
+          <button class="primary-button" id="modalDismiss" type="button">Got it</button>
+        </div>
+      </div>
+
+      <div class="modal-backdrop" id="guessBackdrop" hidden>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="guessTitle">
+          <h2 id="guessTitle">Make your final guess</h2>
+          <p>Pick the character you think your opponent has. If you are right, you win.</p>
+          <div class="guess-portrait" id="guessPortrait" aria-hidden="true"></div>
+          <p class="hint small" id="guessCaption">Selected character</p>
+          <div class="modal-actions">
+            <button class="secondary-button" id="guessCancel" type="button">Cancel</button>
+            <button class="primary-button" id="guessConfirm" type="button" disabled>Confirm guess</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-backdrop" id="resultBackdrop" hidden>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+          <h2 id="resultTitle">Round over</h2>
+          <p id="resultBody">…</p>
+          <div class="modal-actions">
+            <button class="secondary-button" id="resultClose" type="button">Close</button>
+            <button class="primary-button" id="resultAgain" type="button">New Game</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="/shared/game-entry.js" defer></script>
+    <script src="characters.js" defer></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>
