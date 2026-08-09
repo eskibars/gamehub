@@ -31,6 +31,7 @@ BACKGAMMON_STATIC_DIR = BASE_DIR / "backgammon" / "static"
 FIND_EM_STATIC_DIR = BASE_DIR / "find_em" / "static"
 TOOLS_STATIC_DIR = BASE_DIR / "tools" / "static"
 WHOAMI_STATIC_DIR = BASE_DIR / "whoami" / "static"
+HANGMAN_STATIC_DIR = BASE_DIR / "hangman" / "static"
 SHARED_STATIC_DIR = BASE_DIR / "shared"
 MAX_USER_BYTES = int(os.environ.get("BINGO_MAX_USER_BYTES", 5 * 1024 * 1024))
 COLOR_GAMES: dict[str, dict[str, Any]] = {}
@@ -51,6 +52,15 @@ WHOAMI_MAX_PLAYERS = 2
 WHOAMI_POOL_SIZE = 24
 WHOAMI_MAX_CHAT = 60
 WHOAMI_MAX_EVENTS = 30
+HANGMAN_GAMES: dict[str, dict[str, Any]] = {}
+HANGMAN_GAME_SUBSCRIBERS: dict[str, list[queue.Queue[dict[str, Any]]]] = {}
+HANGMAN_GAMES_LOCK = threading.Lock()
+HANGMAN_MIN_PLAYERS = 2
+HANGMAN_MAX_PLAYERS = 2
+HANGMAN_MAX_WRONG = 6
+HANGMAN_MAX_HISTORY = 8
+HANGMAN_MAX_CATEGORY = 48
+HANGMAN_MAX_WORD = 40
 BOGGLE_LETTER_DISTRIBUTION = (
     "E" * 12
     + "A" * 9
@@ -792,6 +802,18 @@ def create_app() -> Flask:
     @app.get("/whoami/<path:filename>")
     def whoami_static(filename: str):
         return send_from_directory(WHOAMI_STATIC_DIR, filename)
+
+    @app.get("/hangman")
+    def hangman_redirect():
+        return redirect("/hangman/")
+
+    @app.get("/hangman/")
+    def hangman_index():
+        return send_from_directory(HANGMAN_STATIC_DIR, "index.html")
+
+    @app.get("/hangman/<path:filename>")
+    def hangman_static(filename: str):
+        return send_from_directory(HANGMAN_STATIC_DIR, filename)
 
     @app.get("/share/<share_id>")
     def shared_card(share_id: str):
@@ -1799,6 +1821,460 @@ def create_app() -> Flask:
             finally:
                 with WHOAMI_GAMES_LOCK:
                     subscribers = WHOAMI_GAME_SUBSCRIBERS.get(code, [])
+                    if subscriber in subscribers:
+                        subscribers.remove(subscriber)
+
+        return Response(stream_with_context(stream()), mimetype="text/event-stream")
+
+    def hangman_normalize_word(text: str) -> str:
+        # Hangman strips anything that isn't a letter or a space/hyphen/apostrophe,
+        # and then squashes runs of whitespace. We keep spaces visible so the
+        # guesser sees the gap layout, but we don't require the picker to type
+        # exact spacing.
+        cleaned = re.sub(r"[^A-Za-z\s\-']", "", text)
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
+        return cleaned.upper()
+
+    def hangman_letters_in(word: str) -> set[str]:
+        return {char for char in word if char.isalpha()}
+
+    def hangman_build_pattern(word: str, guessed: set[str]) -> str:
+        return "".join(
+            char if (not char.isalpha()) or char in guessed else "_"
+            for char in word
+        )
+
+    def hangman_is_won(word: str, guessed: set[str]) -> bool:
+        return hangman_letters_in(word).issubset(guessed)
+
+    def hangman_rotate_picker(game: dict[str, Any]) -> None:
+        player_ids = list(game["players"].keys())
+        if len(player_ids) < 2:
+            return
+        current = game.get("pickerId")
+        try:
+            index = player_ids.index(current) if current in player_ids else -1
+        except ValueError:
+            index = -1
+        game["pickerId"] = player_ids[(index + 1) % len(player_ids)]
+
+    def hangman_create_round(game: dict[str, Any], rotate: bool = True) -> dict[str, Any]:
+        # Pick the next picker (rotate from the previous one) and return the
+        # fresh, "pending" round record. The picker still needs to submit
+        # the word before the guesser can play. Pass rotate=False to keep
+        # the current picker (used when the table first opens so the host
+        # picks the very first word).
+        if rotate:
+            hangman_rotate_picker(game)
+        game["roundNumber"] = game.get("roundNumber", 0) + 1
+        return {
+            "number": game["roundNumber"],
+            "pickerId": game["pickerId"],
+            "status": "pending",
+            "word": None,
+            "guessed": [],
+            "wrongCount": 0,
+            "result": None,
+            "setAt": None,
+            "finishedAt": None,
+        }
+
+    def hangman_player_view(game: dict[str, Any], player_id: str | None) -> dict[str, Any]:
+        players = [
+            {
+                "id": pid,
+                "name": info["name"],
+                "ready": info["ready"],
+                "isHost": info.get("isHost", False),
+                "connectedAt": info.get("connectedAt"),
+            }
+            for pid, info in game["players"].items()
+        ]
+        players.sort(key=lambda item: item.get("connectedAt") or "")
+
+        round_data = game.get("currentRound")
+        round_public: dict[str, Any] | None = None
+        if round_data is not None:
+            # The word is private to the picker during the "active" phase.
+            # Once the round is "finished" we reveal it to everyone.
+            show_word = round_data["status"] == "finished"
+            is_picker = player_id is not None and player_id == round_data["pickerId"]
+            word = round_data["word"] if (show_word or is_picker) else None
+            guessed = {entry["letter"] for entry in round_data.get("guessed", [])}
+            pattern = (
+                hangman_build_pattern(round_data["word"], guessed)
+                if (show_word or is_picker) and round_data.get("word")
+                else None
+            )
+            round_public = {
+                "number": round_data["number"],
+                "pickerId": round_data["pickerId"],
+                "status": round_data["status"],
+                "word": word,
+                "pattern": pattern,
+                "guessed": list(round_data.get("guessed", [])),
+                "wrongCount": round_data.get("wrongCount", 0),
+                "maxWrong": HANGMAN_MAX_WRONG,
+                "result": round_data.get("result"),
+                "setAt": round_data.get("setAt"),
+                "finishedAt": round_data.get("finishedAt"),
+            }
+
+        view = {
+            "code": game["code"],
+            "category": game.get("category"),
+            "maxWrong": HANGMAN_MAX_WRONG,
+            "status": game["status"],
+            "players": players,
+            "pickerId": game.get("pickerId"),
+            "roundNumber": game.get("roundNumber", 0),
+            "currentRound": round_public,
+            "history": game.get("history", []),
+            "score": game.get("score", {}),
+            "roundsPlayed": game.get("roundsPlayed", 0),
+            "createdAt": game["createdAt"],
+            "updatedAt": game["updatedAt"],
+        }
+        if player_id and player_id in game["players"]:
+            info = game["players"][player_id]
+            view["playerId"] = player_id
+            view["yourName"] = info["name"]
+            view["youAreHost"] = info.get("isHost", False)
+            view["youArePicker"] = (
+                round_data is not None and player_id == round_data["pickerId"]
+            )
+            view["youCanPickNext"] = (
+                game["status"] == "active"
+                and (round_data is None or round_data["status"] == "finished")
+                and player_id == game.get("pickerId")
+            )
+            opponents = [
+                {"id": other_id, "name": other["name"]}
+                for other_id, other in game["players"].items()
+                if other_id != player_id
+            ]
+            view["opponents"] = opponents
+        return view
+
+    def hangman_publish(code: str, event_name: str = "game") -> None:
+        with HANGMAN_GAMES_LOCK:
+            game = HANGMAN_GAMES.get(code)
+            subscribers = list(HANGMAN_GAME_SUBSCRIBERS.get(code, []))
+        if not game:
+            return
+        for subscriber in subscribers:
+            player_id = subscriber.get("playerId")
+            subscriber["queue"].put(
+                {"event": event_name, "data": hangman_player_view(game, player_id)}
+            )
+
+    @app.post("/api/hangman/games")
+    def create_hangman_game():
+        body = request.get_json(silent=True) or {}
+        category = str(body.get("category") or "").strip()
+        if len(category) > HANGMAN_MAX_CATEGORY:
+            return jsonify({"error": f"Category must be {HANGMAN_MAX_CATEGORY} characters or fewer."}), 400
+
+        now = utc_now()
+        code = uuid.uuid4().hex[:8].upper()
+        game: dict[str, Any] = {
+            "code": code,
+            "category": category or None,
+            "hostId": None,
+            "players": {},
+            "status": "lobby",
+            "pickerId": None,
+            "roundNumber": 0,
+            "currentRound": None,
+            "history": [],
+            "score": {},
+            "roundsPlayed": 0,
+            "createdAt": now,
+            "updatedAt": now,
+        }
+        with HANGMAN_GAMES_LOCK:
+            HANGMAN_GAMES[code] = game
+            HANGMAN_GAME_SUBSCRIBERS.setdefault(code, [])
+        return jsonify({"game": hangman_player_view(game, None), "shareUrl": f"/hangman/?game={code}"}), 201
+
+    @app.get("/api/hangman/games/<code>")
+    def get_hangman_game(code: str):
+        code = code.upper()
+        player_id = str(request.args.get("playerId") or "").strip() or None
+        with HANGMAN_GAMES_LOCK:
+            game = HANGMAN_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            return jsonify({"game": hangman_player_view(game, player_id)})
+
+    @app.post("/api/hangman/games/<code>/players")
+    def join_hangman_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        name = str(body.get("name") or "").strip()
+        provided_id = str(body.get("playerId") or "").strip()
+        if not name:
+            return jsonify({"error": "Name is required."}), 400
+        if len(name) > 24:
+            return jsonify({"error": "Name must be 24 characters or fewer."}), 400
+
+        now = utc_now()
+        with HANGMAN_GAMES_LOCK:
+            game = HANGMAN_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "lobby":
+                return jsonify({"error": "This game has already started."}), 409
+            if provided_id and provided_id in game["players"]:
+                player = game["players"][provided_id]
+                player["name"] = name
+                player_id = provided_id
+            else:
+                if len(game["players"]) >= HANGMAN_MAX_PLAYERS:
+                    return jsonify({"error": "This table is full."}), 409
+                player_id = secrets.token_urlsafe(8)
+                is_host = not game["players"]
+                if is_host:
+                    game["hostId"] = player_id
+                game["players"][player_id] = {
+                    "id": player_id,
+                    "name": name,
+                    "ready": False,
+                    "isHost": is_host,
+                    "connectedAt": now,
+                }
+            game["updatedAt"] = now
+
+        hangman_publish(code, "joined")
+        with HANGMAN_GAMES_LOCK:
+            return jsonify({"game": hangman_player_view(HANGMAN_GAMES[code], player_id), "playerId": player_id})
+
+    @app.post("/api/hangman/games/<code>/players/<player_id>/ready")
+    def hangman_set_ready(code: str, player_id: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        ready = bool(body.get("ready", True))
+        with HANGMAN_GAMES_LOCK:
+            game = HANGMAN_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "lobby":
+                return jsonify({"error": "Ready can only change before the table starts."}), 409
+            player = game["players"].get(player_id)
+            if not player:
+                return jsonify({"error": "Player was not found."}), 404
+            player["ready"] = ready
+            game["updatedAt"] = utc_now()
+
+        hangman_publish(code)
+        with HANGMAN_GAMES_LOCK:
+            return jsonify({"game": hangman_player_view(HANGMAN_GAMES[code], player_id)})
+
+    @app.post("/api/hangman/games/<code>/start")
+    def hangman_start_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with HANGMAN_GAMES_LOCK:
+            game = HANGMAN_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "lobby":
+                return jsonify({"error": "This table has already started."}), 409
+            if player_id and player_id not in game["players"]:
+                return jsonify({"error": "Player was not found."}), 404
+            if len(game["players"]) < HANGMAN_MIN_PLAYERS:
+                return jsonify({"error": "Wait for an opponent to join."}), 409
+            if any(not info["ready"] for info in game["players"].values()):
+                return jsonify({"error": "Both players must be ready first."}), 409
+
+            # Host picks first. Score starts at 0 for every player.
+            host_id = game.get("hostId") or next(iter(game["players"]))
+            game["status"] = "active"
+            game["pickerId"] = host_id
+            game["score"] = {pid: 0 for pid in game["players"]}
+            game["currentRound"] = hangman_create_round(game, rotate=False)
+            game["updatedAt"] = utc_now()
+
+        hangman_publish(code, "started")
+        with HANGMAN_GAMES_LOCK:
+            return jsonify({"game": hangman_player_view(HANGMAN_GAMES[code], player_id or None)})
+
+    @app.post("/api/hangman/games/<code>/rounds")
+    def hangman_set_word(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        raw_word = str(body.get("word") or "")
+        word = hangman_normalize_word(raw_word)
+        if not player_id:
+            return jsonify({"error": "Player is required."}), 400
+        if not word:
+            return jsonify({"error": "Enter a word with at least one letter."}), 400
+        if len(word) > HANGMAN_MAX_WORD:
+            return jsonify({"error": f"Word must be {HANGMAN_MAX_WORD} characters or fewer."}), 400
+        if not any(char.isalpha() for char in word):
+            return jsonify({"error": "Word must contain at least one letter."}), 400
+
+        with HANGMAN_GAMES_LOCK:
+            game = HANGMAN_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "The table is not in play."}), 409
+            round_data = game.get("currentRound")
+            if not round_data:
+                return jsonify({"error": "There is no active round."}), 409
+            if round_data["status"] != "pending":
+                return jsonify({"error": "A word has already been set for this round."}), 409
+            if player_id != round_data["pickerId"]:
+                return jsonify({"error": "Only the picker can set the word."}), 403
+
+            round_data["word"] = word
+            round_data["status"] = "active"
+            round_data["setAt"] = utc_now()
+            game["updatedAt"] = utc_now()
+
+        hangman_publish(code, "round")
+        with HANGMAN_GAMES_LOCK:
+            return jsonify({"game": hangman_player_view(HANGMAN_GAMES[code], player_id)})
+
+    @app.post("/api/hangman/games/<code>/guess")
+    def hangman_guess(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        letter = str(body.get("letter") or "").strip().upper()
+        if len(letter) != 1 or not letter.isalpha():
+            return jsonify({"error": "Pick a single letter A–Z."}), 400
+
+        with HANGMAN_GAMES_LOCK:
+            game = HANGMAN_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "The table is not in play."}), 409
+            round_data = game.get("currentRound")
+            if not round_data or round_data["status"] != "active":
+                return jsonify({"error": "The guesser can only play during an active round."}), 409
+            if player_id == round_data["pickerId"]:
+                return jsonify({"error": "The picker waits while the guesser plays."}), 403
+            if player_id not in game["players"]:
+                return jsonify({"error": "Player was not found."}), 404
+
+            already = {entry["letter"] for entry in round_data["guessed"]}
+            if letter in already:
+                return jsonify({"error": "That letter has already been guessed."}), 409
+
+            word = round_data["word"]
+            correct = letter in word
+            round_data["guessed"].append(
+                {
+                    "letter": letter,
+                    "correct": correct,
+                    "byId": player_id,
+                    "at": utc_now(),
+                }
+            )
+            if not correct:
+                round_data["wrongCount"] += 1
+
+            if hangman_is_won(word, already | {letter}):
+                round_data["status"] = "finished"
+                round_data["result"] = "won"
+                round_data["finishedAt"] = utc_now()
+                game["score"][player_id] = game["score"].get(player_id, 0) + 1
+                game["roundsPlayed"] = game.get("roundsPlayed", 0) + 1
+                game["history"].insert(
+                    0,
+                    {
+                        "number": round_data["number"],
+                        "word": word,
+                        "result": "won",
+                        "winnerId": player_id,
+                        "wrongCount": round_data["wrongCount"],
+                    },
+                )
+            elif round_data["wrongCount"] >= HANGMAN_MAX_WRONG:
+                round_data["status"] = "finished"
+                round_data["result"] = "lost"
+                round_data["finishedAt"] = utc_now()
+                game["roundsPlayed"] = game.get("roundsPlayed", 0) + 1
+                game["history"].insert(
+                    0,
+                    {
+                        "number": round_data["number"],
+                        "word": word,
+                        "result": "lost",
+                        "winnerId": round_data["pickerId"],
+                        "wrongCount": round_data["wrongCount"],
+                    },
+                )
+                # When the guesser loses, the picker "wins" the round for scoring.
+                picker_id = round_data["pickerId"]
+                if picker_id in game["score"]:
+                    game["score"][picker_id] = game["score"].get(picker_id, 0) + 1
+            if len(game["history"]) > HANGMAN_MAX_HISTORY:
+                game["history"] = game["history"][:HANGMAN_MAX_HISTORY]
+            game["updatedAt"] = utc_now()
+
+        event_name = "guess" if round_data["status"] == "active" else "round"
+        hangman_publish(code, event_name)
+        with HANGMAN_GAMES_LOCK:
+            return jsonify({"game": hangman_player_view(HANGMAN_GAMES[code], player_id)})
+
+    @app.post("/api/hangman/games/<code>/next")
+    def hangman_next_round(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with HANGMAN_GAMES_LOCK:
+            game = HANGMAN_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "The table is not in play."}), 409
+            if player_id not in game["players"]:
+                return jsonify({"error": "Player was not found."}), 404
+            round_data = game.get("currentRound")
+            if round_data and round_data["status"] != "finished":
+                return jsonify({"error": "The current round is still in play."}), 409
+            # The picker advances the round; the next round will then rotate
+            # to the other player inside hangman_create_round.
+            if player_id != game.get("pickerId"):
+                return jsonify({"error": "Wait for the picker to advance the round."}), 403
+            game["currentRound"] = hangman_create_round(game)
+            game["updatedAt"] = utc_now()
+
+        hangman_publish(code, "round")
+        with HANGMAN_GAMES_LOCK:
+            return jsonify({"game": hangman_player_view(HANGMAN_GAMES[code], player_id)})
+
+    @app.get("/api/hangman/games/<code>/events")
+    def hangman_game_events(code: str):
+        code = code.upper()
+        player_id = str(request.args.get("playerId") or "").strip() or None
+        event_queue: queue.Queue[dict[str, Any]] = queue.Queue()
+        subscriber = {"queue": event_queue, "playerId": player_id}
+        with HANGMAN_GAMES_LOCK:
+            game = HANGMAN_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            HANGMAN_GAME_SUBSCRIBERS.setdefault(code, []).append(subscriber)
+            initial_game = hangman_player_view(game, player_id)
+
+        def stream():
+            yield sse_message("game", initial_game)
+            try:
+                while True:
+                    try:
+                        message = event_queue.get(timeout=25)
+                        yield sse_message(message["event"], message["data"])
+                    except queue.Empty:
+                        yield sse_message("ping", {"ok": True})
+            finally:
+                with HANGMAN_GAMES_LOCK:
+                    subscribers = HANGMAN_GAME_SUBSCRIBERS.get(code, [])
                     if subscriber in subscribers:
                         subscribers.remove(subscriber)
 

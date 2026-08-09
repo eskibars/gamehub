@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hangman</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/shared/game-entry.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Letter-by-letter word duel</p>
+          <h1>Hangman</h1>
+        </div>
+        <p class="connection" id="connectionStatus">Ready</p>
+      </header>
+
+      <section class="setup entry-view" id="setupView">
+        <section class="entry-choice" id="choicePanel">
+          <h2>Choose a Mode</h2>
+          <div class="entry-actions">
+            <button class="entry-choice-button" id="showLocal" type="button">Pass &amp; Play</button>
+            <button class="entry-choice-button" id="showCreate" type="button">Create Remote</button>
+            <button class="entry-choice-button" id="showJoin" type="button">Join Remote</button>
+          </div>
+          <p class="hint">Pass &amp; Play is local on one device. Remote needs a share code and a friend online.</p>
+        </section>
+
+        <form class="entry-panel" id="createForm" hidden>
+          <div class="section-heading">
+            <h2>Create Remote Table</h2>
+          </div>
+          <p class="hint">You'll get a share code to send to a friend. The word picker alternates between you, and an optional category will be shown for every round at this table.</p>
+          <label class="field">
+            <span>Category (optional)</span>
+            <input id="categoryInput" type="text" maxlength="48" autocomplete="off" placeholder="Movies, animals, places…">
+          </label>
+          <button class="primary-button" type="submit">Create Share Code</button>
+        </form>
+
+        <form class="entry-panel" id="joinForm" hidden>
+          <div class="section-heading">
+            <h2>Join Remote Table</h2>
+          </div>
+          <label class="field">
+            <span>Share link or code</span>
+            <input id="joinCode" type="text" autocomplete="off" placeholder="Paste a link or short code">
+          </label>
+          <button class="primary-button" type="submit">Open Game</button>
+        </form>
+      </section>
+
+      <section class="play-area" id="playArea" hidden>
+        <div class="play-heading">
+          <div class="play-status">
+            <p class="eyebrow" id="opponentLabel">Opponent</p>
+            <h2 id="opponentName">—</h2>
+          </div>
+          <p class="game-message" id="gameMessage">Pick a word to begin.</p>
+          <div class="play-actions">
+            <span class="round-pill" id="roundPill">Round 1</span>
+            <span class="category-pill" id="categoryPill" hidden>Movies</span>
+          </div>
+        </div>
+
+        <section class="board" aria-label="Hangman board">
+          <div class="gallows-wrap">
+            <svg class="gallows" viewBox="0 0 200 220" aria-hidden="true" id="gallowsSvg">
+              <!-- ground -->
+              <line x1="10" y1="210" x2="170" y2="210"></line>
+              <!-- vertical post -->
+              <line x1="40" y1="210" x2="40" y2="20"></line>
+              <!-- top crossbar -->
+              <line x1="40" y1="20" x2="130" y2="20"></line>
+              <!-- rope -->
+              <line x1="130" y1="20" x2="130" y2="50"></line>
+              <!-- body parts (hidden until wrong guesses accumulate) -->
+              <circle class="hangman-part" data-part="head" cx="130" cy="65" r="15" style="display:none"></circle>
+              <line class="hangman-part" data-part="body" x1="130" y1="80" x2="130" y2="135" style="display:none"></line>
+              <line class="hangman-part" data-part="arm-left" x1="130" y1="95" x2="105" y2="115" style="display:none"></line>
+              <line class="hangman-part" data-part="arm-right" x1="130" y1="95" x2="155" y2="115" style="display:none"></line>
+              <line class="hangman-part" data-part="leg-left" x1="130" y1="135" x2="105" y2="170" style="display:none"></line>
+              <line class="hangman-part" data-part="leg-right" x1="130" y1="135" x2="155" y2="170" style="display:none"></line>
+            </svg>
+          </div>
+          <div class="word-wrap">
+            <p class="word-pattern" id="wordPattern" aria-live="polite">_ _ _ _ _</p>
+            <p class="picker-banner" id="pickerBanner" hidden>You are picking the word. Only the other player will see this until the round ends.</p>
+            <div class="picker-form" id="pickerForm" hidden>
+              <label class="field">
+                <span>Your word or phrase</span>
+                <input id="wordInput" type="text" maxlength="40" autocomplete="off" placeholder="Type a word, leave a space for a phrase">
+              </label>
+              <button class="primary-button" id="setWordButton" type="button">Set Word</button>
+              <p class="hint small" id="pickerHint">Spaces and hyphens stay visible. Other characters are removed.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="alphabet-wrap" aria-label="Letter guesses">
+          <div class="alphabet" id="alphabet"></div>
+        </section>
+
+        <section class="bottom-row">
+          <aside class="score-panel" aria-label="Score">
+            <p class="eyebrow">Score</p>
+            <dl class="score-list" id="scoreList"></dl>
+          </aside>
+
+          <aside class="history-panel" aria-label="Round history">
+            <p class="eyebrow">History</p>
+            <ul class="history-list" id="historyList">
+              <li class="history-empty">No rounds yet.</li>
+            </ul>
+          </aside>
+
+          <aside class="next-panel" aria-label="Next round">
+            <p class="eyebrow" id="nextPanelLabel">Next round</p>
+            <p class="hint" id="nextHint">Win or lose to wrap up this round.</p>
+            <button class="primary-button" id="nextRoundButton" type="button" disabled>Next Round</button>
+            <button class="secondary-button" id="newGameButton" type="button">Back to Setup</button>
+          </aside>
+        </section>
+      </section>
+
+      <section class="lobby-panel" id="lobbyPanel" hidden>
+        <div class="section-heading">
+          <h2>Table</h2>
+          <button class="small-button" id="newGameButtonLobby" type="button">New</button>
+        </div>
+        <div class="share-row" id="shareTools" hidden>
+          <strong id="shareCode">--------</strong>
+          <button class="small-button" id="copyShare" type="button">Copy</button>
+        </div>
+        <dl class="facts">
+          <dt>Mode</dt>
+          <dd>Remote</dd>
+          <dt>Status</dt>
+          <dd id="factStatus">Lobby</dd>
+          <dt>Category</dt>
+          <dd id="factCategory">None</dd>
+        </dl>
+        <form class="name-form" id="nameForm">
+          <label class="field">
+            <span>Your name</span>
+            <input id="playerName" type="text" maxlength="24" autocomplete="nickname" placeholder="Your name">
+          </label>
+          <button class="secondary-button" type="submit">Join Table</button>
+        </form>
+        <div class="lobby-actions" id="lobbyActions" hidden>
+          <button class="primary-button" id="readyButton" type="button">Ready</button>
+          <button class="secondary-button" id="startButton" type="button">Start</button>
+        </div>
+        <p class="lobby-message" id="lobbyMessage">Waiting for an opponent…</p>
+      </section>
+
+      <div class="result-banner" id="resultBanner" hidden>
+        <div class="result-inner">
+          <p class="eyebrow" id="resultEyebrow">Round 1</p>
+          <h2 id="resultTitle">You won!</h2>
+          <p id="resultBody">The word was APPLE.</p>
+        </div>
+      </div>
+    </main>
+
+    <script src="/shared/game-entry.js" defer></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

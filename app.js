@@ -90,6 +90,21 @@ const icons = {
       <path d="M26 35q6 4 12 0"></path>
       <path d="M14 50c4-6 12-8 18-8s14 2 18 8"></path>
     </svg>`,
+  hangman: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <line x1="6" y1="56" x2="44" y2="56"></line>
+      <line x1="14" y1="56" x2="14" y2="8"></line>
+      <line x1="14" y1="8" x2="38" y2="8"></line>
+      <line x1="38" y1="8" x2="38" y2="18"></line>
+      <circle cx="38" cy="24" r="5"></circle>
+      <line x1="38" y1="29" x2="38" y2="42"></line>
+      <line x1="38" y1="34" x2="30" y2="40"></line>
+      <line x1="38" y1="34" x2="46" y2="40"></line>
+      <line x1="38" y1="42" x2="32" y2="52"></line>
+      <line x1="38" y1="42" x2="44" y2="52"></line>
+      <text x="48" y="20" font-family="ui-monospace, monospace" font-weight="900" font-size="9">A</text>
+      <text x="54" y="20" font-family="ui-monospace, monospace" font-weight="900" font-size="9">_</text>
+    </svg>`,
 };
 
 const games = [
@@ -228,6 +243,23 @@ const games = [
       Players: "2",
     },
     icon: "whoami",
+  },
+  {
+    id: "hangman",
+    title: "Hangman",
+    type: "Word duel",
+    status: "ready",
+    category: "board",
+    href: "/hangman/",
+    accent: "#a82a2a",
+    tilt: "-1.3deg",
+    description: "Pass-and-play letter guessing. Type a word, hand the device, and watch the gallows fill in — or play remotely with a share code and an optional category that sticks for the whole table.",
+    features: {
+      Mode: "Local or remote",
+      Storage: "Local browser or in-memory share code",
+      Players: "1-2",
+    },
+    icon: "hangman",
   },
   {
     id: "tools",

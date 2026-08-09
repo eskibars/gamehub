@@ -12,8 +12,8 @@ python3 app.py
 Then open `http://127.0.0.1:25001`.
 
 The ready tools are Bingo Card Builder, Color Guesser, Yahtzee Scorepad,
-Boggle Table, Word Find Creator, Backgammon, Find 'em, Table Tools, and
-Who Am I? — a Guess Who-style character guessing game.
+Boggle Table, Word Find Creator, Backgammon, Find 'em, Table Tools,
+Who Am I? — a Guess Who-style character guessing game, and Hangman.
 
 ## Local-first storage
 
@@ -44,6 +44,15 @@ flask-side game that only stores the random seed, the player's secret
 character index, and a small chat log. Both clients regenerate the same
 24-character pool (a mix of people, cats, and dogs) from the seed, so the
 server never ships the portraits themselves.
+
+Hangman runs locally on a single device for pass-and-play, or on two
+devices with a share code. The picker types a word, the guesser reveals
+letters one at a time, and the picker rotates after every round. An
+optional category entered at the table shows for the rest of that
+session. The server only keeps the share code, player names, current
+round state, and a short history — it never persists the secret word
+between rounds, and the word is hidden from the guesser until the round
+ends.
 
 ## Legacy Bingo command
 
