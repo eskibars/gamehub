@@ -115,6 +115,70 @@
             <ol id="rollHistory"></ol>
           </section>
         </article>
+
+        <article class="tool-panel cards-panel">
+          <header class="panel-header">
+            <div>
+              <p class="eyebrow">Cards</p>
+              <h2>Deck</h2>
+            </div>
+            <button class="icon-button" id="clearCardHistory" type="button" aria-label="Clear draw history" title="Clear draw history">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 6h18"></path>
+                <path d="M8 6V4h8v2"></path>
+                <path d="m19 6-.8 14H5.8L5 6"></path>
+                <path d="M10 11v5"></path>
+                <path d="M14 11v5"></path>
+              </svg>
+            </button>
+          </header>
+
+          <div class="deck-status" aria-live="polite">
+            <span>In deck</span>
+            <strong id="deckRemaining">52</strong>
+            <em id="deckNote">Standard 52-card deck</em>
+          </div>
+
+          <form class="settings-grid cards-settings" id="cardsForm">
+            <label>
+              <span>How many</span>
+              <input id="drawCount" type="number" inputmode="numeric" min="1" max="10" value="3">
+            </label>
+            <button class="primary-button" type="submit">Draw</button>
+            <button class="secondary-button" id="shuffleDeck" type="button">Shuffle</button>
+          </form>
+
+          <div class="preset-row">
+            <button class="preset-button joker-toggle" id="jokersToggle" type="button" aria-pressed="false">Jokers: off</button>
+          </div>
+
+          <div class="card-tray" id="cardTray" aria-label="Drawn cards"></div>
+
+          <section class="history-panel" aria-label="Draw history">
+            <h3>History</h3>
+            <ol id="cardHistory"></ol>
+          </section>
+        </article>
+
+        <article class="tool-panel coin-panel">
+          <header class="panel-header">
+            <div>
+              <p class="eyebrow">Coin</p>
+              <h2>Flip</h2>
+            </div>
+          </header>
+
+          <div class="coin-display" id="coinDisplay" aria-live="polite">
+            <div class="coin-result" id="coinResult">Ready to flip</div>
+            <div class="coin" id="coin" aria-hidden="true"><span id="coinFace">?</span></div>
+            <div class="coin-tally" id="coinTally">Heads 0 · Tails 0</div>
+          </div>
+
+          <div class="action-row">
+            <button class="primary-button" id="flipCoin" type="button">Flip coin</button>
+            <button class="secondary-button" id="resetCoin" type="button">Reset tally</button>
+          </div>
+        </article>
       </section>
     </main>
 

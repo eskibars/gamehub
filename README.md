@@ -59,9 +59,11 @@ Yahtzee Scorepad stores its current game in browser storage. It can run as a
 manual scorecard for players bringing their own dice, or as a dice roller with
 lockable dice and suggested category scores.
 
-Table Tools stores timer and dice preferences in browser storage. It includes
-digital and sand-style countdown timers with custom durations, plus a dice
-roller with configurable dice count, sides, modifier, and roll history.
+Table Tools stores timer, dice, and deck preferences in browser storage. It
+includes digital and sand-style countdown timers with custom durations, a dice
+roller with configurable dice count, sides, modifier, and roll history, a card
+draw that pulls from a shuffled 52-card deck (optional jokers) with a draw
+history, and a coin flip with a running tally.
 
 Find 'em loads kid-friendly prompt cards from `find_em/static/cards.json`,
 randomizes the selected deck in the browser, and keeps the game shell available

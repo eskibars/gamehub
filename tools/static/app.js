@@ -1,5 +1,32 @@
 const STORAGE_KEY = "local-first-game-hub-tools-v1";
 
+const SUITS = [
+  { symbol: "♠", red: false },
+  { symbol: "♥", red: true },
+  { symbol: "♦", red: true },
+  { symbol: "♣", red: false },
+];
+const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+
+function freshDeck(includeJokers) {
+  const cards = [];
+  for (const suit of SUITS) {
+    for (const rank of RANKS) cards.push({ rank, suit: suit.symbol, red: suit.red });
+  }
+  if (includeJokers) {
+    cards.push({ rank: "Joker", suit: "★", red: false }, { rank: "Joker", suit: "★", red: true });
+  }
+  for (let i = cards.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+  return cards;
+}
+
+function isCard(value) {
+  return Boolean(value) && typeof value === "object" && typeof value.rank === "string" && typeof value.suit === "string";
+}
+
 const defaultState = {
   timerView: "digital",
   timerSeconds: 300,
@@ -7,6 +34,10 @@ const defaultState = {
   diceSides: 6,
   diceModifier: 0,
   history: [],
+  drawCount: 3,
+  includeJokers: false,
+  cardHistory: [],
+  coinTally: { heads: 0, tails: 0 },
 };
 
 const state = {
@@ -17,6 +48,10 @@ const state = {
   startedAt: 0,
   endsAt: 0,
   dice: [],
+  deck: freshDeck(defaultState.includeJokers),
+  hand: [],
+  lastCoin: null,
+  coinFlipping: false,
 };
 
 const els = {
@@ -32,7 +67,7 @@ const els = {
   timerForm: document.querySelector("#timerForm"),
   startPauseTimer: document.querySelector("#startPauseTimer"),
   resetTimer: document.querySelector("#resetTimer"),
-  presetButtons: document.querySelectorAll(".preset-button"),
+  presetButtons: document.querySelectorAll(".preset-button:not(.joker-toggle)"),
   diceForm: document.querySelector("#diceForm"),
   diceCount: document.querySelector("#diceCount"),
   diceSides: document.querySelector("#diceSides"),
@@ -41,6 +76,22 @@ const els = {
   diceTray: document.querySelector("#diceTray"),
   rollHistory: document.querySelector("#rollHistory"),
   clearHistory: document.querySelector("#clearHistory"),
+  cardsForm: document.querySelector("#cardsForm"),
+  drawCount: document.querySelector("#drawCount"),
+  shuffleDeck: document.querySelector("#shuffleDeck"),
+  jokersToggle: document.querySelector("#jokersToggle"),
+  deckRemaining: document.querySelector("#deckRemaining"),
+  deckNote: document.querySelector("#deckNote"),
+  cardTray: document.querySelector("#cardTray"),
+  cardHistory: document.querySelector("#cardHistory"),
+  clearCardHistory: document.querySelector("#clearCardHistory"),
+  coinDisplay: document.querySelector("#coinDisplay"),
+  coin: document.querySelector("#coin"),
+  coinFace: document.querySelector("#coinFace"),
+  coinResult: document.querySelector("#coinResult"),
+  coinTally: document.querySelector("#coinTally"),
+  flipCoin: document.querySelector("#flipCoin"),
+  resetCoin: document.querySelector("#resetCoin"),
 };
 
 function clamp(value, min, max) {
@@ -66,6 +117,13 @@ function saveState() {
       diceSides: state.diceSides,
       diceModifier: state.diceModifier,
       history: state.history,
+      drawCount: state.drawCount,
+      includeJokers: state.includeJokers,
+      deck: state.deck,
+      hand: state.hand,
+      cardHistory: state.cardHistory,
+      coinTally: state.coinTally,
+      lastCoin: state.lastCoin,
     })
   );
 }
@@ -81,6 +139,20 @@ function loadState() {
     state.diceSides = clamp(saved.diceSides, 2, 1000);
     state.diceModifier = clamp(saved.diceModifier, -999, 999);
     state.history = Array.isArray(saved.history) ? saved.history.slice(0, 10) : [];
+    state.drawCount = clamp(saved.drawCount, 1, 10);
+    state.includeJokers = saved.includeJokers === true;
+    state.deck = Array.isArray(saved.deck) && saved.deck.every(isCard)
+      ? saved.deck
+      : freshDeck(state.includeJokers);
+    state.hand = Array.isArray(saved.hand) && saved.hand.every(isCard) ? saved.hand.slice(0, 10) : [];
+    state.cardHistory = Array.isArray(saved.cardHistory) ? saved.cardHistory.slice(0, 10) : [];
+    if (saved.coinTally && typeof saved.coinTally === "object") {
+      state.coinTally = {
+        heads: clamp(saved.coinTally.heads, 0, 1e9),
+        tails: clamp(saved.coinTally.tails, 0, 1e9),
+      };
+    }
+    state.lastCoin = saved.lastCoin === "Heads" || saved.lastCoin === "Tails" ? saved.lastCoin : null;
   } catch {
     localStorage.removeItem(STORAGE_KEY);
   }
@@ -196,6 +268,119 @@ function renderDice() {
   });
 }
 
+function cardLabel(card) {
+  return `${card.rank}${card.suit}`;
+}
+
+function cardEl(card, faceDown) {
+  const el = document.createElement("div");
+  el.className = "playing-card";
+  if (faceDown) {
+    el.classList.add("is-back");
+    return el;
+  }
+  if (card.red) el.classList.add("is-red");
+  const isJoker = card.rank === "Joker";
+  const corner = document.createElement("span");
+  corner.className = "corner";
+  corner.textContent = isJoker ? "J★" : `${card.rank}${card.suit}`;
+  const cornerBottom = corner.cloneNode(true);
+  cornerBottom.classList.add("bottom");
+  const pip = document.createElement("span");
+  pip.className = "pip";
+  pip.textContent = isJoker ? "★" : card.suit;
+  el.append(corner, pip, cornerBottom);
+  return el;
+}
+
+function renderCards() {
+  els.drawCount.value = state.drawCount;
+  els.jokersToggle.textContent = `Jokers: ${state.includeJokers ? "on" : "off"}`;
+  els.jokersToggle.classList.toggle("is-active", state.includeJokers);
+  els.jokersToggle.setAttribute("aria-pressed", String(state.includeJokers));
+
+  const deckEmpty = state.deck.length === 0;
+  els.deckRemaining.textContent = state.deck.length;
+  els.deckNote.textContent = deckEmpty
+    ? "Deck empty — shuffle for a fresh deck"
+    : state.includeJokers ? "54-card deck with jokers" : "Standard 52-card deck";
+  els.shuffleDeck.disabled = false;
+  document.querySelector("#cardsForm .primary-button").disabled = deckEmpty;
+
+  els.cardTray.innerHTML = "";
+  const cardsToShow = state.hand.length
+    ? state.hand.map((card) => cardEl(card, false))
+    : Array.from({ length: state.drawCount }, () => cardEl(null, true));
+  cardsToShow.forEach((el) => els.cardTray.append(el));
+
+  els.cardHistory.innerHTML = "";
+  state.cardHistory.forEach((draw) => {
+    const item = document.createElement("li");
+    item.innerHTML = `<span><strong>${draw.count} drawn</strong> ${draw.cards}</span><span>${draw.left} left</span>`;
+    els.cardHistory.append(item);
+  });
+}
+
+function drawCards() {
+  const count = clamp(els.drawCount.value, 1, 10);
+  state.drawCount = count;
+  if (!state.deck.length) {
+    renderCards();
+    return;
+  }
+  state.hand = state.deck.splice(-count, count);
+  state.cardHistory.unshift({
+    count: state.hand.length,
+    cards: state.hand.map(cardLabel).join("  "),
+    left: state.deck.length,
+  });
+  state.cardHistory = state.cardHistory.slice(0, 10);
+  saveState();
+  renderCards();
+}
+
+function shuffleDeck() {
+  state.deck = freshDeck(state.includeJokers);
+  state.hand = [];
+  saveState();
+  renderCards();
+}
+
+function setIncludeJokers(includeJokers) {
+  state.includeJokers = includeJokers === true;
+  state.deck = freshDeck(state.includeJokers);
+  state.hand = [];
+  saveState();
+  renderCards();
+}
+
+function renderCoin() {
+  if (state.lastCoin) {
+    els.coinFace.textContent = state.lastCoin === "Heads" ? "H" : "T";
+    els.coinResult.textContent = `${state.lastCoin}!`;
+  } else {
+    els.coinFace.textContent = "?";
+    els.coinResult.textContent = "Ready to flip";
+  }
+  els.coinTally.textContent = `Heads ${state.coinTally.heads} · Tails ${state.coinTally.tails}`;
+}
+
+function flipCoin() {
+  if (state.coinFlipping) return;
+  state.coinFlipping = true;
+  const result = Math.random() < 0.5 ? "Heads" : "Tails";
+  els.coin.classList.remove("is-flipping");
+  void els.coin.offsetWidth;
+  els.coin.classList.add("is-flipping");
+  window.setTimeout(() => {
+    state.lastCoin = result;
+    state.coinTally[result.toLowerCase()] += 1;
+    state.coinFlipping = false;
+    saveState();
+    renderCoin();
+  }, 450);
+}
+
 function bindEvents() {
   els.digitalMode.addEventListener("click", () => setTimerView("digital"));
   els.sandMode.addEventListener("click", () => setTimerView("sand"));
@@ -228,9 +413,35 @@ function bindEvents() {
     saveState();
     renderDice();
   });
+
+  els.cardsForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    drawCards();
+  });
+
+  els.shuffleDeck.addEventListener("click", shuffleDeck);
+
+  els.jokersToggle.addEventListener("click", () => setIncludeJokers(!state.includeJokers));
+
+  els.clearCardHistory.addEventListener("click", () => {
+    state.cardHistory = [];
+    saveState();
+    renderCards();
+  });
+
+  els.flipCoin.addEventListener("click", flipCoin);
+
+  els.resetCoin.addEventListener("click", () => {
+    state.coinTally = { heads: 0, tails: 0 };
+    state.lastCoin = null;
+    saveState();
+    renderCoin();
+  });
 }
 
 loadState();
 bindEvents();
 renderTimer();
 renderDice();
+renderCards();
+renderCoin();

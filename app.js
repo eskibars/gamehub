@@ -270,9 +270,9 @@ const games = [
     href: "/tools/",
     accent: "#7b6333",
     tilt: "1deg",
-    description: "Run a digital or sand-style timer, then roll any mix of dice with configurable count and sides.",
+    description: "Run a digital or sand-style timer, roll any mix of dice, draw from a shuffled deck with optional jokers, and settle ties with a coin flip.",
     features: {
-      Mode: "Timer and dice",
+      Mode: "Timer, dice, cards, coin",
       Storage: "Local preferences",
       Players: "Flexible",
     },
