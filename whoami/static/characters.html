@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Who Am I? — character gallery</title>
+<style>
+  body { font-family: ui-monospace, monospace; background: #2a2320; color: #f5ead9; margin: 16px; }
+  h1 { font-size: 15px; margin: 0 0 8px; }
+  .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; font-size: 13px; }
+  .controls input { width: 90px; }
+  .controls button { font: inherit; }
+  h2 { font-size: 13px; margin: 18px 0 6px; color: #d9c6a8; }
+  .grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; }
+  .grid.small { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .tile { aspect-ratio: 1 / 1.05; background: #fff; border-radius: 6px; overflow: hidden; position: relative; }
+  .tile svg { width: 100%; height: 100%; display: block; }
+  .tag { position: absolute; left: 3px; bottom: 2px; font-size: 9px; color: #333; background: rgba(255,255,255,.75); padding: 0 3px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<h1>Who Am I? character gallery</h1>
+<div class="controls">
+  <label>Seed <input id="seed" type="number" value="7"></label>
+  <button id="reroll">Regenerate</button>
+  <span id="note"></span>
+</div>
+<h2>Game board (24 cards, 6 columns)</h2>
+<div class="grid" id="board"></div>
+<h2>Detail row (same characters, large)</h2>
+<div class="grid small" id="detail"></div>
+<script src="characters.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const seedInput = document.querySelector("#seed");
+  seedInput.value = params.get("seed") || 7;
+  function render() {
+    const seed = parseInt(seedInput.value, 10) || 1;
+    const pool = window.WhoAmI.generatePool(seed, 24);
+    const board = document.querySelector("#board");
+    const detail = document.querySelector("#detail");
+    board.innerHTML = "";
+    detail.innerHTML = "";
+    for (const character of pool) {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      tile.append(window.WhoAmI.renderPortrait(character, { className: "card-portrait" }));
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      tag.textContent = `${character.kind[0].toUpperCase()}${character.index + 1}`;
+      tile.append(tag);
+      board.append(tile);
+    }
+    for (const character of pool.slice(0, 12)) {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      tile.append(window.WhoAmI.renderPortrait(character, { className: "card-portrait" }));
+      detail.append(tile);
+    }
+    document.querySelector("#note").textContent = `seed ${seed}`;
+  }
+  document.querySelector("#reroll").addEventListener("click", () => {
+    seedInput.value = Math.floor(Math.random() * 99999) + 1;
+    render();
+  });
+  seedInput.addEventListener("change", render);
+  render();
+</script>
+</body>
+</html>

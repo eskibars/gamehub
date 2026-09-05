@@ -71,7 +71,10 @@ Who Am I? is a remote-by-default Guess Who clone. A share code spins up a
 flask-side game that only stores the random seed, the player's secret
 character index, and a small chat log. Both clients regenerate the same
 24-character pool (a mix of people, cats, and dogs) from the seed, so the
-server never ships the portraits themselves.
+server never ships the portraits themselves. Boards are dealt from shuffled
+quota lists so every game gets a good spread of species, hair colors, hats,
+glasses, and expressions. A character gallery for tuning the portrait
+generator lives at `/whoami/characters.html?seed=N`.
 
 Hangman runs locally on a single device for pass-and-play, or on two
 devices with a share code. The picker types a word, the guesser reveals

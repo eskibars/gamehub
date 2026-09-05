@@ -1,7 +1,17 @@
-// characters.js
-// Deterministic character bank + SVG renderer for "Who Am I?".
+// characters.js — procedural portrait generator for "Who Am I?".
+//
 // The same (seed, count) pair always produces the same pool of characters,
-// so the server only needs to ship the seed and the secret index for each player.
+// so the server only ships the seed and each player's secret index.
+//
+// Illustration system: every portrait is a flat two-tone cartoon drawn on a
+// 100x100 SVG with warm brown line work, a soft pastel background, and a
+// single "emotion" token per character that drives brows, eyelids, pupils,
+// and mouth together so faces read as coherent expressions at card size.
+//
+// Board planning: instead of rolling every trait independently, the pool is
+// dealt from shuffled quota lists (species split, near-distinct hair/fur
+// colors, spread of glasses, hats, and expressions) so a 24-card board plays
+// like a real Guess Who box — lots of visible, askable differences.
 
 (function (global) {
   "use strict";
@@ -19,7 +29,6 @@
   }
 
   function pick(rng, options) {
-    if (!options.length) return undefined;
     return options[Math.floor(rng() * options.length)];
   }
 
@@ -27,165 +36,195 @@
     return rng() < probability;
   }
 
-  // ----- Trait banks -----
-  // Skin tones for humans — wide range so a Guess Who board shows variety.
-  const SKIN_COLORS = [
-    "#fde2c4", "#f4cba0", "#e0a879", "#bf8157", "#8a5a3b", "#5d3b25"
-  ];
-  const EYE_COLORS = [
-    "#3a6ea5", "#3b7a3b", "#7a5a35", "#3a3a3a", "#6e7a8a", "#4f6f4a", "#9b6f3a"
-  ];
-  // Hair colors including "unusual" tones for variety.
-  const HAIR_COLORS = [
-    "#1a1a1a", "#2a1f1a", "#3a2820", "#5a3a1a", "#8a5a2a", "#b58a3a", "#d3b27a",
-    "#cccccc", "#5a4a3a", "#3a2a55", "#7a3a2a"
-  ];
-  // Cat/dog fur colors — distinct from skin tones to read as "furry".
-  const FUR_COLORS = [
-    "#1f1f1f", "#3a2a1a", "#4a3a2a", "#6b4a2a", "#8a5a2a", "#a05a3a", "#b07a3a",
-    "#d9b27a", "#e6e1d2", "#5a4a3a", "#2a2a55", "#7a3a2a"
-  ];
-  const NOSE_COLORS = ["#1a1a1a", "#3a2a1a", "#5a3a2a", "#a05a4a"];
-  const HAT_COLORS = [
-    "#c84e4e", "#356eb8", "#2f6b4a", "#e2b34f", "#6e5cb8", "#1f1f1f", "#e2e2e2",
-    "#a04a8a", "#8a5a2a"
-  ];
-  const COLLAR_COLORS = [
-    "#c84e4e", "#356eb8", "#2f6b4a", "#e2b34f", "#6e5cb8", "#1f1f1f", "#e2e2e2",
-    "#a04a8a", "#b07a3a"
-  ];
-  const EAR_INNER = "#f1a8a0";
-  const EAR_INNER_DARK = "#a86060";
-
-  const HAIR_STYLES = ["short", "long", "ponytail", "bun", "curly", "buzz", "bald", "afro"];
-  const HAT_STYLES = ["none", "beanie", "cap", "tophat", "cowboy", "bandana"];
-  const GLASSES_STYLES = ["none", "round", "square", "sunglasses", "monocle"];
-  const HUMAN_EXPRESSIONS = ["smile", "grin", "neutral", "frown", "surprised", "smirk", "skeptical", "sleepy"];
-  const CAT_EXPRESSIONS = ["smile", "neutral", "sleepy", "smug", "alert"];
-  const DOG_EXPRESSIONS = ["smile", "panting", "alert", "sleepy", "happy"];
-  const FACIAL_HAIR = ["none", "mustache", "beard", "goatee"];
-
-  // Predefined breeds with distinct head shapes — the user wanted "general
-  // head shapes for each" so the player can tell at a glance "that's a
-  // spaniel, not a bulldog".
-  const HUMAN_BREEDS = [
-    { id: "man", weight: 5 },
-    { id: "woman", weight: 5 },
-    { id: "kid", weight: 2 },
-  ];
-  const CAT_BREEDS = [
-    { id: "tabby", weight: 4 },
-    { id: "kitten", weight: 3 },
-    { id: "siamese", weight: 2 },
-  ];
-  const DOG_BREEDS = [
-    { id: "spaniel", weight: 3 },
-    { id: "puppy", weight: 3 },
-    { id: "bulldog", weight: 2 },
-  ];
-
-  function pickBreed(rng, breeds) {
-    const total = breeds.reduce((sum, b) => sum + b.weight, 0);
-    let roll = rng() * total;
-    for (const b of breeds) {
-      roll -= b.weight;
-      if (roll <= 0) return b.id;
+  function shuffle(rng, list) {
+    const copy = list.slice();
+    for (let i = copy.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(rng() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
     }
-    return breeds[0].id;
+    return copy;
   }
 
-  // ----- Character generation -----
-  function generateHuman(rng) {
-    const breed = pickBreed(rng, HUMAN_BREEDS);
-    const skin = pick(rng, SKIN_COLORS);
-    const eye = pick(rng, EYE_COLORS);
-    const hair = pick(rng, HAIR_COLORS);
-    const hairStyle = pick(rng, HAIR_STYLES);
-    const hat = pick(rng, HAT_STYLES);
-    const hatColor = hat === "none" ? null : pick(rng, HAT_COLORS);
-    const glasses = pick(rng, GLASSES_STYLES);
-    const expression = pick(rng, HUMAN_EXPRESSIONS);
-    const facialHair = breed === "man" && maybe(rng, 0.45) ? pick(rng, FACIAL_HAIR) : "none";
-    const lipstick = breed !== "man" && (expression === "grin" || expression === "smile" || expression === "smirk") ? maybe(rng, 0.55) : false;
-    const earrings = hat === "none" && breed !== "man" ? maybe(rng, 0.35) : false;
-    const eyebrows = pick(rng, ["normal", "normal", "raised", "angry", "sad", "bushy"]);
+  // Deal `n` values from a shuffled cycle of `list`, so every value appears
+  // before any repeats and large groups stay visually distinct.
+  function deal(rng, list, n) {
+    const out = [];
+    while (out.length < n) out.push(...shuffle(rng, list));
+    return out.slice(0, n);
+  }
+
+  // ----- Color helpers -----
+  function hexToRgb(hex) {
+    const num = parseInt(hex.replace("#", ""), 16);
+    return { r: (num >> 16) & 0xff, g: (num >> 8) & 0xff, b: num & 0xff };
+  }
+
+  function rgbToHex(r, g, b) {
+    return "#" + [r, g, b].map((c) => Math.round(c).toString(16).padStart(2, "0")).join("");
+  }
+
+  function shade(hex, percent) {
+    const { r, g, b } = hexToRgb(hex);
+    const f = percent / 100;
+    const adjust = (c) => Math.max(0, Math.min(255, c + 255 * f));
+    return rgbToHex(adjust(r), adjust(g), adjust(b));
+  }
+
+  const darken = (hex, percent) => shade(hex, -Math.abs(percent));
+  const lighten = (hex, percent) => shade(hex, Math.abs(percent));
+
+  function isLightColor(hex) {
+    const { r, g, b } = hexToRgb(hex);
+    return 0.299 * r + 0.587 * g + 0.114 * b > 150;
+  }
+
+  // ----- Palettes -----
+  const LINE = "#463428"; // warm near-black for all line work
+  const SKIN_COLORS = [
+    "#ffe0c4", "#f6c99f", "#e2a878", "#bf8157", "#8d5a3b", "#5f3d28",
+  ];
+  const HAIR_COLORS = [
+    "#1f1a17", "#33251c", "#4a3222", "#5f4025", "#7a5230", "#96683a",
+    "#b8894e", "#d3ac69", "#c96f3b", "#a34f2a", "#8a8d93", "#d9d5cf",
+  ];
+  const EYE_COLORS = ["#4a6f8a", "#4f7a4f", "#7a5a35", "#3d3a37", "#6e7a8a"];
+  const CLOTHES_COLORS = [
+    "#c96f4a", "#4a7d8c", "#d9a441", "#7d9c6a", "#5b6b9e", "#a86a8e", "#96604a",
+  ];
+  const FUR_COLORS = [
+    "#8a6a48", "#a8845e", "#6b5138", "#4c3a28", "#2f2620", "#c7a37c",
+    "#d9c8ae", "#b5b0a8", "#8c8578",
+  ];
+  const COLORPOINT_FURS = ["#e8dcc6", "#dcc9a8", "#e5d9c4"];
+  // Soft card backgrounds, rotated per character for a varied board.
+  const BG_PASTELS = ["#f3e4d3", "#e4edf2", "#f0e6ee", "#e7efe2", "#f6ecd9", "#f0e0da"];
+  const EAR_INNER = "#e8a4a0";
+  const BLUSH = "rgba(217, 108, 108, 0.30)";
+  const MOUTH_DARK = "#5c3a34";
+  const TONGUE = "#e88a9a";
+
+  // ----- Pool planning -----
+  const HUMAN_HAIRSTYLES = ["short", "long", "curly", "ponytail", "bun", "afro", "buzz", "bald"];
+  const HUMAN_EXPRESSIONS = ["happy", "grin", "calm", "smirk", "surprised", "sad", "grumpy", "sleepy"];
+  const CAT_EXPRESSIONS = ["content", "playful", "smug", "sleepy", "alert", "grumpy"];
+  const DOG_EXPRESSIONS = ["happy", "panting", "alert", "sleepy", "sad"];
+  const CAT_PATTERNS = ["stripes", "solid", "calico", "colorpoint", "stripes", "solid"];
+  const DOG_BREEDS = ["shepherd", "spaniel", "puppy", "bulldog"];
+
+  function planSpecies(rng, count) {
+    const humans = Math.round(count * 0.5);
+    const cats = Math.round(count * 0.25);
+    const dogs = count - humans - cats;
+    const kinds = [
+      ...Array.from({ length: humans }, () => "human"),
+      ...Array.from({ length: cats }, () => "cat"),
+      ...Array.from({ length: dogs }, () => "dog"),
+    ];
+    return shuffle(rng, kinds);
+  }
+
+  function planHuman(rng, i, n) {
+    const breed = ["man", "woman", "kid"][i % 3];
+    const hat = deal(rng, ["none", "none", "none", "none", "none", "none", "beanie", "cap", "cowboy", "bandana", "tophat"], n)[i];
     return {
       kind: "human",
       breed,
       traits: {
-        skin, eye, hair, hairStyle, hat, hatColor, glasses, expression, facialHair,
-        lipstick, earrings, eyebrows, freckles: maybe(rng, 0.2),
+        skin: deal(rng, SKIN_COLORS, n)[i],
+        hair: deal(rng, HAIR_COLORS, n)[i],
+        hairStyle: deal(rng, HUMAN_HAIRSTYLES, n)[i],
+        expression: deal(rng, HUMAN_EXPRESSIONS, n)[i],
+        glasses: deal(
+          rng,
+          ["none", "none", "none", "none", "none", "round", "round", "square", "sunglasses", "monocle"],
+          n
+        )[i],
+        hat,
+        hatColor: hat === "none" ? null : pick(rng, CLOTHES_COLORS.concat(["#6b5138", "#3d3a37"])),
+        shirt: deal(rng, CLOTHES_COLORS, n)[i],
+        eye: pick(rng, EYE_COLORS),
+        facialHair:
+          breed === "man" && maybe(rng, 0.5)
+            ? pick(rng, ["mustache", "beard", "goatee"])
+            : "none",
+        earrings: breed !== "man" && hat === "none" && maybe(rng, 0.4),
+        lipstick: breed === "woman" && maybe(rng, 0.45),
+        freckles: maybe(rng, 0.22),
+        tilt: (rng() - 0.5) * 3.4,
       },
     };
   }
 
-  function generateCat(rng) {
-    const breed = pickBreed(rng, CAT_BREEDS);
-    const fur = pick(rng, FUR_COLORS);
-    // Tabby gets stripes; kitten is solid; siamese gets colorpoint.
-    let pattern = "solid";
-    if (breed === "tabby") pattern = pick(rng, ["stripes", "stripes", "mackerel", "solid"]);
-    if (breed === "kitten") pattern = pick(rng, ["solid", "calico", "solid"]);
-    if (breed === "siamese") pattern = "colorpoint";
-    const eye = breed === "siamese" ? "#3a6ea5" : pick(rng, EYE_COLORS);
-    const collar = pick(rng, [null, null, null, ...COLLAR_COLORS]);
-    const collarTag = collar ? maybe(rng, 0.55) : false;
-    const expression = pick(rng, CAT_EXPRESSIONS);
+  function planCat(rng, i, n) {
+    const pattern = CAT_PATTERNS[i % CAT_PATTERNS.length];
+    const furPool = pattern === "colorpoint" ? COLORPOINT_FURS : FUR_COLORS;
     return {
       kind: "cat",
-      breed,
-      traits: { fur, pattern, eye, collar, collarTag, expression },
+      breed: "cat",
+      traits: {
+        fur: deal(rng, furPool, n)[i],
+        pattern,
+        expression: deal(rng, CAT_EXPRESSIONS, n)[i],
+        collar: maybe(rng, 0.5) ? pick(rng, CLOTHES_COLORS) : null,
+        tag: maybe(rng, 0.6),
+        tilt: (rng() - 0.5) * 3,
+      },
     };
   }
 
-  function generateDog(rng) {
-    const breed = pickBreed(rng, DOG_BREEDS);
-    const fur = pick(rng, FUR_COLORS);
-    // Most dogs share ear color with the fur; spaniels can have a contrasting
-    // patch to add breed personality without being garish.
-    const earColor = breed === "spaniel" && maybe(rng, 0.4) ? shade(fur, 30) : shade(fur, -15);
-    const nose = pick(rng, NOSE_COLORS);
-    const eye = pick(rng, EYE_COLORS);
-    const collar = pick(rng, [...COLLAR_COLORS, null, null]);
-    const expression = pick(rng, DOG_EXPRESSIONS);
+  function planDog(rng, i, n) {
+    const fur = deal(rng, FUR_COLORS, n)[i];
     return {
       kind: "dog",
-      breed,
-      traits: { fur, earColor, nose, eye, collar, expression },
+      breed: deal(rng, DOG_BREEDS, n)[i],
+      traits: {
+        fur,
+        // Most dogs share their ear color with a darker shade of the coat;
+        // some get a contrasting patch for extra breed personality.
+        earColor: maybe(rng, 0.35) ? pick(rng, ["#4c3a28", "#2f2620", "#8a5a3a", "#6b5138"]) : darken(fur, 18),
+        expression: deal(rng, DOG_EXPRESSIONS, n)[i],
+        collar: maybe(rng, 0.55) ? pick(rng, CLOTHES_COLORS) : null,
+        tag: maybe(rng, 0.6),
+        tilt: (rng() - 0.5) * 3,
+      },
     };
-  }
-
-  function generateCharacter(rng) {
-    const kinds = [
-      { id: "human", weight: 5 },
-      { id: "cat", weight: 3 },
-      { id: "dog", weight: 3 },
-    ];
-    const total = kinds.reduce((sum, k) => sum + k.weight, 0);
-    let roll = rng() * total;
-    let kind = kinds[0].id;
-    for (const k of kinds) {
-      roll -= k.weight;
-      if (roll <= 0) { kind = k.id; break; }
-    }
-    if (kind === "human") return generateHuman(rng);
-    if (kind === "cat") return generateCat(rng);
-    return generateDog(rng);
   }
 
   function generatePool(seed, count) {
     const rng = mulberry32(seed);
-    const pool = [];
-    for (let i = 0; i < count; i += 1) {
-      const character = generateCharacter(rng);
-      character.id = `c${i}`;
-      character.index = i;
-      pool.push(character);
+    const kinds = planSpecies(rng, count);
+    const humans = kinds.filter((kind) => kind === "human").length;
+    const cats = kinds.filter((kind) => kind === "cat").length;
+    const dogs = kinds.filter((kind) => kind === "dog").length;
+    const humanPlans = Array.from({ length: humans }, (_, i) => planHuman(rng, i, humans));
+    const catPlans = Array.from({ length: cats }, (_, i) => planCat(rng, i, cats));
+    const dogPlans = Array.from({ length: dogs }, (_, i) => planDog(rng, i, dogs));
+
+    const plans = [];
+    let hi = 0;
+    let ci = 0;
+    let di = 0;
+    for (const kind of kinds) {
+      if (kind === "human") plans.push(humanPlans[hi++]);
+      else if (kind === "cat") plans.push(catPlans[ci++]);
+      else plans.push(dogPlans[di++]);
     }
-    return pool;
+
+    return plans.map((plan, index) => {
+      // Breed lives on the character for the app's labels, and inside traits
+      // so the renderers' per-breed branches can read it in one place.
+      const character = {
+        kind: plan.kind,
+        breed: plan.breed,
+        traits: { ...plan.traits, breed: plan.breed },
+      };
+      character.id = `c${index}`;
+      character.index = index;
+      return character;
+    });
   }
 
-  // ----- SVG helpers -----
+  // ----- SVG primitives -----
   const SVG_NS = "http://www.w3.org/2000/svg";
 
   function svgEl(tag, attrs = {}, children = []) {
@@ -201,634 +240,808 @@
     return el;
   }
 
-  const circle = (cx, cy, r, fill, stroke = null) => svgEl("circle", { cx, cy, r, fill, stroke });
-  const ellipse = (cx, cy, rx, ry, fill, stroke = null) => svgEl("ellipse", { cx, cy, rx, ry, fill, stroke });
-  const rect = (x, y, w, h, fill, rx = 0, stroke = null) => svgEl("rect", { x, y, width: w, height: h, rx, ry: rx, fill, stroke });
-  const path = (d, fill, stroke = "none", strokeWidth = 0) => svgEl("path", { d, fill, stroke, "stroke-width": strokeWidth });
-  const line = (x1, y1, x2, y2, stroke, sw = 1) => svgEl("line", { x1, y1, x2, y2, stroke, "stroke-width": sw, "stroke-linecap": "round" });
+  const circle = (cx, cy, r, fill, stroke = "none", sw = 0) =>
+    svgEl("circle", { cx, cy, r, fill, stroke, "stroke-width": sw });
+  const ellipse = (cx, cy, rx, ry, fill, stroke = "none", sw = 0, transform = null) =>
+    svgEl("ellipse", { cx, cy, rx, ry, fill, stroke, "stroke-width": sw, transform });
+  const path = (d, fill, stroke = "none", sw = 0, extra = {}) =>
+    svgEl("path", { d, fill, stroke, "stroke-width": sw, "stroke-linecap": "round", "stroke-linejoin": "round", ...extra });
+  const line = (x1, y1, x2, y2, stroke, sw = 1.4) =>
+    svgEl("line", { x1, y1, x2, y2, stroke, "stroke-width": sw, "stroke-linecap": "round" });
 
   function group(children, transform = null) {
     const g = svgEl("g", transform ? { transform } : {});
-    for (const child of children) g.append(child);
+    for (const child of children) if (child != null) g.append(child);
     return g;
   }
 
-  // ----- Color helpers -----
-  function shade(hex, percent) {
-    const { r, g, b } = hexToRgb(hex);
-    const f = percent / 100;
-    const adjust = (c) => Math.max(0, Math.min(255, Math.round(c + 255 * f)));
-    return rgbToHex(adjust(r), adjust(g), adjust(b));
-  }
-  const darken = (hex, percent) => shade(hex, -Math.abs(percent));
-
-  function hexToRgb(hex) {
-    const clean = hex.replace("#", "");
-    const num = parseInt(clean, 16);
-    return { r: (num >> 16) & 0xff, g: (num >> 8) & 0xff, b: num & 0xff };
+  function zzz(x, y, size, opacity) {
+    const text = svgEl("text", {
+      x, y,
+      "font-size": size,
+      "font-family": "ui-monospace, monospace",
+      "font-weight": "700",
+      fill: `rgba(70, 52, 40, ${opacity})`,
+    });
+    text.textContent = "z";
+    return text;
   }
 
-  function rgbToHex(r, g, b) {
-    return "#" + [r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("");
-  }
-
-  // ============================================================
-  // CAT RENDERERS — three breeds, each with a distinct head shape
-  // ============================================================
-
-  // Cat ear: pointed triangle rising from the top of the head.
-  // Takes explicit base-left, base-right, and apex coordinates so the
-  // ears always look like they belong to the head.
-  function catEar(baseLeft, baseRight, apex, fill, innerFill) {
-    const [blx, bly] = baseLeft;
-    const [brx, bry] = baseRight;
-    const [ax, ay] = apex;
-    const d = `M ${blx} ${bly} L ${ax} ${ay} L ${brx} ${bry} Z`;
-    const out = [path(d, fill, "#000", 0.6)];
-    if (innerFill) {
-      // Inner ear — smaller triangle inset toward the apex
-      const inset = 0.35;
-      const iblx = blx + (ax - blx) * inset;
-      const ibly = bly + (ay - bly) * inset;
-      const ibrx = brx + (ax - brx) * inset;
-      const ibry = bry + (ay - bry) * inset;
-      const iax = blx + (brx - blx) / 2 + (ax - (blx + brx) / 2) * (1 - inset);
-      const iay = bly + (bry - bly) / 2 + (ay - (bly + bry) / 2) * (1 - inset);
-      const id = `M ${iblx.toFixed(1)} ${ibly.toFixed(1)} L ${iax.toFixed(1)} ${iay.toFixed(1)} L ${ibrx.toFixed(1)} ${ibry.toFixed(1)} Z`;
-      out.push(path(id, innerFill));
-    }
-    return group(out);
-  }
-
-  // Tabby: heart-shaped face, classic triangular ears rising from the top.
-  function catTabbyHead(c) {
-    const t = c.traits;
-    const out = [];
-    // Shoulders
-    out.push(path("M 4 100 C 18 82, 82 82, 96 100 Z", shade(t.fur, -10)));
-    // Neck fluff
-    out.push(ellipse(50, 80, 18, 12, t.fur));
-    // Ears — drawn first so the head overlaps the base of each ear.
-    // Left ear: base sits on top of the head, apex points up and slightly out.
-    out.push(catEar([22, 32], [38, 28], [26, 6], t.fur, EAR_INNER));
-    out.push(catEar([62, 28], [78, 32], [74, 6], t.fur, EAR_INNER));
-    // Head: heart-shape, wider at temples, pointed chin
-    out.push(path(
-      "M 50 30 " +
-      "C 32 30 20 42 20 56 " +
-      "C 20 70 32 80 50 90 " +
-      "C 68 80 80 70 80 56 " +
-      "C 80 42 68 30 50 30 Z",
-      t.fur, "#000", 0.6
-    ));
-    // M-shaped tabby forehead stripes
-    if (t.pattern === "stripes" || t.pattern === "mackerel") {
-      out.push(path("M 32 38 Q 38 32 42 38", "none", darken(t.fur, 25), 1.5));
-      out.push(path("M 58 38 Q 62 32 68 38", "none", darken(t.fur, 25), 1.5));
-      out.push(path("M 50 34 L 50 42", "none", darken(t.fur, 25), 1.5));
-    }
-    // Calico patches
-    if (t.pattern === "calico") {
-      out.push(path("M 22 52 C 26 42 38 58 32 72 C 26 66 18 62 22 52 Z", "#d9b27a"));
-      out.push(path("M 70 57 C 76 47 84 72 64 74 C 68 67 64 60 70 57 Z", "#1f1f1f"));
-    }
-    return group(out);
-  }
-
-  // Kitten: rounder, fluffier face, bigger eyes, smaller ears.
-  function catKittenHead(c) {
-    const t = c.traits;
-    const out = [];
-    out.push(path("M 4 100 C 18 82, 82 82, 96 100 Z", shade(t.fur, -10)));
-    out.push(ellipse(50, 82, 22, 14, t.fur));
-    // Smaller triangular ears (kitten-sized)
-    out.push(catEar([26, 36], [40, 32], [30, 14], t.fur, EAR_INNER));
-    out.push(catEar([60, 32], [74, 36], [70, 14], t.fur, EAR_INNER));
-    // Rounder, fluffier head
-    out.push(ellipse(50, 58, 30, 28, t.fur, "#000"));
-    // Fluffy cheeks
-    out.push(ellipse(32, 64, 10, 8, shade(t.fur, 5)));
-    out.push(ellipse(68, 64, 10, 8, shade(t.fur, 5)));
-    return group(out);
-  }
-
-  // Siamese: classic colorpoint with darker face mask and ears, blue eyes.
-  function catSiameseHead(c) {
-    const t = c.traits;
-    const out = [];
-    out.push(path("M 4 100 C 18 82, 82 82, 96 100 Z", shade(t.fur, -10)));
-    out.push(ellipse(50, 80, 18, 12, t.fur));
-    // Ears — colorpoint: dark ear fronts
-    out.push(catEar([22, 32], [38, 28], [26, 6], darken(t.fur, 35), EAR_INNER_DARK));
-    out.push(catEar([62, 28], [78, 32], [74, 6], darken(t.fur, 35), EAR_INNER_DARK));
-    // Face — same heart-shape as tabby
-    out.push(path(
-      "M 50 30 " +
-      "C 32 30 20 42 20 56 " +
-      "C 20 70 32 80 50 90 " +
-      "C 68 80 80 70 80 56 " +
-      "C 80 42 68 30 50 30 Z",
-      t.fur, "#000", 0.6
-    ));
-    // Colorpoint mask around the muzzle (darker on the points)
-    out.push(path(
-      "M 50 44 " +
-      "C 36 44 28 54 28 64 " +
-      "C 28 74 36 80 50 80 " +
-      "C 64 80 72 74 72 64 " +
-      "C 72 54 64 44 50 44 Z",
-      darken(t.fur, 35), null, 0
-    ));
-    return group(out);
-  }
-
-  // Cat eyes — two almond/circle eyes + nose + mouth + whiskers.
-  // `eyeShape` adjusts for breed ("kitten" → bigger).
-  function catFace(c, eyeScale = 1) {
-    const t = c.traits;
-    const out = [];
-    const eyeY = 60;
-    const eyeRx = 4 * eyeScale;
-    const eyeRy = 5 * eyeScale;
-    // Eye whites
-    out.push(ellipse(38, eyeY, eyeRx, eyeRy, "#fffaf0"));
-    out.push(ellipse(62, eyeY, eyeRx, eyeRy, "#fffaf0"));
-    // Pupils — vertical slits for cat
-    out.push(ellipse(38, eyeY, eyeRx * 0.4, eyeRy * 0.85, t.eye));
-    out.push(ellipse(62, eyeY, eyeRx * 0.4, eyeRy * 0.85, t.eye));
-    // Catchlight
-    out.push(circle(38, eyeY - eyeRy * 0.5, 0.6, "#fff"));
-    out.push(circle(62, eyeY - eyeRy * 0.5, 0.6, "#fff"));
-    // Nose
-    out.push(path("M 47 68 L 50 66 L 53 68 L 50 72 Z", "#d36b7a", "#000", 0.4));
-    // Mouth
-    if (t.expression === "smile" || t.expression === "happy") {
-      out.push(path("M 44 76 Q 50 80 56 76", "none", "#1a1a1a", 1.4));
-    } else if (t.expression === "smug") {
-      out.push(path("M 44 75 Q 50 77 56 75", "none", "#1a1a1a", 1.4));
-    } else if (t.expression === "sleepy") {
-      out.push(path("M 45 76 Q 50 77 55 76", "none", "#1a1a1a", 1.2));
-    } else if (t.expression === "alert") {
-      out.push(path("M 44 76 L 50 76 L 56 76", "none", "#1a1a1a", 1.4));
-    } else {
-      out.push(path("M 44 76 Q 50 78 56 76", "none", "#1a1a1a", 1.2));
-    }
-    // Whiskers — 3 per side
-    out.push(line(22, 70, 40, 71, "#1a1a1a", 0.7));
-    out.push(line(22, 74, 40, 74, "#1a1a1a", 0.7));
-    out.push(line(22, 78, 40, 77, "#1a1a1a", 0.7));
-    out.push(line(60, 71, 78, 70, "#1a1a1a", 0.7));
-    out.push(line(60, 74, 78, 74, "#1a1a1a", 0.7));
-    out.push(line(60, 77, 78, 78, "#1a1a1a", 0.7));
-    return group(out);
-  }
-
-  function catCollar(c) {
-    const t = c.traits;
-    if (!t.collar) return null;
-    const out = [
-      path("M 18 88 Q 50 96 82 88 L 80 96 Q 50 102 20 96 Z", t.collar, darken(t.collar, 20), 0.6),
+  // ----- Shared pieces -----
+  function backdrop(character, options = {}) {
+    const bg = options.background || BG_PASTELS[character.index % BG_PASTELS.length];
+    return [
+      svgEl("rect", { x: 0, y: 0, width: 100, height: 100, fill: bg }),
+      circle(50, 52, 41, lighten(bg, 7)),
     ];
-    if (t.collarTag) {
-      out.push(ellipse(50, 95, 4, 5, "#e2b34f", "#1a1a1a"));
-    }
-    return group(out);
   }
 
-  // ============================================================
-  // DOG RENDERERS — three breeds, distinct silhouettes
-  // ============================================================
-
-  // Spaniel: long face, long droopy ears that hang down the sides.
-  function dogSpanielHead(c) {
-    const t = c.traits;
-    const out = [];
-    out.push(path("M 4 100 C 18 82, 82 82, 96 100 Z", shade(t.fur, -10)));
-    // Long droopy ears BEHIND the head
-    out.push(path("M 22 42 C 6 50, 8 88, 26 86 C 32 80, 32 60, 28 42 Z", t.earColor, "#000", 0.6));
-    out.push(path("M 78 42 C 94 50, 92 88, 74 86 C 68 80, 68 60, 72 42 Z", t.earColor, "#000", 0.6));
-    // Top of head (rounded but elongated)
-    out.push(ellipse(50, 48, 24, 22, t.fur, "#000"));
-    // Snout — long, hangs down
-    out.push(ellipse(50, 68, 13, 14, shade(t.fur, 8), "#000"));
-    return group(out);
+  function tagCircle(cx, cy) {
+    return group([
+      circle(cx, cy, 3.4, "#e2b34f", darken("#e2b34f", 25), 1),
+      circle(cx - 0.8, cy - 0.9, 0.9, "rgba(255,255,255,0.85)"),
+    ]);
   }
 
-  // Puppy: round face, big eyes, small floppy ears.
-  function dogPuppyHead(c) {
-    const t = c.traits;
-    const out = [];
-    out.push(path("M 4 100 C 18 82, 82 82, 96 100 Z", shade(t.fur, -10)));
-    // Small floppy ears on the sides
-    out.push(path("M 24 38 C 16 44, 18 60, 28 60 C 30 52, 30 44, 28 38 Z", t.earColor, "#000", 0.6));
-    out.push(path("M 76 38 C 84 44, 82 60, 72 60 C 70 52, 70 44, 72 38 Z", t.earColor, "#000", 0.6));
-    // Round head
-    out.push(ellipse(50, 50, 28, 26, t.fur, "#000"));
-    // Small snout
-    out.push(ellipse(50, 66, 11, 9, shade(t.fur, 10), "#000"));
-    return group(out);
-  }
-
-  // Bulldog: square, wide head, short pushed-in snout, small rose ears.
-  function dogBulldogHead(c) {
-    const t = c.traits;
-    const out = [];
-    out.push(path("M 4 100 C 18 82, 82 82, 96 100 Z", shade(t.fur, -10)));
-    // Tiny rose ears
-    out.push(path("M 22 30 C 16 28, 14 36, 22 40 C 26 36, 26 32, 22 30 Z", t.earColor, "#000", 0.5));
-    out.push(path("M 78 30 C 84 28, 86 36, 78 40 C 74 36, 74 32, 78 30 Z", t.earColor, "#000", 0.5));
-    // Square head
-    out.push(rect(20, 30, 60, 50, t.fur, 12, "#000"));
-    // Wrinkle lines on the forehead
-    out.push(path("M 30 42 Q 50 38 70 42", "none", darken(t.fur, 18), 1));
-    out.push(path("M 32 48 Q 50 46 68 48", "none", darken(t.fur, 18), 1));
-    // Short pushed-in snout
-    out.push(ellipse(50, 66, 18, 10, shade(t.fur, 10), "#000"));
-    return group(out);
-  }
-
-  function dogFace(c, opts = {}) {
-    const t = c.traits;
-    const out = [];
-    // Eye position depends on breed — spaniel eyes are higher and a bit sad,
-    // puppy eyes are big and round, bulldog eyes are wide set.
-    let eyeY, eyeRX, eyeRY, eyeDX;
-    if (c.breed === "puppy") {
-      eyeY = 48; eyeRX = 4.5; eyeRY = 5; eyeDX = 12;
-    } else if (c.breed === "bulldog") {
-      eyeY = 46; eyeRX = 3.2; eyeRY = 3.2; eyeDX = 14;
-    } else {
-      eyeY = 46; eyeRX = 3.2; eyeRY = 3.2; eyeDX = 12;
-    }
-    const exL = 50 - eyeDX;
-    const exR = 50 + eyeDX;
-    // Eye whites
-    out.push(ellipse(exL, eyeY, eyeRX, eyeRY, "#fffaf0"));
-    out.push(ellipse(exR, eyeY, eyeRX, eyeRY, "#fffaf0"));
-    out.push(circle(exL, eyeY, eyeRX * 0.55, t.eye));
-    out.push(circle(exR, eyeY, eyeRX * 0.55, t.eye));
-    out.push(circle(exL, eyeY - 1, 0.7, "#fff"));
-    out.push(circle(exR, eyeY - 1, 0.7, "#fff"));
-    // Nose — large for spaniel/puppy, small for bulldog
-    let noseW, noseH, noseY;
-    if (c.breed === "bulldog") { noseW = 5; noseH = 3; noseY = 64; }
-    else if (c.breed === "puppy") { noseW = 5; noseH = 4; noseY = 64; }
-    else { noseW = 6; noseH = 5; noseY = 64; }
-    out.push(ellipse(50, noseY, noseW, noseH, t.nose, "#000"));
-    // Mouth
-    if (t.expression === "panting") {
-      out.push(path("M 42 70 Q 50 78 58 70", "none", "#1a1a1a", 1.5));
-      out.push(path("M 47 73 L 47 78 Q 50 80 53 78 L 53 73 Z", "#c84e6e"));
-    } else if (t.expression === "happy") {
-      out.push(path("M 40 70 Q 50 80 60 70", "none", "#1a1a1a", 1.5));
-    } else if (t.expression === "sleepy") {
-      out.push(path("M 44 71 Q 50 72 56 71", "none", "#1a1a1a", 1.2));
-    } else if (t.expression === "alert") {
-      out.push(path("M 44 70 L 56 70", "none", "#1a1a1a", 1.5));
-    } else {
-      out.push(path("M 44 70 Q 50 74 56 70", "none", "#1a1a1a", 1.4));
-    }
-    return group(out);
-  }
-
-  function dogCollar(c) {
-    const t = c.traits;
+  function animalCollar(t, y) {
     if (!t.collar) return null;
-    const out = [
-      path("M 18 88 Q 50 96 82 88 L 80 96 Q 50 102 20 96 Z", t.collar, darken(t.collar, 20), 0.6),
+    const parts = [
+      path(`M 26 ${y} Q 50 ${y + 8} 74 ${y} L 72.5 ${y + 6} Q 50 ${y + 13.5} 27.5 ${y + 6} Z`, t.collar, darken(t.collar, 22), 1.4),
     ];
-    if (t.collarTag) {
-      out.push(ellipse(50, 95, 4, 5, "#e2b34f", "#1a1a1a"));
-    }
-    return group(out);
+    if (t.tag) parts.push(tagCircle(50, y + 10));
+    return group(parts);
   }
 
   // ============================================================
-  // HUMAN RENDERERS — man, woman, kid
+  // HUMAN RENDERER
   // ============================================================
 
-  function humanBase(c) {
-    const t = c.traits;
-    const out = [];
-    // Shoulders / neck
-    out.push(path("M 8 100 C 22 78, 78 78, 92 100 Z", shade(t.skin, -15)));
-    out.push(rect(42, 76, 16, 12, shade(t.skin, -8)));
-    // Ears (drawn before the head so the head overlaps them slightly)
-    out.push(ellipse(24, 50, 5, 8, t.skin, "#000"));
-    out.push(ellipse(76, 50, 5, 8, t.skin, "#000"));
+  function humanHeadPath(breed) {
+    if (breed === "man") {
+      return "M 50 21 C 34 21 24 31 24 46 C 24 59 30 70 38 74.5 C 43 77 57 77 62 74.5 C 70 70 76 59 76 46 C 76 31 66 21 50 21 Z";
+    }
+    if (breed === "woman") {
+      return "M 50 21 C 35 21 25 31 25 46 C 25 60 33 72 43 75.5 C 47 77 53 77 57 75.5 C 67 72 75 60 75 46 C 75 31 65 21 50 21 Z";
+    }
+    return "M 50 23 C 36 23 26 33 26 47 C 26 61 36 75 50 75 C 64 75 74 61 74 47 C 74 33 64 23 50 23 Z";
+  }
+
+  function humanBody(t, breed) {
+    const inset = breed === "kid" ? 20 : 12;
+    return [
+      // Neck first so the shirt covers its base.
+      path("M 43 64 L 43 82 L 57 82 L 57 64 Z", t.skin),
+      path("M 43 68 Q 50 74 57 68 L 57 64 L 43 64 Z", darken(t.skin, 12)),
+      path(
+        `M ${inset} 102 C ${inset + 4} 86 34 79 50 79 C 66 79 ${100 - inset - 4} 86 ${100 - inset} 102 Z`,
+        t.shirt, darken(t.shirt, 25), 2
+      ),
+      path("M 42 79 Q 50 85 58 79", "none", darken(t.shirt, 32), 1.6),
+    ];
+  }
+
+  function humanEars(t) {
+    const parts = [
+      ellipse(24, 52, 4.2, 6, t.skin, LINE, 1.6),
+      ellipse(76, 52, 4.2, 6, t.skin, LINE, 1.6),
+      path("M 24.5 50.5 Q 22.6 52 24.3 54", "none", darken(t.skin, 22), 1.1),
+      path("M 75.5 50.5 Q 77.4 52 75.7 54", "none", darken(t.skin, 22), 1.1),
+    ];
     if (t.earrings) {
-      out.push(circle(24, 58, 2.2, "#e2b34f"));
-      out.push(circle(76, 58, 2.2, "#e2b34f"));
+      parts.push(circle(24, 58.5, 1.7, "#e2b34f", darken("#e2b34f", 25), 0.8));
+      parts.push(circle(76, 58.5, 1.7, "#e2b34f", darken("#e2b34f", 25), 0.8));
     }
-    return out;
+    return group(parts);
   }
 
-  // Face shape: round/oval, slightly angular for "man", softer for "woman",
-  // even rounder for "kid".
-  function humanFace(c) {
-    const t = c.traits;
-    let rx, ry, cy, jawDrop = 0;
-    if (c.breed === "man") { rx = 22; ry = 26; cy = 50; jawDrop = 2; }
-    else if (c.breed === "woman") { rx = 21; ry = 25; cy = 50; jawDrop = -2; }
-    else { rx = 21; ry = 23; cy = 48; jawDrop = 0; } // kid
-    // Use a path for the face so we can shape the jaw.
-    // Top half: half-ellipse. Bottom: come down to a slightly tapered chin.
-    const top = `M ${50 - rx} ${cy} A ${rx} ${ry} 0 0 1 ${50 + rx} ${cy}`;
-    const leftJaw = `Q ${50 - rx} ${cy + ry} ${50} ${cy + ry + jawDrop}`;
-    const rightJaw = `Q ${50 + rx} ${cy + ry} ${50} ${cy + ry + jawDrop}`;
-    return path(`${top} ${rightJaw} ${leftJaw} Z`, t.skin, "#000", 0.6);
-  }
-
-  // Hair — drawn first, then the face overlaps the front (for short styles),
-  // and bangs sit on top of the face.
-  function humanHairBack(c) {
-    const t = c.traits;
-    if (t.hairStyle === "bald") return null;
+  // Hair drawn behind the head: long panels, ponytail tail, buns, afro mass.
+  function humanHairBack(t) {
     const color = t.hair;
-    if (t.hairStyle === "long") {
-      return path(
-        "M 20 50 C 20 16, 80 16, 80 50 L 86 92 L 70 88 L 60 60 L 50 58 L 40 60 L 30 88 L 14 92 Z",
-        color
+    const edge = darken(color, 22);
+    switch (t.hairStyle) {
+      case "long":
+        return path(
+          "M 22 44 C 22 18 36 10 50 10 C 64 10 78 18 78 44 L 81 88 Q 75 92 71 88 L 67 62 L 33 62 L 29 88 Q 25 92 19 88 Z",
+          color, edge, 1.6
+        );
+      case "ponytail":
+        return path(
+          "M 62 28 C 80 30 88 48 84 66 C 82 76 75 82 70 77 C 77 64 77 46 60 37 Z",
+          color, edge, 1.4
+        );
+      case "bun":
+        return group([
+          path("M 24 44 C 24 20 36 12 50 12 C 64 12 76 20 76 44 Z", color, edge, 1.4),
+          circle(50, 10, 8.5, color, edge, 1.6),
+        ]);
+      case "curly":
+        return group([
+          circle(24, 44, 7.5, color, edge, 1.2),
+          circle(21, 54, 6.5, color, edge, 1.2),
+          circle(76, 44, 7.5, color, edge, 1.2),
+          circle(79, 54, 6.5, color, edge, 1.2),
+        ]);
+      case "afro":
+        return group([
+          ellipse(50, 36, 33, 29, color, edge, 1.8),
+          circle(20, 44, 8, color, edge, 1.2),
+          circle(80, 44, 8, color, edge, 1.2),
+        ]);
+      default:
+        return null;
+    }
+  }
+
+  // Hair drawn after the head: caps, bangs, fringes.
+  function humanHairFront(t) {
+    const color = t.hair;
+    const edge = darken(color, 20);
+    switch (t.hairStyle) {
+      case "buzz":
+        return path(
+          "M 26 45 C 26 28 37 19 50 19 C 63 19 74 28 74 45 C 70 33 61 29 50 29 C 39 29 30 33 26 45 Z",
+          color, edge, 1.2
+        );
+      case "short":
+        return group([
+          path(
+            "M 25 47 C 24 28 36 17 50 17 C 64 17 76 28 75 47 C 72 38 67 33.5 61 32.5 C 55 31.5 52 28 48 28 C 44 28 40 32.5 35 33.5 C 30 34.5 27 40 25 47 Z",
+            color, edge, 1.6
+          ),
+          // Sideburns keep the cap from reading as a helmet.
+          path("M 25 44 L 29.5 43.5 L 29 52.5 Q 25.8 51 25 44 Z", color),
+          path("M 75 44 L 70.5 43.5 L 71 52.5 Q 74.2 51 75 44 Z", color),
+        ]);
+      case "long":
+        return group([
+          path(
+            "M 25 48 C 24 24 36 15 50 15 C 64 15 76 24 75 48 C 71 36 66 31 50 30 C 40 30 30 36 25 48 Z",
+            color, edge, 1.6
+          ),
+          path("M 25 44 C 23.5 56 23.5 66 26 76 L 32.5 73.5 C 30.5 65 30.5 54 31.5 45 Z", color, edge, 1.2),
+          path("M 75 44 C 76.5 56 76.5 66 74 76 L 67.5 73.5 C 69.5 65 69.5 54 68.5 45 Z", color, edge, 1.2),
+        ]);
+      case "ponytail":
+        return path(
+          "M 25 48 C 24 26 36 16 50 16 C 64 16 76 26 75 48 C 71 37 65 32 50 31 C 38 31 29 37 25 48 Z",
+          color, edge, 1.6
+        );
+      case "bun":
+        return path(
+          "M 25 47 C 24 27 36 16 50 16 C 64 16 76 27 75 47 C 70 36 62 31 50 31 C 38 31 30 36 25 47 Z",
+          color, edge, 1.6
+        );
+      case "curly":
+        return group([
+          circle(32, 28, 8, color, edge, 1.2),
+          circle(43, 21.5, 8.5, color, edge, 1.2),
+          circle(57, 21.5, 8.5, color, edge, 1.2),
+          circle(68, 28, 8, color, edge, 1.2),
+          circle(27.5, 39, 7, color, edge, 1.2),
+          circle(72.5, 39, 7, color, edge, 1.2),
+        ]);
+      case "afro":
+        return group([
+          circle(36, 27, 6, color, edge, 1),
+          circle(50, 24.5, 6.5, color, edge, 1),
+          circle(64, 27, 6, color, edge, 1),
+        ]);
+      default:
+        return null;
+    }
+  }
+
+  // One emotion drives brows, lids, and mouth so the face stays coherent.
+  const HUMAN_EMOTION_PRESETS = {
+    happy:     { brow: "arch",     lid: 0,    pupil: 1,    mouth: "smileOpen" },
+    grin:      { brow: "archHigh", lid: 0.32, pupil: 0.95, mouth: "grin" },
+    calm:      { brow: "flat",     lid: 0.12, pupil: 1,    mouth: "calm" },
+    smirk:     { brow: "asym",     lid: 0.15, pupil: 1,    mouth: "smirk" },
+    surprised: { brow: "high",     lid: 0,    pupil: 1.15, mouth: "o", wide: true },
+    sad:       { brow: "sad",      lid: 0.3,  pupil: 1,    mouth: "frown" },
+    grumpy:    { brow: "angry",    lid: 0.42, pupil: 1,    mouth: "flat" },
+    sleepy:    { brow: "low",      lid: 0.72, pupil: 0.9,  mouth: "sleepy" },
+  };
+
+  const BROW_PATHS = {
+    arch:     { l: "M 33 46.6 Q 38.5 43.8 44 46.2", r: "M 67 46.6 Q 61.5 43.8 56 46.2" },
+    archHigh: { l: "M 33 45 Q 38.5 42.4 44 44.8",   r: "M 67 45 Q 61.5 42.4 56 44.8" },
+    flat:     { l: "M 33 46.5 L 44 46.2",           r: "M 67 46.5 L 56 46.2" },
+    high:     { l: "M 33 43.8 Q 38.5 41.4 44 43.6", r: "M 67 43.8 Q 61.5 41.4 56 43.6" },
+    low:      { l: "M 33 48 L 44 47.6",             r: "M 67 48 L 56 47.6" },
+    asym:     { l: "M 33 43.8 Q 38.5 41.4 44 44.2", r: "M 67 47.2 Q 61.5 45.4 56 46.4" },
+    sad:      { l: "M 33 47.8 L 44 44.8",           r: "M 67 47.8 L 56 44.8" },
+    angry:    { l: "M 33 44.2 L 44 47.4",           r: "M 67 44.2 L 56 47.4" },
+  };
+
+  function humanBrows(preset, hairColor) {
+    const paths = BROW_PATHS[preset.brow] || BROW_PATHS.flat;
+    const color = darken(hairColor, 12);
+    return group([
+      path(paths.l, "none", color, 2.1),
+      path(paths.r, "none", color, 2.1),
+    ]);
+  }
+
+  function humanEyes(t, preset) {
+    const exL = 39, exR = 61, ey = 55, rx = 4.1;
+    const ry = preset.wide ? 5.1 : 4.6;
+    const skinLid = darken(t.skin, 8);
+    const parts = [];
+    for (const ex of [exL, exR]) {
+      parts.push(ellipse(ex, ey, rx, ry, "#fffdf8", LINE, 1.3));
+      const irisR = 2.75 * preset.pupil;
+      parts.push(circle(ex, ey + 0.2, irisR, t.eye));
+      parts.push(circle(ex, ey + 0.2, irisR * 0.48, "#241d18"));
+      parts.push(circle(ex - 0.9, ey - 1.1, 0.75, "rgba(255,255,255,0.95)"));
+      if (preset.lid > 0.02) {
+        const lidH = ry * 2 * preset.lid;
+        parts.push(ellipse(ex, ey - ry + lidH / 2, rx * 0.92, lidH / 2 + 0.4, skinLid));
+        parts.push(path(
+          `M ${ex - rx + 0.3} ${ey - ry + lidH} Q ${ex} ${ey - ry + lidH + 1.7} ${ex + rx - 0.3} ${ey - ry + lidH}`,
+          "none", LINE, 1.2
+        ));
+      }
+    }
+    if (t.breed !== "man") {
+      parts.push(path("M 34.8 53.4 L 32.8 52.2", "none", LINE, 1.1));
+      parts.push(path("M 65.2 53.4 L 67.2 52.2", "none", LINE, 1.1));
+    }
+    return group(parts);
+  }
+
+  function humanNose(t) {
+    return path(
+      "M 50 56.5 C 49.2 59.5 48.2 61.8 47.4 63.2 Q 50 64.8 52.6 63.2",
+      "none", darken(t.skin, 26), 1.5
+    );
+  }
+
+  function humanMouth(t, preset) {
+    const lip = t.lipstick ? "#c4526a" : darken(t.skin, 28);
+    switch (preset.mouth) {
+      case "smileOpen":
+        return group([
+          path("M 42.5 68.5 Q 50 74.8 57.5 68.5", "none", lip, 2),
+          path("M 45 71.6 Q 50 73.3 55 71.6", "none", lip, 1),
+        ]);
+      case "grin":
+        return group([
+          path("M 41.5 67.5 Q 50 79 58.5 67.5 Q 50 70 41.5 67.5 Z", MOUTH_DARK, LINE, 1.4),
+          path("M 43.5 68.7 Q 50 70.4 56.5 68.7 L 56.2 70.8 Q 50 72.6 43.8 70.8 Z", "#fffdf8"),
+          path("M 45.5 75.6 Q 50 77.4 54.5 75.6", "none", TONGUE, 1.6),
+        ]);
+      case "calm":
+        return path("M 44.5 69.5 Q 50 72.2 55.5 69.5", "none", lip, 2);
+      case "smirk":
+        return path("M 43.5 70.5 Q 50 73.8 57.5 68.2", "none", lip, 2);
+      case "o":
+        return group([
+          ellipse(50, 70.5, 3.1, 4, MOUTH_DARK, LINE, 1.2),
+          ellipse(50, 72.4, 1.6, 1.5, TONGUE),
+        ]);
+      case "frown":
+        return path("M 44.5 71.8 Q 50 68.8 55.5 71.8", "none", lip, 2);
+      case "flat":
+        return path("M 44.5 70.4 L 55.5 70.4", "none", lip, 2);
+      case "sleepy":
+        return ellipse(50.5, 70.5, 2.1, 2.6, MOUTH_DARK, LINE, 1);
+      default:
+        return path("M 44.5 70 L 55.5 70", "none", lip, 2);
+    }
+  }
+
+  function humanExtras(t) {
+    const parts = [];
+    if (["happy", "grin", "surprised"].includes(t.expression)) {
+      parts.push(ellipse(31.5, 63.5, 3.4, 2.1, BLUSH));
+      parts.push(ellipse(68.5, 63.5, 3.4, 2.1, BLUSH));
+    }
+    if (t.freckles) {
+      const c = "rgba(122, 68, 38, 0.75)";
+      parts.push(
+        circle(36, 60.5, 0.75, c), circle(39.5, 62, 0.7, c), circle(42, 60, 0.6, c),
+        circle(58, 60, 0.6, c), circle(60.5, 62, 0.7, c), circle(64, 60.5, 0.75, c)
       );
     }
-    if (t.hairStyle === "ponytail") {
-      return group([
-        path("M 22 50 C 22 20, 78 20, 78 50 L 80 64 L 20 64 Z", color),
-        ellipse(84, 70, 6, 14, color),
-        path("M 78 78 L 80 92 L 88 92 L 86 76 Z", color),
-      ]);
-    }
-    if (t.hairStyle === "bun") {
-      return group([
-        path("M 22 50 C 22 18, 78 18, 78 50 L 78 58 L 22 58 Z", color),
-        circle(78, 22, 9, color),
-        circle(22, 22, 9, color),
-      ]);
-    }
-    if (t.hairStyle === "afro") {
-      return group([
-        circle(28, 32, 11, color),
-        circle(40, 22, 12, color),
-        circle(50, 20, 13, color),
-        circle(60, 22, 12, color),
-        circle(72, 32, 11, color),
-        circle(20, 44, 9, color),
-        circle(80, 44, 9, color),
-      ]);
-    }
-    if (t.hairStyle === "curly") {
-      return group([
-        circle(30, 32, 8, color),
-        circle(40, 24, 9, color),
-        circle(50, 22, 9, color),
-        circle(60, 24, 9, color),
-        circle(70, 32, 8, color),
-        circle(24, 42, 7, color),
-        circle(76, 42, 7, color),
-      ]);
-    }
-    if (t.hairStyle === "buzz") {
-      return path("M 24 46 C 24 28, 76 28, 76 46 L 78 50 L 22 50 Z", color);
-    }
-    // short
-    return path("M 22 50 C 22 22, 78 22, 78 50 L 80 56 L 20 56 Z", color);
-  }
-
-  // Bangs — drawn AFTER the face so they sit on the forehead.
-  function humanHairFront(c) {
-    const t = c.traits;
-    if (t.hat !== "none" || t.hairStyle === "bald" || t.hairStyle === "buzz") return null;
-    const color = t.hair;
-    if (t.hairStyle === "afro" || t.hairStyle === "curly") return null;
-    if (t.hairStyle === "long" || t.hairStyle === "ponytail") {
-      return path("M 22 48 C 30 34, 70 34, 78 48 Q 70 42 60 46 Q 50 50 40 46 Q 30 42 22 48 Z", color);
-    }
-    if (t.hairStyle === "bun") return null;
-    // short
-    return path("M 24 48 C 30 36, 70 36, 76 48 Q 70 44 60 46 Q 50 50 40 46 Q 30 44 24 48 Z", color);
-  }
-
-  // Hats — drawn AFTER the back hair but BEFORE the front hair.
-  // Each hat is shaped to follow the curve of the head so it doesn't look
-  // like a rectangle stuck on the forehead.
-  function humanHat(c) {
-    const t = c.traits;
-    if (t.hat === "none") return null;
-    const color = t.hatColor;
-    if (t.hat === "beanie") {
-      return group([
-        // The dome of the beanie follows the head's curve.
-        path("M 20 44 C 22 22, 78 22, 80 44 L 78 50 L 22 50 Z", color, darken(color, 15), 0.6),
-        // Folded cuff at the bottom
-        rect(20, 46, 60, 6, shade(color, -12), 1, darken(color, 20)),
-        // Pom on top
-        circle(50, 18, 5, "#fffaf0", darken(color, 25)),
-      ]);
-    }
-    if (t.hat === "cap") {
-      return group([
-        // Crown of the cap follows the head curve.
-        path("M 18 42 C 22 26, 78 26, 82 42 L 80 46 L 20 46 Z", color, darken(color, 15), 0.6),
-        // Brim — a thin horizontal strip across the forehead, above the eyes
-        rect(18, 46, 64, 4, color, 1, darken(color, 15)),
-        // Button on top
-        circle(50, 26, 2, shade(color, 15)),
-      ]);
-    }
-    if (t.hat === "tophat") {
-      return group([
-        // Tall cylinder
-        rect(36, 8, 28, 32, color, 2, darken(color, 20)),
-        // Brim
-        rect(26, 38, 48, 5, color, 2, darken(color, 20)),
-        // Band
-        rect(36, 34, 28, 5, darken(color, 25)),
-      ]);
-    }
-    if (t.hat === "cowboy") {
-      return group([
-        // Brim — wide oval
-        ellipse(50, 42, 36, 7, color, darken(color, 20)),
-        // Crown — pinched in the middle (classic cowboy shape)
-        path("M 32 42 C 32 18, 68 18, 68 42 Z", color, darken(color, 20), 0.6),
-        // Hatband
-        path("M 32 36 Q 50 32 68 36 L 68 40 Q 50 36 32 40 Z", darken(color, 20)),
-      ]);
-    }
-    if (t.hat === "bandana") {
-      // Bandana — a wide strip across the forehead with a knot on top.
-      return group([
-        // Front strip — covers the forehead, just above the eyes
-        path("M 18 44 L 82 44 L 80 50 L 20 50 Z", color, darken(color, 20), 0.6),
-        // Knot on top
-        path("M 44 38 L 50 28 L 56 38 L 52 44 L 48 44 Z", color, darken(color, 20), 0.6),
-        // Small polka dots for character
-        circle(30, 47, 1, "rgba(255,250,240,0.5)"),
-        circle(50, 47, 1, "rgba(255,250,240,0.5)"),
-        circle(70, 47, 1, "rgba(255,250,240,0.5)"),
-      ]);
-    }
-    return null;
-  }
-
-  function humanEyes(c) {
-    const t = c.traits;
-    const out = [];
-    out.push(ellipse(38, 54, 3, 3.2, "#fff"));
-    out.push(ellipse(62, 54, 3, 3.2, "#fff"));
-    out.push(circle(38, 54, 1.7, t.eye));
-    out.push(circle(62, 54, 1.7, t.eye));
-    out.push(circle(38, 53.2, 0.6, "#fff"));
-    out.push(circle(62, 53.2, 0.6, "#fff"));
-    return group(out);
-  }
-
-  function humanEyebrows(c) {
-    const t = c.traits;
-    const color = darken(t.hair, -5);
-    if (t.eyebrows === "raised") {
-      return group([
-        path("M 33 44 Q 38 41 43 44", "none", color, 2),
-        path("M 57 44 Q 62 41 67 44", "none", color, 2),
-      ]);
-    }
-    if (t.eyebrows === "angry") {
-      return group([
-        path("M 33 46 L 43 43", "none", color, 2),
-        path("M 57 43 L 67 46", "none", color, 2),
-      ]);
-    }
-    if (t.eyebrows === "sad") {
-      return group([
-        path("M 33 44 L 43 47", "none", color, 2),
-        path("M 57 47 L 67 44", "none", color, 2),
-      ]);
-    }
-    if (t.eyebrows === "bushy") {
-      return group([
-        path("M 32 45 Q 38 42 44 45 L 44 47 L 32 47 Z", color),
-        path("M 56 45 Q 62 42 68 45 L 68 47 L 56 47 Z", color),
-      ]);
-    }
-    return group([
-      path("M 33 46 L 43 46", "none", color, 2),
-      path("M 57 46 L 67 46", "none", color, 2),
-    ]);
-  }
-
-  function humanGlasses(c) {
-    const t = c.traits;
-    if (t.glasses === "none") return null;
-    const stroke = "#1a1a1a";
-    const sw = 1.5;
-    if (t.glasses === "round") {
-      return group([
-        circle(38, 54, 5.5, "none", stroke),
-        circle(62, 54, 5.5, "none", stroke),
-        path("M 43 54 H 57", stroke, stroke, sw),
-      ]);
-    }
-    if (t.glasses === "square") {
-      return group([
-        rect(31, 50, 14, 9, "none", 1, stroke),
-        rect(55, 50, 14, 9, "none", 1, stroke),
-        path("M 45 54 H 55", stroke, stroke, sw),
-      ]);
-    }
-    if (t.glasses === "sunglasses") {
-      return group([
-        rect(31, 50, 14, 8, "#1a1a1a", 2),
-        rect(55, 50, 14, 8, "#1a1a1a", 2),
-        path("M 45 54 H 55", stroke, "#1a1a1a", sw),
-        // Reflection shine
-        path("M 34 52 L 38 55", "none", "rgba(255,255,255,0.4)", 1),
-        path("M 58 52 L 62 55", "none", "rgba(255,255,255,0.4)", 1),
-      ]);
-    }
-    if (t.glasses === "monocle") {
-      return group([
-        circle(62, 54, 6, "none", stroke, sw),
-        line(62, 60, 64, 70, stroke, 0.8),
-      ]);
-    }
-    return null;
-  }
-
-  function humanNose(c) {
-    const t = c.traits;
-    return path("M 50 58 L 46 66 L 50 67 L 54 66 Z", shade(t.skin, -8));
-  }
-
-  function humanFacialHair(c) {
-    const t = c.traits;
-    if (t.facialHair === "none") return null;
-    const color = darken(t.hair, 5);
-    if (t.facialHair === "mustache") {
-      return path("M 40 68 Q 50 64 60 68 Q 55 71 50 70 Q 45 71 40 68 Z", color);
-    }
-    if (t.facialHair === "beard") {
-      return path("M 28 64 Q 50 95 72 64 Q 60 80 50 80 Q 40 80 28 64 Z", color);
-    }
-    if (t.facialHair === "goatee") {
-      return group([
-        path("M 44 70 Q 50 68 56 70 Q 53 73 50 73 Q 47 73 44 70 Z", color),
-        path("M 46 73 L 50 80 L 54 73 Z", color),
-      ]);
-    }
-    return null;
-  }
-
-  function humanMouth(c) {
-    const t = c.traits;
-    const lip = t.lipstick ? "#c84e4e" : shade(t.skin, -25);
-    if (t.expression === "grin" || t.expression === "smile") {
-      return group([
-        path("M 40 70 Q 50 78 60 70", "none", lip, 2),
-        t.lipstick ? path("M 40 70 Q 50 80 60 70 Q 50 72 40 70 Z", lip) : null,
-        // Teeth hint for big grin
-        t.expression === "grin" ? path("M 42 72 Q 50 76 58 72 L 58 73 Q 50 75 42 73 Z", "#fffaf0") : null,
-      ]);
-    }
-    if (t.expression === "smirk") {
-      return group([
-        path("M 40 71 Q 50 74 60 70", "none", lip, 2),
-        t.lipstick ? path("M 40 71 Q 50 75 60 70 Q 50 71 40 71 Z", lip) : null,
-      ]);
-    }
-    if (t.expression === "frown") {
-      return group([
-        path("M 40 72 Q 50 66 60 72", "none", lip, 2),
-        t.lipstick ? path("M 40 72 Q 50 70 60 72 Q 50 76 40 72 Z", lip) : null,
-      ]);
-    }
-    if (t.expression === "surprised") {
-      return ellipse(50, 71, 3, 4, lip, "#1a1a1a");
-    }
-    if (t.expression === "skeptical") {
-      return path("M 42 71 Q 50 70 58 71", "none", lip, 2);
-    }
     if (t.expression === "sleepy") {
-      return path("M 44 71 Q 50 72 56 71", "none", lip, 1.5);
+      parts.push(zzz(78, 32, 7, 0.7), zzz(85, 24, 5.5, 0.55));
     }
-    return path("M 44 70 H 56", "none", lip, 2);
+    return parts.length ? group(parts) : null;
   }
 
-  function humanFreckles(c) {
-    if (!c.traits.freckles) return null;
-    const freckleColor = "#a05a3a";
+  function humanFacialHair(t) {
+    const color = darken(t.hair, 6);
+    switch (t.facialHair) {
+      case "mustache":
+        return path(
+          "M 41.5 66.5 Q 46 63.8 50 66 Q 54 63.8 58.5 66.5 Q 54 68.8 50 67.2 Q 46 68.8 41.5 66.5 Z",
+          color
+        );
+      case "beard":
+        return path(
+          "M 30 56 C 30 74 38 83 50 83 C 62 83 70 74 70 56 C 66 72 60 74.5 50 74.5 C 40 74.5 34 72 30 56 Z",
+          color, darken(color, 20), 1
+        );
+      case "goatee":
+        return path(
+          "M 44.5 71 C 45.5 77.5 48 79.5 50 79.5 C 52 79.5 54.5 77.5 55.5 71 C 53.5 73.2 46.5 73.2 44.5 71 Z",
+          color
+        );
+      default:
+        return null;
+    }
+  }
+
+  function humanGlasses(t) {
+    switch (t.glasses) {
+      case "round":
+        return group([
+          circle(39, 55, 6.4, "rgba(255,255,255,0.25)", LINE, 1.7),
+          circle(61, 55, 6.4, "rgba(255,255,255,0.25)", LINE, 1.7),
+          path("M 45.4 54.4 Q 50 52.8 54.6 54.4", "none", LINE, 1.7),
+          line(32.6, 54, 26, 51.5, LINE, 1.5),
+          line(67.4, 54, 74, 51.5, LINE, 1.5),
+        ]);
+      case "square":
+        return group([
+          svgEl("rect", { x: 31.5, y: 49.5, width: 15, height: 11.5, rx: 3, fill: "rgba(255,255,255,0.25)", stroke: LINE, "stroke-width": 1.7 }),
+          svgEl("rect", { x: 53.5, y: 49.5, width: 15, height: 11.5, rx: 3, fill: "rgba(255,255,255,0.25)", stroke: LINE, "stroke-width": 1.7 }),
+          path("M 46.5 54.4 Q 50 53 53.5 54.4", "none", LINE, 1.7),
+          line(31.5, 53.5, 26, 51.5, LINE, 1.5),
+          line(68.5, 53.5, 74, 51.5, LINE, 1.5),
+        ]);
+      case "sunglasses":
+        return group([
+          path("M 30.5 49 L 47.5 49 Q 48 56.5 43 58 Q 35 59.5 31.5 55.5 Q 30.2 52.5 30.5 49 Z", "#33291f", LINE, 1.5),
+          path("M 69.5 49 L 52.5 49 Q 52 56.5 57 58 Q 65 59.5 68.5 55.5 Q 69.8 52.5 69.5 49 Z", "#33291f", LINE, 1.5),
+          path("M 47.5 51.5 Q 50 50.4 52.5 51.5", "none", LINE, 1.7),
+          line(30.5, 51, 26, 51.5, LINE, 1.5),
+          line(69.5, 51, 74, 51.5, LINE, 1.5),
+          path("M 34 52 L 37.5 55.5", "none", "rgba(255,255,255,0.5)", 1.3),
+          path("M 56 52 L 59.5 55.5", "none", "rgba(255,255,255,0.5)", 1.3),
+        ]);
+      case "monocle":
+        return group([
+          circle(61, 55, 6.8, "rgba(255,255,255,0.25)", LINE, 1.7),
+          path("M 61 61.8 Q 63.5 68 66.5 72", "none", LINE, 1.1),
+        ]);
+      default:
+        return null;
+    }
+  }
+
+  function humanHat(t) {
+    const c = t.hatColor || "#6b5138";
+    const edge = darken(c, 26);
+    switch (t.hat) {
+      case "beanie":
+        return group([
+          path("M 22.5 39 C 21 21 34 10 50 10 C 66 10 79 21 77.5 39 Z", c, edge, 1.8),
+          svgEl("rect", { x: 21, y: 34.5, width: 58, height: 8.5, rx: 4.2, fill: darken(c, 12), stroke: edge, "stroke-width": 1.4 }),
+          circle(50, 7.5, 5.2, "#f6efe2", darken("#f6efe2", 14), 1.2),
+        ]);
+      case "cap":
+        return group([
+          path("M 22.5 43 C 22.5 25 34.5 14 50 14 C 65.5 14 77.5 25 77.5 43 L 77.5 44.5 L 22.5 44.5 Z", c, edge, 1.8),
+          path("M 20 43 Q 50 49.5 80 43 Q 50 46 20 43 Z", darken(c, 12), edge, 1.4),
+          circle(50, 12.5, 2.2, lighten(c, 14)),
+        ]);
+      case "tophat":
+        return group([
+          svgEl("rect", { x: 34, y: 2, width: 32, height: 33, rx: 2.5, fill: c, stroke: edge, "stroke-width": 1.8 }),
+          svgEl("rect", { x: 34, y: 25, width: 32, height: 6.5, fill: darken(c, 22) }),
+          ellipse(50, 35.5, 27, 5.2, c, edge, 1.8),
+        ]);
+      case "cowboy":
+        return group([
+          path("M 31.5 35 C 31.5 17 42 11 50 11 C 58 11 68.5 17 68.5 35 Z", c, edge, 1.8),
+          path("M 31.5 30 Q 50 26 68.5 30 L 68.5 35 Q 50 31.5 31.5 35 Z", darken(c, 18)),
+          path(
+            "M 12 36.5 C 16 30.5 26 32.5 32 35.5 C 40 39.5 60 39.5 68 35.5 C 74 32.5 84 30.5 88 36.5 C 90 42.5 76 46.5 50 46.5 C 24 46.5 10 42.5 12 36.5 Z",
+            c, edge, 1.8
+          ),
+        ]);
+      case "bandana":
+        return group([
+          path("M 24 42 C 24 26 35 16 50 16 C 65 16 76 26 76 42 L 69 44.5 Q 50 38.5 31 44.5 Z", c, edge, 1.6),
+          path("M 69.5 43.5 L 79 39.5 L 76 48.5 Z", c, edge, 1.4),
+          circle(38, 31, 1.4, "rgba(255,250,240,0.55)"),
+          circle(50, 25.5, 1.4, "rgba(255,250,240,0.55)"),
+          circle(60, 32, 1.4, "rgba(255,250,240,0.55)"),
+        ]);
+      default:
+        return null;
+    }
+  }
+
+  function renderHuman(character) {
+    const t = character.traits;
+    const preset = HUMAN_EMOTION_PRESETS[t.expression] || HUMAN_EMOTION_PRESETS.calm;
+    const layers = [
+      ...humanBody(t, character.breed),
+      humanHairBack(t),
+      humanEars(t),
+      path(humanHeadPath(character.breed), t.skin, LINE, 2),
+      humanHairFront(t),
+      humanBrows(preset, t.hair),
+      humanEyes(t, preset),
+      humanNose(t),
+      humanFacialHair(t),
+      humanMouth(t, preset),
+      humanExtras(t),
+      humanGlasses(t),
+      humanHat(t),
+    ];
+    return group(layers.filter(Boolean), `rotate(${(t.tilt || 0).toFixed(2)} 50 62)`);
+  }
+
+  // ============================================================
+  // CAT RENDERER
+  // ============================================================
+
+  const CAT_EMOTION_PRESETS = {
+    content: { eyes: "happyArcs", mouth: "omega", blush: true },
+    playful: { eyes: "roundBig",  mouth: "openTongue", blush: true },
+    smug:    { eyes: "halfLid",   mouth: "omegaSmirk" },
+    sleepy:  { eyes: "closed",    mouth: "tiny", zzz: true },
+    alert:   { eyes: "roundWide", mouth: "tiny" },
+    grumpy:  { eyes: "grumpyLid", mouth: "flatOmega" },
+  };
+
+  function catEars(t, fur) {
+    const edge = darken(fur, 24);
+    const dark = t.pattern === "colorpoint" ? darken(fur, 38) : fur;
     return group([
-      circle(40, 64, 0.7, freckleColor),
-      circle(44, 66, 0.6, freckleColor),
-      circle(48, 65, 0.6, freckleColor),
-      circle(52, 65, 0.7, freckleColor),
-      circle(56, 66, 0.6, freckleColor),
-      circle(60, 64, 0.7, freckleColor),
+      path("M 26 40 Q 22.5 22 30 12 Q 41 18 43.5 33 Z", dark, edge, 1.8),
+      path("M 74 40 Q 77.5 22 70 12 Q 59 18 56.5 33 Z", dark, edge, 1.8),
+      path("M 30.5 33 Q 29 23 32.5 17.5 Q 38 21.5 39.5 30 Z", EAR_INNER),
+      path("M 69.5 33 Q 71 23 67.5 17.5 Q 62 21.5 60.5 30 Z", EAR_INNER),
     ]);
   }
 
+  function catHead(t, fur) {
+    const edge = darken(fur, 24);
+    const parts = [
+      path("M 50 24 C 34 24 23 34 23 50 C 23 67 35 79 50 79 C 65 79 77 67 77 50 C 77 34 66 24 50 24 Z", fur, edge, 2),
+      // Cheek tufts — little fur spikes on each side.
+      path("M 23.5 54 L 18 56 L 23.5 58.5 L 19.5 62 L 25 63.5", "none", edge, 1.2),
+      path("M 76.5 54 L 82 56 L 76.5 58.5 L 80.5 62 L 75 63.5", "none", edge, 1.2),
+    ];
+    if (t.pattern === "stripes") {
+      const stripe = darken(fur, 20);
+      parts.push(
+        path("M 42 27 L 40.5 34", "none", stripe, 2),
+        path("M 50 25.5 L 50 33", "none", stripe, 2),
+        path("M 58 27 L 59.5 34", "none", stripe, 2),
+        path("M 27.5 42 L 34 44.5", "none", stripe, 2),
+        path("M 72.5 42 L 66 44.5", "none", stripe, 2)
+      );
+    }
+    if (t.pattern === "calico") {
+      parts.push(
+        path("M 28 38 C 33 30 44 32 42 42 C 38 48 30 46 28 38 Z", "#d9a35c"),
+        path("M 67 59 C 73 55 78 62 74 68 C 68 71 64 65 67 59 Z", "#3a3028")
+      );
+    }
+    if (t.pattern === "colorpoint") {
+      parts.push(ellipse(50, 63, 15.5, 11.5, darken(fur, 34)));
+    }
+    return group(parts);
+  }
+
+  function catEyes(t, preset) {
+    const ey = 49, exL = 39, exR = 61;
+    // Deterministic iris color derived from the fur color string.
+    const hash = (t.fur || "").split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    const iris = t.pattern === "colorpoint" ? "#5b8ac2" : ["#7a9a4f", "#c9a441", "#5b8ac2"][hash % 3];
+    const parts = [];
+    const drawOpen = (ex, wide) => {
+      const rx = wide ? 5.4 : 4.9;
+      const ry = wide ? 6 : 5.4;
+      parts.push(ellipse(ex, ey, rx, ry, "#fdf8ee", darken(t.fur, 30), 1.2));
+      parts.push(ellipse(ex, ey, rx * 0.72, ry * 0.78, iris));
+      parts.push(ellipse(ex, ey, rx * 0.2, ry * 0.6, "#241d18"));
+      parts.push(circle(ex - 1.1, ey - 1.6, 0.85, "rgba(255,255,255,0.95)"));
+    };
+    switch (preset.eyes) {
+      case "happyArcs":
+        parts.push(
+          path("M 34.5 50 Q 39 44.5 43.5 50", "none", LINE, 2),
+          path("M 56.5 50 Q 61 44.5 65.5 50", "none", LINE, 2)
+        );
+        break;
+      case "closed":
+        parts.push(
+          path("M 34.5 48 Q 39 52.5 43.5 48", "none", LINE, 2),
+          path("M 56.5 48 Q 61 52.5 65.5 48", "none", LINE, 2)
+        );
+        break;
+      case "halfLid":
+        drawOpen(exL, false); drawOpen(exR, false);
+        parts.push(
+          ellipse(exL, ey - 3.4, 4.6, 2.2, darken(t.fur, 10)),
+          ellipse(exR, ey - 3.4, 4.6, 2.2, darken(t.fur, 10)),
+          path("M 34.5 47.5 Q 39 49 43.5 47.5", "none", LINE, 1.6),
+          path("M 56.5 47.5 Q 61 49 65.5 47.5", "none", LINE, 1.6)
+        );
+        break;
+      case "grumpyLid":
+        drawOpen(exL, false); drawOpen(exR, false);
+        parts.push(
+          ellipse(exL, ey - 2.6, 4.6, 2.4, darken(t.fur, 10), "none", 0, `rotate(-10 ${exL} ${ey - 2.6})`),
+          ellipse(exR, ey - 2.6, 4.6, 2.4, darken(t.fur, 10), "none", 0, `rotate(10 ${exR} ${ey - 2.6})`),
+          path("M 34.5 48.6 Q 39 50.2 43.5 49", "none", LINE, 1.6),
+          path("M 65.5 48.6 Q 61 50.2 56.5 49", "none", LINE, 1.6)
+        );
+        break;
+      case "roundWide":
+        drawOpen(exL, true); drawOpen(exR, true);
+        break;
+      default:
+        drawOpen(exL, false); drawOpen(exR, false);
+    }
+    return group(parts);
+  }
+
+  function catMuzzle(t, preset) {
+    const parts = [
+      ellipse(50, 63.5, 12.5, 9, lighten(t.fur, 14)),
+      path("M 46.6 58.4 Q 50 56.6 53.4 58.4 Q 52 62.2 50 62.8 Q 48 62.2 46.6 58.4 Z", "#d3737f", darken("#d3737f", 25), 0.9),
+    ];
+    const mouthLine = darken(t.fur, 40);
+    switch (preset.mouth) {
+      case "omega":
+        parts.push(path("M 43.5 65.5 Q 46.5 69 50 66.2 Q 53.5 69 56.5 65.5", "none", mouthLine, 1.8));
+        break;
+      case "omegaSmirk":
+        parts.push(path("M 44.5 66 Q 47.5 69.5 50.5 66.4 Q 54 68.4 57 64.6", "none", mouthLine, 1.8));
+        break;
+      case "flatOmega":
+        parts.push(path("M 44.5 66.5 Q 47.5 68.6 50 66.8 Q 52.5 68.6 55.5 66.5", "none", mouthLine, 1.7));
+        break;
+      case "openTongue":
+        parts.push(
+          path("M 44 64.5 Q 50 72 56 64.5 Q 50 66.5 44 64.5 Z", MOUTH_DARK, LINE, 1.2),
+          ellipse(50, 68.6, 2.6, 2.4, TONGUE)
+        );
+        break;
+      default:
+        parts.push(path("M 45.5 65.8 Q 50 67.8 54.5 65.8", "none", mouthLine, 1.7));
+    }
+    const whisker = "rgba(70, 52, 40, 0.6)";
+    parts.push(
+      path("M 36.5 61 Q 28 59.5 21.5 56.5", "none", whisker, 1),
+      path("M 36.5 64 Q 28 64.5 21.5 64.5", "none", whisker, 1),
+      path("M 63.5 61 Q 72 59.5 78.5 56.5", "none", whisker, 1),
+      path("M 63.5 64 Q 72 64.5 78.5 64.5", "none", whisker, 1)
+    );
+    return group(parts);
+  }
+
+  function renderCat(character) {
+    const t = character.traits;
+    const preset = CAT_EMOTION_PRESETS[t.expression] || CAT_EMOTION_PRESETS.content;
+    const point = t.pattern === "colorpoint";
+    // Colorpoint cats have cream bodies with dark ears, mask, and tail.
+    const bodyFur = point ? t.fur : t.fur;
+    const tailFur = point ? darken(t.fur, 30) : t.fur;
+    const edge = darken(bodyFur, 24);
+    const layers = [
+      path("M 72 100 C 86 97 93 85 84 77 C 80 74 76 76 77 80", "none", tailFur, 7),
+      circle(77, 80, 3.6, darken(tailFur, 18)),
+      path("M 17 102 C 22 85 37 78 50 78 C 63 78 78 85 83 102 Z", bodyFur, edge, 2),
+      ellipse(50, 95, 12, 9, lighten(bodyFur, 12)),
+      animalCollar(t, 85),
+      catEars(t, bodyFur),
+      catHead(t, bodyFur),
+      catEyes(t, preset),
+      catMuzzle(t, preset),
+    ];
+    if (preset.blush) {
+      layers.push(ellipse(31, 58.5, 3.4, 2, BLUSH), ellipse(69, 58.5, 3.4, 2, BLUSH));
+    }
+    if (preset.zzz) {
+      layers.push(zzz(76, 32, 8, 0.7), zzz(84, 23, 6, 0.55));
+    }
+    return group(layers.filter(Boolean), `rotate(${(t.tilt || 0).toFixed(2)} 50 62)`);
+  }
+
   // ============================================================
-  // Top-level renderer — picks the right head + accessories
+  // DOG RENDERER
   // ============================================================
+
+  const DOG_EMOTION_PRESETS = {
+    happy:   { eyes: "round",  brows: "relaxed", mouth: "smileTongue", ears: "normal" },
+    panting: { eyes: "round",  brows: "relaxed", mouth: "pant",        ears: "droop" },
+    alert:   { eyes: "wide",   brows: "up",      mouth: "small",       ears: "up" },
+    sleepy:  { eyes: "closed", brows: "flat",    mouth: "tiny",        ears: "droop", zzz: true },
+    sad:     { eyes: "sadLid", brows: "sad",     mouth: "frown",       ears: "droop" },
+  };
+
+  function dogEars(t, pose) {
+    const edge = darken(t.earColor, 22);
+    switch (t.breed) {
+      case "shepherd": {
+        if (pose === "droop") {
+          return group([
+            path("M 28 32 Q 21 44 28 56 Q 34.5 53 35 40 Z", t.earColor, edge, 1.8),
+            path("M 72 32 Q 79 44 72 56 Q 65.5 53 65 40 Z", t.earColor, edge, 1.8),
+          ]);
+        }
+        return group([
+          path("M 27 38 Q 23 18 33 10 Q 44 16 45.5 32 Z", t.earColor, edge, 1.8),
+          path("M 73 38 Q 77 18 67 10 Q 56 16 54.5 32 Z", t.earColor, edge, 1.8),
+          path("M 31.5 30 Q 30 19 34.5 14.5 Q 40 18.5 41.5 28 Z", darken(t.earColor, 28)),
+          path("M 68.5 30 Q 70 19 65.5 14.5 Q 60 18.5 58.5 28 Z", darken(t.earColor, 28)),
+        ]);
+      }
+      case "spaniel":
+        return group([
+          path("M 27 34 C 14 38 12 62 18 78 C 21 86 30 86 31 78 C 33 64 33 46 31 36 Z", t.earColor, edge, 1.8),
+          path("M 73 34 C 86 38 88 62 82 78 C 79 86 70 86 69 78 C 67 64 67 46 69 36 Z", t.earColor, edge, 1.8),
+        ]);
+      case "bulldog":
+        return group([
+          path("M 25 36 Q 18.5 30 21 42 Q 23 50 30 47.5 Z", t.earColor, edge, 1.6),
+          path("M 75 36 Q 81.5 30 79 42 Q 77 50 70 47.5 Z", t.earColor, edge, 1.6),
+        ]);
+      default: // puppy
+        return group([
+          path("M 27 34 C 19 38 18 52 24 58 C 29 56 31 44 30 35 Z", t.earColor, edge, 1.8),
+          path("M 73 34 C 81 38 82 52 76 58 C 71 56 69 44 70 35 Z", t.earColor, edge, 1.8),
+        ]);
+    }
+  }
+
+  function dogHead(t) {
+    const edge = darken(t.fur, 24);
+    if (t.breed === "bulldog") {
+      return group([
+        path("M 50 26 C 32 26 21 35 21 50 C 21 66 33 78 50 78 C 67 78 79 66 79 50 C 79 35 68 26 50 26 Z", t.fur, edge, 2),
+        path("M 33 41.5 Q 39 39 44 41.5", "none", darken(t.fur, 20), 1.3),
+        path("M 56 41.5 Q 61 39 67 41.5", "none", darken(t.fur, 20), 1.3),
+        path("M 42 33.5 Q 50 31.5 58 33.5", "none", darken(t.fur, 20), 1.3),
+      ]);
+    }
+    if (t.breed === "puppy") {
+      return group([
+        path("M 50 26 C 35 26 25 36 25 50 C 25 65 36 78 50 78 C 64 78 75 65 75 50 C 75 36 65 26 50 26 Z", t.fur, edge, 2),
+        ellipse(50, 19, 3.6, 2.8, lighten(t.fur, 12)),
+      ]);
+    }
+    if (t.breed === "spaniel") {
+      return group([
+        path("M 50 25 C 35 25 25 35 25 49 C 25 65 36 79 50 79 C 64 79 75 65 75 49 C 75 35 65 25 50 25 Z", t.fur, edge, 2),
+        path("M 33 29 Q 50 21 67 29 Q 58 24.5 50 24.5 Q 42 24.5 33 29 Z", darken(t.fur, 10)),
+      ]);
+    }
+    // shepherd
+    return group([
+      path("M 50 24 C 35 24 24 33 24 48 C 24 64 35 79 50 79 C 65 79 76 64 76 48 C 76 33 65 24 50 24 Z", t.fur, edge, 2),
+    ]);
+  }
+
+  function dogEyes(t, preset) {
+    const exL = t.breed === "bulldog" ? 38.5 : 39;
+    const exR = t.breed === "bulldog" ? 61.5 : 61;
+    const ey = 50;
+    const rx = t.breed === "puppy" ? 4.9 : 4.3;
+    const ryBase = t.breed === "puppy" ? 5.3 : 4.7;
+    const parts = [];
+    const drawOpen = (ex, ryScale = 1, lidFrac = 0) => {
+      const ry = ryBase * ryScale;
+      parts.push(ellipse(ex, ey, rx, ry, "#fdf8ee", darken(t.fur, 30), 1.2));
+      parts.push(circle(ex, ey + 0.2, rx * 0.62, "#4a3a24"));
+      parts.push(circle(ex, ey + 0.2, rx * 0.3, "#1d1613"));
+      parts.push(circle(ex - 0.95, ey - 1.2, 0.8, "rgba(255,255,255,0.95)"));
+      if (lidFrac > 0.02) {
+        const lidH = ry * 2 * lidFrac;
+        parts.push(ellipse(ex, ey - ry + lidH / 2, rx * 0.92, lidH / 2 + 0.4, darken(t.fur, 6)));
+        parts.push(path(
+          `M ${ex - rx + 0.3} ${ey - ry + lidH} Q ${ex} ${ey - ry + lidH + 1.6} ${ex + rx - 0.3} ${ey - ry + lidH}`,
+          "none", LINE, 1.2
+        ));
+      }
+    };
+    switch (preset.eyes) {
+      case "closed":
+        parts.push(
+          path(`M ${exL - 4.4} 50 Q ${exL} 54.5 ${exL + 4.4} 50`, "none", LINE, 2),
+          path(`M ${exR - 4.4} 50 Q ${exR} 54.5 ${exR + 4.4} 50`, "none", LINE, 2)
+        );
+        break;
+      case "sadLid":
+        drawOpen(exL, 0.95, 0.32); drawOpen(exR, 0.95, 0.32);
+        break;
+      case "wide":
+        drawOpen(exL, 1.12); drawOpen(exR, 1.12);
+        break;
+      default:
+        drawOpen(exL); drawOpen(exR);
+    }
+    // Classic eyebrow dots — they tilt with the emotion. On light coats the
+    // dots must darken to stay visible; on dark coats they lighten.
+    const browColor = t.breed === "bulldog"
+      ? "#3a2d22"
+      : isLightColor(t.fur) ? darken(t.fur, 32) : lighten(t.fur, 34);
+    const browY = preset.brows === "up" ? 42 : 43.6;
+    const leftTilt = preset.brows === "sad" ? -14 : preset.brows === "up" ? 0 : 5;
+    const rightTilt = preset.brows === "sad" ? 14 : preset.brows === "up" ? 0 : -5;
+    parts.push(ellipse(exL, browY, 3, 1.4, browColor, "none", 0, `rotate(${leftTilt} ${exL} ${browY})`));
+    parts.push(ellipse(exR, browY, 3, 1.4, browColor, "none", 0, `rotate(${rightTilt} ${exR} ${browY})`));
+    return group(parts);
+  }
+
+  function dogMuzzle(t, preset) {
+    const edge = darken(t.fur, 24);
+    const muzzleFill = t.breed === "bulldog" ? lighten(t.fur, 16) : lighten(t.fur, 22);
+    const parts = [];
+    if (t.breed === "bulldog") {
+      parts.push(ellipse(50, 65, 16, 10.5, muzzleFill, edge, 1.4));
+      parts.push(path("M 40 66.5 Q 44.5 71.5 50 70 Q 55.5 71.5 60 66.5", "none", darken(t.fur, 30), 1.4));
+    } else if (t.breed === "puppy") {
+      parts.push(ellipse(50, 64, 11, 8.5, muzzleFill, edge, 1.4));
+    } else {
+      parts.push(ellipse(50, 65, 13.5, 10, muzzleFill, edge, 1.4));
+    }
+    parts.push(
+      path("M 45.8 57.8 Q 50 55.4 54.2 57.8 Q 52.8 62.4 50 63 Q 47.2 62.4 45.8 57.8 Z", "#33261f", LINE, 1),
+      path("M 48.4 58.2 Q 47.4 59.4 47.8 60.6", "none", "rgba(255,255,255,0.35)", 1),
+      path("M 50 63 L 50 66", "none", LINE, 1.4)
+    );
+    switch (preset.mouth) {
+      case "smileTongue":
+        parts.push(
+          path("M 42.5 66 Q 46.5 71.5 50 67.5 Q 53.5 71.5 57.5 66", "none", LINE, 1.8),
+          path("M 47 69.5 Q 50 73.5 53 69.5 Q 53 75.5 50 76 Q 47 75.5 47 69.5 Z", TONGUE, darken(TONGUE, 22), 1)
+        );
+        break;
+      case "pant":
+        parts.push(
+          path("M 43 65.5 Q 50 72.5 57 65.5", "none", LINE, 1.8),
+          path("M 46.6 68 Q 50 71 53.4 68 L 53.4 77 Q 50 80 46.6 77 Z", TONGUE, darken(TONGUE, 22), 1),
+          path("M 50 70.5 L 50 76", "none", darken(TONGUE, 26), 0.9)
+        );
+        break;
+      case "small":
+        parts.push(path("M 46 66.5 Q 50 68 54 66.5", "none", LINE, 1.6));
+        break;
+      case "frown":
+        parts.push(path("M 45 68 Q 50 65.5 55 68", "none", LINE, 1.7));
+        break;
+      default:
+        parts.push(path("M 46.5 66.8 Q 50 68.4 53.5 66.8", "none", LINE, 1.5));
+    }
+    return group(parts);
+  }
+
+  function renderDog(character) {
+    const t = character.traits;
+    const preset = DOG_EMOTION_PRESETS[t.expression] || DOG_EMOTION_PRESETS.happy;
+    const edge = darken(t.fur, 24);
+    const wagging = t.expression === "happy";
+    const layers = [
+      wagging ? path("M 74 100 C 88 96 94 84 85 76", "none", t.fur, 7) : null,
+      wagging ? circle(85, 76, 3.4, lighten(t.fur, 10)) : null,
+      path("M 18 102 C 23 86 38 79 50 79 C 62 79 77 86 82 102 Z", t.fur, edge, 2),
+      ellipse(50, 96, 12.5, 9, lighten(t.fur, 14)),
+      animalCollar(t, 86),
+      dogEars(t, preset.ears || "normal"),
+      dogHead(t),
+      dogEyes(t, preset),
+      dogMuzzle(t, preset),
+    ];
+    if (t.expression === "happy" || t.expression === "panting") {
+      layers.push(ellipse(30.5, 57.5, 3.2, 2, BLUSH), ellipse(69.5, 57.5, 3.2, 2, BLUSH));
+    }
+    if (preset.zzz) {
+      layers.push(zzz(76, 32, 8, 0.7), zzz(84, 23, 6, 0.55));
+    }
+    return group(layers.filter(Boolean), `rotate(${(t.tilt || 0).toFixed(2)} 50 62)`);
+  }
+
+  // ----- Top-level renderer -----
   function renderPortrait(character, options = {}) {
     const root = svgEl("svg", {
       viewBox: "0 0 100 100",
@@ -836,51 +1049,12 @@
       "aria-hidden": "true",
     });
     if (options.className) root.classList.add(options.className);
-    root.append(rect(0, 0, 100, 100, options.background || "#fffaf0", 6));
-    if (character.kind === "cat") {
-      if (character.breed === "kitten") {
-        root.append(catKittenHead(character));
-        root.append(catFace(character, 1.3));
-      } else if (character.breed === "siamese") {
-        root.append(catSiameseHead(character));
-        root.append(catFace(character, 1));
-      } else {
-        root.append(catTabbyHead(character));
-        root.append(catFace(character, 1));
-      }
-      const collar = catCollar(character);
-      if (collar) root.append(collar);
-    } else if (character.kind === "dog") {
-      if (character.breed === "puppy") root.append(dogPuppyHead(character));
-      else if (character.breed === "bulldog") root.append(dogBulldogHead(character));
-      else root.append(dogSpanielHead(character));
-      root.append(dogFace(character));
-      const collar = dogCollar(character);
-      if (collar) root.append(collar);
-    } else {
-      // Human
-      for (const el of humanBase(character)) root.append(el);
-      const hairBack = humanHairBack(character);
-      if (hairBack) root.append(hairBack);
-      root.append(humanFace(character));
-      const hairFront = humanHairFront(character);
-      if (hairFront) root.append(hairFront);
-      const eyebrows = humanEyebrows(character);
-      if (eyebrows) root.append(eyebrows);
-      const freckles = humanFreckles(character);
-      if (freckles) root.append(freckles);
-      const facialHair = humanFacialHair(character);
-      if (facialHair) root.append(facialHair);
-      const mouth = humanMouth(character);
-      if (mouth) root.append(mouth);
-      root.append(humanNose(character));
-      root.append(humanEyes(character));
-      const glasses = humanGlasses(character);
-      if (glasses) root.append(glasses);
-      // Hat is drawn last so the band/rim sits on the forehead, not behind it.
-      const hat = humanHat(character);
-      if (hat) root.append(hat);
-    }
+    for (const layer of backdrop(character, options)) root.append(layer);
+    let portrait;
+    if (character.kind === "cat") portrait = renderCat(character);
+    else if (character.kind === "dog") portrait = renderDog(character);
+    else portrait = renderHuman(character);
+    root.append(portrait);
     return root;
   }
 
