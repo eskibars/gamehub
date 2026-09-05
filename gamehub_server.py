@@ -4,6 +4,7 @@ import base64
 import hashlib
 import hmac
 import json
+import logging
 import os
 import queue
 import random
@@ -18,6 +19,8 @@ from typing import Any
 
 from flask import Flask, Response, jsonify, redirect, request, send_from_directory, session, stream_with_context
 
+
+logger = logging.getLogger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent
 BINGO_STATIC_DIR = BASE_DIR / "bingo" / "static"
@@ -61,6 +64,10 @@ HANGMAN_MAX_WRONG = 6
 HANGMAN_MAX_HISTORY = 8
 HANGMAN_MAX_CATEGORY = 48
 HANGMAN_MAX_WORD = 40
+# Idle remote tables are swept from memory so abandoned game codes do not
+# accumulate until restart. TTL <= 0 disables the sweeper entirely.
+GAME_TTL_SECONDS = int(os.environ.get("GAME_TTL_SECONDS", 6 * 60 * 60))
+GAME_SWEEP_INTERVAL_SECONDS = int(os.environ.get("GAME_SWEEP_INTERVAL_SECONDS", 5 * 60))
 BOGGLE_LETTER_DISTRIBUTION = (
     "E" * 12
     + "A" * 9
@@ -244,6 +251,73 @@ def publish_color_game(code: str, event_name: str = "game") -> None:
 def sse_message(event: str, data: Any) -> str:
     encoded = json.dumps(data, separators=(",", ":"))
     return f"event: {event}\ndata: {encoded}\n\n"
+
+
+def game_is_expired(game: dict[str, Any], now: float) -> bool:
+    try:
+        updated = datetime.fromisoformat(str(game["updatedAt"]))
+    except (KeyError, TypeError, ValueError):
+        return False
+    if updated.tzinfo is None:
+        updated = updated.replace(tzinfo=timezone.utc)
+    return (now - updated.timestamp()) >= GAME_TTL_SECONDS
+
+
+def sweep_stale_games(now: float | None = None) -> list[str]:
+    # Every remote game refreshes "updatedAt" on each mutating request, so this
+    # only collects tables nobody has touched for GAME_TTL_SECONDS — including
+    # ones a background tab still holds an SSE connection open against. Each
+    # removed game's subscribers get a terminal "closed" event; anything they
+    # request afterwards 404s exactly like a restarted server would.
+    if GAME_TTL_SECONDS <= 0:
+        return []
+    current_time = time.time() if now is None else now
+    removed: list[str] = []
+    namespaces = (
+        (COLOR_GAMES_LOCK, COLOR_GAMES, COLOR_GAME_SUBSCRIBERS, None),
+        (BOGGLE_GAMES_LOCK, BOGGLE_GAMES, BOGGLE_GAME_SUBSCRIBERS, BOGGLE_GAME_TIMERS),
+        (BACKGAMMON_GAMES_LOCK, BACKGAMMON_GAMES, BACKGAMMON_GAME_SUBSCRIBERS, None),
+        (WHOAMI_GAMES_LOCK, WHOAMI_GAMES, WHOAMI_GAME_SUBSCRIBERS, None),
+        (HANGMAN_GAMES_LOCK, HANGMAN_GAMES, HANGMAN_GAME_SUBSCRIBERS, None),
+    )
+    for lock, games, subscribers, timers in namespaces:
+        closed_queues: list[queue.Queue] = []
+        with lock:
+            expired_codes = [code for code, game in games.items() if game_is_expired(game, current_time)]
+            for code in expired_codes:
+                games.pop(code, None)
+                closed_queues.extend(
+                    entry["queue"] if isinstance(entry, dict) else entry
+                    for entry in subscribers.pop(code, [])
+                )
+                if timers is not None:
+                    timer = timers.pop(code, None)
+                    if timer:
+                        timer.cancel()
+                removed.append(code)
+        for subscriber_queue in closed_queues:
+            subscriber_queue.put({"event": "closed", "data": {"reason": "expired"}})
+    if removed:
+        logger.info("TTL sweep removed %d idle game(s): %s", len(removed), ", ".join(removed))
+    return removed
+
+
+def start_game_sweeper() -> threading.Thread | None:
+    if GAME_TTL_SECONDS <= 0 or GAME_SWEEP_INTERVAL_SECONDS <= 0:
+        logger.info("Game TTL sweeping is disabled.")
+        return None
+
+    def sweep_loop() -> None:
+        while True:
+            time.sleep(GAME_SWEEP_INTERVAL_SECONDS)
+            try:
+                sweep_stale_games()
+            except Exception:
+                logger.exception("Game TTL sweep failed")
+
+    sweeper = threading.Thread(target=sweep_loop, name="game-ttl-sweeper", daemon=True)
+    sweeper.start()
+    return sweeper
 
 
 def normalize_boggle_word(word: str) -> str:
@@ -665,7 +739,17 @@ def backgammon_revision_matches(body: dict[str, Any], game: dict[str, Any]) -> b
 
 def create_app() -> Flask:
     app = Flask(__name__)
-    app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-only-change-me")
+    secret_key = os.environ.get("FLASK_SECRET_KEY")
+    if not secret_key:
+        # A per-process random key keeps sessions and share tokens unforgeable
+        # when no explicit key is configured; the tradeoff is that restarts
+        # invalidate existing share links. Set FLASK_SECRET_KEY for stable links.
+        secret_key = secrets.token_hex(32)
+        logger.warning(
+            "FLASK_SECRET_KEY is not set; using a random per-process key. "
+            "Sessions and share links will not survive a restart."
+        )
+    app.secret_key = secret_key
 
     def current_user() -> dict[str, str] | None:
         user = session.get("user")
@@ -822,6 +906,31 @@ def create_app() -> Flask:
     @app.get("/api/me")
     def api_me():
         return jsonify({"user": current_user(), "maxUserBytes": MAX_USER_BYTES})
+
+    @app.get("/healthz")
+    def healthz():
+        with COLOR_GAMES_LOCK:
+            color_count = len(COLOR_GAMES)
+        with BOGGLE_GAMES_LOCK:
+            boggle_count = len(BOGGLE_GAMES)
+        with BACKGAMMON_GAMES_LOCK:
+            backgammon_count = len(BACKGAMMON_GAMES)
+        with WHOAMI_GAMES_LOCK:
+            whoami_count = len(WHOAMI_GAMES)
+        with HANGMAN_GAMES_LOCK:
+            hangman_count = len(HANGMAN_GAMES)
+        return jsonify(
+            {
+                "ok": True,
+                "games": {
+                    "bulls-and-cows": color_count,
+                    "boggle": boggle_count,
+                    "backgammon": backgammon_count,
+                    "whoami": whoami_count,
+                    "hangman": hangman_count,
+                },
+            }
+        )
 
     @app.post("/auth/dev-login")
     def dev_login():
@@ -2279,5 +2388,7 @@ def create_app() -> Flask:
                         subscribers.remove(subscriber)
 
         return Response(stream_with_context(stream()), mimetype="text/event-stream")
+
+    start_game_sweeper()
 
     return app

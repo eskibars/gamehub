@@ -1,0 +1,13 @@
+# Local secrets — never commit.
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Runtime user data
+bingo/data/
+
+.DS_Store
