@@ -60,6 +60,7 @@ const els = {
   timerStatus: document.querySelector("#timerStatus"),
   topSand: document.querySelector("#topSand"),
   bottomSand: document.querySelector("#bottomSand"),
+  sandStream: document.querySelector("#sandStream"),
   digitalMode: document.querySelector("#digitalMode"),
   sandMode: document.querySelector("#sandMode"),
   minutesInput: document.querySelector("#minutesInput"),
@@ -183,8 +184,18 @@ function renderTimer() {
   els.sandMode.classList.toggle("is-active", state.timerView === "sand");
 
   const progress = timerProgress();
-  els.topSand.style.setProperty("--sand-level", `${Math.max(0, 100 - progress * 100)}%`);
-  els.bottomSand.style.setProperty("--sand-level", `${Math.min(100, progress * 100)}%`);
+  // Sand surfaces in the SVG hourglass (viewBox 0 0 200 300): the top bulb's
+  // surface descends from y=40 to the waist at y=148, the bottom bulb's rises
+  // from y=260 to just below the waist.
+  const topSurface = 40 + (148 - 40) * progress;
+  els.topSand.setAttribute("y", topSurface.toFixed(1));
+  els.topSand.setAttribute("height", Math.max(0, 148 - topSurface).toFixed(1));
+  const bottomSurface = 260 - (260 - 152) * progress;
+  els.bottomSand.setAttribute("y", bottomSurface.toFixed(1));
+  els.bottomSand.setAttribute("height", Math.max(0, 260 - bottomSurface).toFixed(1));
+  const streamHeight = Math.max(0, bottomSurface - 148);
+  els.sandStream.setAttribute("height", streamHeight.toFixed(1));
+  els.sandStream.style.opacity = state.running && state.remainingSeconds > 0 ? "1" : "0";
 
   const minutes = Math.floor(state.timerSeconds / 60);
   const seconds = state.timerSeconds % 60;

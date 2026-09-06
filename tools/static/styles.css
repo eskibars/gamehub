@@ -196,65 +196,66 @@ h2 {
 
 .sandglass {
   display: none;
-  position: relative;
-  width: min(230px, 68vw);
-  height: 300px;
-  color: var(--clay);
-}
-
-.sand-bulb {
-  position: absolute;
-  left: 50%;
-  width: 170px;
-  height: 135px;
-  overflow: hidden;
-  border: 5px solid rgba(32, 36, 31, 0.72);
-  background: rgba(255, 255, 255, 0.45);
-  transform: translateX(-50%);
-}
-
-.sand-bulb.top {
-  top: 0;
-  border-radius: 44% 44% 10% 10%;
-}
-
-.sand-bulb.bottom {
-  bottom: 0;
-  border-radius: 10% 10% 44% 44%;
-}
-
-.sand-bulb span {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: var(--sand-level, 100%);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 18%),
-    var(--gold);
-  transition: height 220ms linear;
-}
-
-.sand-neck {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 18px;
-  height: 42px;
-  border-left: 5px solid rgba(32, 36, 31, 0.72);
-  border-right: 5px solid rgba(32, 36, 31, 0.72);
-  transform: translate(-50%, -50%);
 }
 
 .timer-display.sand-view .sandglass {
   display: block;
+  width: min(180px, 52vw);
+}
+
+.sandglass svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.wood-cap {
+  fill: #a8553a;
+  stroke: rgba(32, 36, 31, 0.55);
+  stroke-width: 2;
+}
+
+.wood-post {
+  fill: #8f4a35;
+  stroke: rgba(32, 36, 31, 0.55);
+  stroke-width: 2;
+}
+
+.glass {
+  fill: rgba(255, 255, 255, 0.35);
+  stroke: rgba(32, 36, 31, 0.7);
+  stroke-width: 4;
+}
+
+.sand {
+  fill: var(--gold);
+}
+
+.sand-stream {
+  fill: var(--gold);
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+.sheen {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.timer-display.sand-view {
+  min-height: 430px;
 }
 
 .timer-display.sand-view .time-readout {
-  position: absolute;
-  bottom: 48px;
+  position: static;
   font-size: clamp(2rem, 8vw, 3.2rem);
   color: var(--felt-dark);
+}
+
+.timer-display.sand-view .timer-status {
+  position: static;
 }
 
 .preset-row,

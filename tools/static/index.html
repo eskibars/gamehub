@@ -37,9 +37,30 @@
 
           <div class="timer-display digital-view" id="timerDisplay" aria-live="polite">
             <div class="sandglass" id="sandglass" aria-hidden="true">
-              <div class="sand-bulb top"><span id="topSand"></span></div>
-              <div class="sand-neck"></div>
-              <div class="sand-bulb bottom"><span id="bottomSand"></span></div>
+              <svg viewBox="0 0 200 300">
+                <defs>
+                  <clipPath id="topSandClip">
+                    <path d="M 50 40 C 50 92 82 114 94 148 L 106 148 C 118 114 150 92 150 40 Z"/>
+                  </clipPath>
+                  <clipPath id="bottomSandClip">
+                    <path d="M 94 148 C 94 182 50 208 50 260 L 150 260 C 150 208 106 182 106 148 Z"/>
+                  </clipPath>
+                </defs>
+                <rect class="wood-post" x="34" y="24" width="9" height="252" rx="4.5"/>
+                <rect class="wood-post" x="157" y="24" width="9" height="252" rx="4.5"/>
+                <path class="glass" d="M 50 40 C 50 92 82 114 94 148 C 94 182 50 208 50 260 L 150 260 C 150 208 106 182 106 148 C 118 114 150 92 150 40 Z"/>
+                <g clip-path="url(#topSandClip)">
+                  <rect id="topSand" class="sand" x="50" y="40" width="100" height="108"/>
+                </g>
+                <g clip-path="url(#bottomSandClip)">
+                  <rect id="bottomSand" class="sand" x="50" y="260" width="100" height="0"/>
+                </g>
+                <rect id="sandStream" class="sand-stream" x="97" y="148" width="6" height="0"/>
+                <path class="sheen" d="M 66 54 C 66 78 78 92 86 106"/>
+                <path class="sheen" d="M 134 196 C 126 210 116 224 112 240"/>
+                <rect class="wood-cap" x="26" y="22" width="148" height="20" rx="7"/>
+                <rect class="wood-cap" x="26" y="258" width="148" height="20" rx="7"/>
+              </svg>
             </div>
             <div class="time-readout" id="timeReadout">05:00</div>
             <div class="timer-status" id="timerStatus">Ready</div>
