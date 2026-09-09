@@ -431,11 +431,11 @@ h2 {
 }
 
 .cell.ship.bow-v {
-  border-radius: 8px 8px 999px 999px;
+  border-radius: 999px 999px 8px 8px;
 }
 
 .cell.ship.stern-v {
-  border-radius: 999px 999px 8px 8px;
+  border-radius: 8px 8px 999px 999px;
 }
 
 .cell.ship.mid-h,
