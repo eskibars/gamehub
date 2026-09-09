@@ -41,7 +41,8 @@ python-dotenv. See `.env.example` for the full list with comments.
 
 The ready tools are Bingo Card Builder, Color Guesser, Yahtzee Scorepad,
 Boggle Table, Word Find Creator, Backgammon, Find 'em, Table Tools,
-Who Am I? — a Guess Who-style character guessing game, and Hangman.
+Who Am I? — a Guess Who-style character guessing game, Hangman, and
+Battleship.
 
 ## Local-first storage
 
@@ -86,6 +87,14 @@ session. The server only keeps the share code, player names, current
 round state, and a short history — it never persists the secret word
 between rounds, and the word is hidden from the guesser until the round
 ends.
+
+Battleship is a remote two-player fleet duel over a share code. Each
+admiral places a five-ship fleet privately, then shots alternate one per
+turn. The server keeps both fleets in memory but every API view only
+exposes a player's own ships plus the public shot record — sunk enemy
+ships surface cell by cell, and full fleets are revealed only after the
+game ends. A short captain's log records each salvo, and the loser of a
+round fires first in the rematch.
 
 ## Legacy Bingo command
 

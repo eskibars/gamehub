@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Battleship — two-player fleet duel</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/shared/game-entry.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Two-player naval strategy</p>
+          <h1>Battleship</h1>
+        </div>
+        <p class="connection" id="connectionStatus">Ready</p>
+      </header>
+
+      <section class="setup entry-view" id="setupView">
+        <section class="entry-choice" id="choicePanel">
+          <h2>Choose a Mode</h2>
+          <div class="entry-actions">
+            <button class="entry-choice-button" id="showJoin" type="button">Join Game</button>
+            <button class="entry-choice-button" id="showCreate" type="button">Create Game</button>
+          </div>
+        </section>
+
+        <form class="entry-panel" id="createForm" hidden>
+          <div class="section-heading">
+            <h2>Create Game</h2>
+          </div>
+          <p class="hint">You will get a share code to send to a friend. Each of you hides a five-ship fleet, then trades shots until one fleet goes under.</p>
+          <button class="primary-button" type="submit">Create Share Code</button>
+        </form>
+
+        <form class="entry-panel" id="joinForm" hidden>
+          <div class="section-heading">
+            <h2>Join Game</h2>
+          </div>
+          <label class="field">
+            <span>Share link or code</span>
+            <input id="joinCode" type="text" autocomplete="off" placeholder="Paste a link or short code">
+          </label>
+          <button class="primary-button" type="submit">Open Game</button>
+        </form>
+      </section>
+
+      <section class="lobby-panel" id="lobbyPanel" hidden>
+        <div class="section-heading">
+          <h2>Harbor</h2>
+          <button class="small-button" id="newGameButton" type="button">New</button>
+        </div>
+        <div class="share-row" id="shareTools" hidden>
+          <strong id="shareCode">--------</strong>
+          <button class="small-button" id="copyShare" type="button">Copy</button>
+        </div>
+        <dl class="facts">
+          <dt>Mode</dt>
+          <dd>Remote</dd>
+          <dt>Status</dt>
+          <dd id="factStatus">Lobby</dd>
+          <dt>Fleet</dt>
+          <dd>5 ships</dd>
+        </dl>
+        <form class="name-form" id="nameForm">
+          <label class="field">
+            <span>Your name</span>
+            <input id="playerName" type="text" maxlength="24" autocomplete="nickname" placeholder="Your name">
+          </label>
+          <button class="secondary-button" type="submit">Join Battle</button>
+        </form>
+        <div class="lobby-actions" id="lobbyActions" hidden>
+          <button class="primary-button" id="startButton" type="button">To battle stations</button>
+        </div>
+        <p class="lobby-message" id="lobbyMessage">Waiting for an opponent…</p>
+      </section>
+
+      <section class="play-area" id="playArea" hidden>
+        <div class="play-heading">
+          <div class="play-status">
+            <p class="eyebrow" id="phaseLabel">Placement</p>
+            <h2 id="turnBanner">—</h2>
+          </div>
+          <p class="game-message" id="gameMessage">Anchor your fleet.</p>
+        </div>
+
+        <section class="placement-panel" id="placementPanel" hidden>
+          <div class="board-card harbor">
+            <header class="board-card-header">
+              <h3>Your harbor</h3>
+              <span class="board-sub">Click to place · R to rotate</span>
+            </header>
+            <div class="board-frame">
+              <div class="coords coords-cols" id="placeCoords"></div>
+              <div class="board-with-rows">
+                <div class="coords coords-rows" id="placeRows"></div>
+                <div class="board own-board" id="placeBoard" aria-label="Fleet placement board"></div>
+              </div>
+            </div>
+          </div>
+          <aside class="fleet-panel">
+            <h3>Your fleet</h3>
+            <div class="fleet-list" id="fleetList"></div>
+            <div class="placement-actions">
+              <button class="secondary-button" id="rotateButton" type="button">↻ Rotate</button>
+              <button class="secondary-button" id="randomButton" type="button">🎲 Random</button>
+              <button class="secondary-button" id="clearButton" type="button">Clear</button>
+            </div>
+            <button class="primary-button anchor-button" id="anchorButton" type="button" disabled>Anchor fleet</button>
+            <p class="hint small" id="placementHint">Pick a ship, then click your harbor.</p>
+          </aside>
+        </section>
+
+        <section class="battle-panel" id="battlePanel" hidden>
+          <div class="board-card harbor">
+            <header class="board-card-header">
+              <h3>Your fleet</h3>
+              <span class="board-sub" id="ownFleetStatus">5 afloat</span>
+            </header>
+            <div class="board-frame">
+              <div class="coords coords-cols" id="ownCoords"></div>
+              <div class="board-with-rows">
+                <div class="coords coords-rows" id="ownRows"></div>
+                <div class="board own-board" id="ownBoard" aria-label="Your fleet board"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="battle-side">
+            <div class="board-card radar">
+              <header class="board-card-header">
+                <h3 id="enemyTitle">Enemy waters</h3>
+                <span class="board-sub" id="enemyFleetStatus">5 afloat</span>
+              </header>
+              <div class="board-frame">
+                <div class="coords coords-cols" id="enemyCoords"></div>
+                <div class="board-with-rows">
+                  <div class="coords coords-rows" id="enemyRows"></div>
+                  <div class="board enemy-board" id="enemyBoard" aria-label="Enemy waters board"></div>
+                </div>
+              </div>
+            </div>
+            <section class="log-panel" aria-label="Battle log">
+              <h3>Captain's log</h3>
+              <ol id="battleLog"></ol>
+            </section>
+          </div>
+        </section>
+      </section>
+
+      <div class="modal-backdrop" id="resultBackdrop" hidden>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+          <h2 id="resultTitle">Battle over</h2>
+          <p id="resultBody">…</p>
+          <div class="modal-actions">
+            <button class="secondary-button" id="resultClose" type="button">Review boards</button>
+            <button class="primary-button" id="rematchButton" type="button">Rematch</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="/shared/game-entry.js" defer></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

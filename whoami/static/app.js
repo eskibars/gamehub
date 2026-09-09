@@ -14,6 +14,7 @@ const state = {
   eliminated: new Set(),
   guessedThisRound: false,
   eventSource: null,
+  streamKey: "",
   entryMode: "choice",
   showReveal: false,
   pendingGuessIndex: null,
@@ -189,9 +190,13 @@ function adoptGame(game, options = {}) {
   }
   rebuildPool();
   els.setupView.hidden = true;
-  if (state.eventSource) state.eventSource.close();
-  state.eventSource = null;
-  connectEvents();
+  // Reconnect only when the stream target actually changes — every SSE
+  // event lands here too, and reconnecting per event would loop forever.
+  const streamKey = `${game.code}:${state.playerId}`;
+  if (state.streamKey !== streamKey) {
+    state.streamKey = streamKey;
+    connectEvents();
+  }
   render();
   if (game.status === "active" && game.yourSecretIndex != null && options.showReveal) {
     revealYourCharacter();
@@ -774,6 +779,7 @@ function showStartMode(mode) {
     state.eventSource.close();
     state.eventSource = null;
   }
+  state.streamKey = "";
   state.game = null;
   state.pool = [];
   state.eliminated = new Set();

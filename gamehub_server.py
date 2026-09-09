@@ -64,6 +64,19 @@ HANGMAN_MAX_WRONG = 6
 HANGMAN_MAX_HISTORY = 8
 HANGMAN_MAX_CATEGORY = 48
 HANGMAN_MAX_WORD = 40
+BATTLESHIP_GAMES: dict[str, dict[str, Any]] = {}
+BATTLESHIP_GAME_SUBSCRIBERS: dict[str, list[dict[str, Any]]] = {}
+BATTLESHIP_GAMES_LOCK = threading.Lock()
+BATTLESHIP_SIZE = 10
+BATTLESHIP_FLEET = (
+    ("carrier", 5),
+    ("battleship", 4),
+    ("cruiser", 3),
+    ("submarine", 3),
+    ("destroyer", 2),
+)
+BATTLESHIP_MAX_PLAYERS = 2
+BATTLESHIP_MAX_LOG = 12
 # Idle remote tables are swept from memory so abandoned game codes do not
 # accumulate until restart. TTL <= 0 disables the sweeper entirely.
 GAME_TTL_SECONDS = int(os.environ.get("GAME_TTL_SECONDS", 6 * 60 * 60))
@@ -279,6 +292,7 @@ def sweep_stale_games(now: float | None = None) -> list[str]:
         (BACKGAMMON_GAMES_LOCK, BACKGAMMON_GAMES, BACKGAMMON_GAME_SUBSCRIBERS, None),
         (WHOAMI_GAMES_LOCK, WHOAMI_GAMES, WHOAMI_GAME_SUBSCRIBERS, None),
         (HANGMAN_GAMES_LOCK, HANGMAN_GAMES, HANGMAN_GAME_SUBSCRIBERS, None),
+        (BATTLESHIP_GAMES_LOCK, BATTLESHIP_GAMES, BATTLESHIP_GAME_SUBSCRIBERS, None),
     )
     for lock, games, subscribers, timers in namespaces:
         closed_queues: list[queue.Queue] = []
@@ -899,6 +913,20 @@ def create_app() -> Flask:
     def hangman_static(filename: str):
         return send_from_directory(HANGMAN_STATIC_DIR, filename)
 
+    BATTLESHIP_STATIC_DIR = BASE_DIR / "battleship" / "static"
+
+    @app.get("/battleship")
+    def battleship_redirect():
+        return redirect("/battleship/")
+
+    @app.get("/battleship/")
+    def battleship_index():
+        return send_from_directory(BATTLESHIP_STATIC_DIR, "index.html")
+
+    @app.get("/battleship/<path:filename>")
+    def battleship_static(filename: str):
+        return send_from_directory(BATTLESHIP_STATIC_DIR, filename)
+
     @app.get("/share/<share_id>")
     def shared_card(share_id: str):
         return redirect(f"/bingo/?share={share_id}")
@@ -919,6 +947,8 @@ def create_app() -> Flask:
             whoami_count = len(WHOAMI_GAMES)
         with HANGMAN_GAMES_LOCK:
             hangman_count = len(HANGMAN_GAMES)
+        with BATTLESHIP_GAMES_LOCK:
+            battleship_count = len(BATTLESHIP_GAMES)
         return jsonify(
             {
                 "ok": True,
@@ -928,6 +958,7 @@ def create_app() -> Flask:
                     "backgammon": backgammon_count,
                     "whoami": whoami_count,
                     "hangman": hangman_count,
+                    "battleship": battleship_count,
                 },
             }
         )
@@ -2384,6 +2415,447 @@ def create_app() -> Flask:
             finally:
                 with HANGMAN_GAMES_LOCK:
                     subscribers = HANGMAN_GAME_SUBSCRIBERS.get(code, [])
+                    if subscriber in subscribers:
+                        subscribers.remove(subscriber)
+
+        return Response(stream_with_context(stream()), mimetype="text/event-stream")
+
+    # ============================================================
+    # BATTLESHIP — remote two-player fleet game. Ship placements are
+    # private: every view only exposes a player's own fleet plus the
+    # public shot record, and sunk enemy ships are revealed cell by cell.
+    # ============================================================
+
+    def battleship_cell_key(row: int, col: int) -> str:
+        return f"{row},{col}"
+
+    def battleship_ship_cells(cells: list[list[int]]) -> dict[str, int]:
+        # Map "r,c" -> index along the ship so hits can mark bow-to-stern order.
+        return {battleship_cell_key(int(r), int(c)): i for i, (r, c) in enumerate(cells)}
+
+    def battleship_new_player(player_id: str, name: str, is_host: bool, now: str) -> dict[str, Any]:
+        return {
+            "id": player_id,
+            "name": name,
+            "isHost": is_host,
+            "connectedAt": now,
+            "ships": None,
+            "shots": {},
+        }
+
+    def battleship_create_game() -> dict[str, Any]:
+        now = utc_now()
+        return {
+            "code": uuid.uuid4().hex[:8].upper(),
+            "status": "lobby",
+            "round": 1,
+            "turnId": None,
+            "winnerId": None,
+            "winReason": None,
+            "players": {},
+            "log": [],
+            "createdAt": now,
+            "updatedAt": now,
+        }
+
+    def battleship_append_log(game: dict[str, Any], text: str) -> None:
+        game["log"].append({"text": text, "at": utc_now()})
+        if len(game["log"]) > BATTLESHIP_MAX_LOG:
+            del game["log"][: len(game["log"]) - BATTLESHIP_MAX_LOG]
+        game["updatedAt"] = utc_now()
+
+    def battleship_opponent(game: dict[str, Any], player_id: str) -> dict[str, Any] | None:
+        for pid, player in game["players"].items():
+            if pid != player_id:
+                return player
+        return None
+
+    def battleship_validate_fleet(payload: Any) -> tuple[dict[str, dict[str, Any]] | None, str | None]:
+        if not isinstance(payload, list) or len(payload) != len(BATTLESHIP_FLEET):
+            return None, "Fleet must include every ship exactly once."
+
+        seen_names = set()
+        occupied: set[str] = set()
+        ships: dict[str, dict[str, Any]] = {}
+        for entry in payload:
+            if not isinstance(entry, dict):
+                return None, "Each ship needs a name and cells."
+            name = str(entry.get("name") or "").strip().lower()
+            expected = next((item for item in BATTLESHIP_FLEET if item[0] == name), None)
+            if not expected or name in seen_names:
+                return None, "Fleet must include every ship exactly once."
+            seen_names.add(name)
+            cells = entry.get("cells")
+            if not isinstance(cells, list) or len(cells) != expected[1]:
+                return None, f"The {name.title()} must be exactly {expected[1]} cells."
+            normalized: list[list[int]] = []
+            for cell in cells:
+                if not isinstance(cell, (list, tuple)) or len(cell) != 2:
+                    return None, "Ship cells must be row/column pairs."
+                try:
+                    row, col = int(cell[0]), int(cell[1])
+                except (TypeError, ValueError):
+                    return None, "Ship cells must be row/column pairs."
+                if not (0 <= row < BATTLESHIP_SIZE and 0 <= col < BATTLESHIP_SIZE):
+                    return None, "All ships must sit inside the grid."
+                normalized.append([row, col])
+            rows = {r for r, _ in normalized}
+            cols = {c for _, c in normalized}
+            if len(rows) != 1 and len(cols) != 1:
+                return None, "Ships must be straight lines."
+            if len(rows) == 1 and len(cols) == 1:
+                return None, "Ships must be straight lines."
+            ordered = sorted(normalized)
+            contiguous = all(
+                (ordered[i + 1][0] - ordered[i][0]) + (ordered[i + 1][1] - ordered[i][1]) == 1
+                for i in range(len(ordered) - 1)
+            )
+            if not contiguous:
+                return None, "Ship cells must be contiguous."
+            keys = [battleship_cell_key(r, c) for r, c in ordered]
+            if any(key in occupied for key in keys):
+                return None, "Ships cannot overlap."
+            occupied.update(keys)
+            ships[name] = {"cells": ordered, "hits": []}
+        if len(seen_names) != len(BATTLESHIP_FLEET):
+            return None, "Fleet must include every ship exactly once."
+        return ships, None
+
+    def battleship_fleet_is_sunk(ship: dict[str, Any]) -> bool:
+        return len(ship["hits"]) >= len(ship["cells"])
+
+    def battleship_ship_view(ship: dict[str, Any]) -> dict[str, Any]:
+        hit_keys = {battleship_cell_key(r, c) for r, c in ship["hits"]}
+        return {
+            "name": ship["name"],
+            "cells": ship["cells"],
+            "hits": ship["hits"],
+            "sunk": battleship_fleet_is_sunk(ship),
+            "hitCells": sorted(hit_keys),
+        }
+
+    def battleship_player_view(game: dict[str, Any], player_id: str | None) -> dict[str, Any]:
+        players = []
+        for pid, info in game["players"].items():
+            ships = info.get("ships")
+            players.append(
+                {
+                    "id": pid,
+                    "name": info["name"],
+                    "isHost": info.get("isHost", False),
+                    "connectedAt": info.get("connectedAt"),
+                    "fleetReady": ships is not None,
+                    "shipsSunk": sum(1 for s in ships.values() if battleship_fleet_is_sunk(s)) if ships else 0,
+                }
+            )
+        players.sort(key=lambda item: item["connectedAt"] or "")
+
+        view: dict[str, Any] = {
+            "code": game["code"],
+            "status": game["status"],
+            "round": game["round"],
+            "size": BATTLESHIP_SIZE,
+            "fleetSpec": [{"name": name, "size": size} for name, size in BATTLESHIP_FLEET],
+            "players": players,
+            "turnId": game["turnId"],
+            "winnerId": game["winnerId"],
+            "winReason": game["winReason"],
+            "log": list(game["log"]),
+            "createdAt": game["createdAt"],
+            "updatedAt": game["updatedAt"],
+        }
+        if not player_id or player_id not in game["players"]:
+            return view
+
+        me = game["players"][player_id]
+        opponent = battleship_opponent(game, player_id)
+        view["playerId"] = player_id
+        view["youAreHost"] = me.get("isHost", False)
+        view["yourName"] = me["name"]
+        view["opponents"] = [{"id": pid, "name": p["name"]} for pid, p in game["players"].items() if pid != player_id]
+        view["yourTurn"] = game["status"] == "active" and game["turnId"] == player_id
+
+        # My fleet, always fully visible to me.
+        view["yourFleet"] = (
+            [battleship_ship_view(ship) for ship in me["ships"].values()] if me.get("ships") else None
+        )
+        # Shots I have fired: "r,c" -> result. Ship name on a hit is public
+        # information in classic play ("you sank my cruiser").
+        view["yourShots"] = me.get("shots", {})
+
+        if opponent is not None:
+            # Incoming shots the opponent fired at my board.
+            view["incomingShots"] = [
+                {"row": r, "col": c, "hit": shot["hit"], "ship": shot.get("ship")}
+                for key, shot in opponent.get("shots", {}).items()
+                for r, c in [key.split(",")]
+            ]
+            opp_ships = opponent.get("ships")
+            # Sunk enemy ships become visible where they lie.
+            sunk_ships = []
+            if opp_ships:
+                sunk_ships = [battleship_ship_view(ship) for ship in opp_ships.values() if battleship_fleet_is_sunk(ship)]
+            view["sunkEnemyShips"] = sunk_ships
+            # Only after the game ends does the full enemy fleet show.
+            if game["status"] == "finished" and opp_ships:
+                view["opponentFleet"] = [battleship_ship_view(ship) for ship in opp_ships.values()]
+        else:
+            view["incomingShots"] = []
+            view["sunkEnemyShips"] = []
+        return view
+
+    def battleship_publish(code: str, event_name: str = "game") -> None:
+        with BATTLESHIP_GAMES_LOCK:
+            game = BATTLESHIP_GAMES.get(code)
+            subscribers = list(BATTLESHIP_GAME_SUBSCRIBERS.get(code, []))
+        if not game:
+            return
+        for subscriber in subscribers:
+            player_id = subscriber.get("playerId")
+            subscriber["queue"].put({"event": event_name, "data": battleship_player_view(game, player_id)})
+
+    @app.post("/api/battleship/games")
+    def create_battleship_game():
+        game = battleship_create_game()
+        with BATTLESHIP_GAMES_LOCK:
+            BATTLESHIP_GAMES[game["code"]] = game
+            BATTLESHIP_GAME_SUBSCRIBERS.setdefault(game["code"], [])
+        return jsonify({"game": battleship_player_view(game, None), "shareUrl": f"/battleship/?game={game['code']}"}), 201
+
+    @app.get("/api/battleship/games/<code>")
+    def get_battleship_game(code: str):
+        code = code.upper()
+        player_id = str(request.args.get("playerId") or "").strip() or None
+        with BATTLESHIP_GAMES_LOCK:
+            game = BATTLESHIP_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            return jsonify({"game": battleship_player_view(game, player_id)})
+
+    @app.post("/api/battleship/games/<code>/players")
+    def join_battleship_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        name = str(body.get("name") or "").strip()
+        provided_id = str(body.get("playerId") or "").strip()
+        if not name:
+            return jsonify({"error": "Name is required."}), 400
+        if len(name) > 24:
+            return jsonify({"error": "Name must be 24 characters or fewer."}), 400
+
+        now = utc_now()
+        with BATTLESHIP_GAMES_LOCK:
+            game = BATTLESHIP_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "lobby":
+                return jsonify({"error": "This battle has already started."}), 409
+            if provided_id and provided_id in game["players"]:
+                player = game["players"][provided_id]
+                player["name"] = name
+                player_id = provided_id
+            else:
+                if len(game["players"]) >= BATTLESHIP_MAX_PLAYERS:
+                    return jsonify({"error": "This battle is full."}), 409
+                player_id = secrets.token_urlsafe(8)
+                is_host = not game["players"]
+                game["players"][player_id] = battleship_new_player(player_id, name, is_host, now)
+            game["updatedAt"] = now
+
+        battleship_publish(code, "joined")
+        with BATTLESHIP_GAMES_LOCK:
+            return jsonify(
+                {"game": battleship_player_view(BATTLESHIP_GAMES[code], player_id), "playerId": player_id}
+            )
+
+    @app.post("/api/battleship/games/<code>/start")
+    def start_battleship_placement(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with BATTLESHIP_GAMES_LOCK:
+            game = BATTLESHIP_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "lobby":
+                return jsonify({"error": "Placement already started."}), 409
+            if len(game["players"]) < BATTLESHIP_MAX_PLAYERS:
+                return jsonify({"error": "Wait for your opponent to join."}), 409
+            if player_id and player_id not in game["players"]:
+                return jsonify({"error": "Player was not found."}), 404
+            game["status"] = "placement"
+            game["updatedAt"] = utc_now()
+            battleship_append_log(game, "Both admirals are on deck. Place your fleets!")
+
+        battleship_publish(code, "started")
+        with BATTLESHIP_GAMES_LOCK:
+            return jsonify({"game": battleship_player_view(BATTLESHIP_GAMES[code], player_id or None)})
+
+    @app.post("/api/battleship/games/<code>/players/<player_id>/fleet")
+    def submit_battleship_fleet(code: str, player_id: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        ships, error = battleship_validate_fleet(body.get("ships"))
+        if error:
+            return jsonify({"error": error}), 400
+
+        with BATTLESHIP_GAMES_LOCK:
+            game = BATTLESHIP_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "placement":
+                return jsonify({"error": "Fleets can only be set during placement."}), 409
+            player = game["players"].get(player_id)
+            if not player:
+                return jsonify({"error": "Player was not found."}), 404
+            if player.get("ships"):
+                return jsonify({"error": "Your fleet is already anchored."}), 409
+
+            for name, ship in ships.items():
+                ship["name"] = name
+            player["ships"] = ships
+            game["updatedAt"] = utc_now()
+
+            opponent = battleship_opponent(game, player_id)
+            everyone_ready = all(p.get("ships") for p in game["players"].values())
+            if everyone_ready and opponent is not None:
+                game["status"] = "active"
+                previous_winner = game.get("winnerId")
+                if previous_winner:
+                    # The admiral who lost the last round fires first.
+                    game["turnId"] = next(
+                        (pid for pid in game["players"] if pid != previous_winner),
+                        next(iter(game["players"])),
+                    )
+                else:
+                    game["turnId"] = secrets.choice(list(game["players"].keys()))
+                first = game["players"][game["turnId"]]["name"]
+                battleship_append_log(game, f"Fleets anchored. {first} fires first!")
+
+        battleship_publish(code, "fleet" if game["status"] != "active" else "started")
+        with BATTLESHIP_GAMES_LOCK:
+            return jsonify({"game": battleship_player_view(BATTLESHIP_GAMES[code], player_id)})
+
+    @app.post("/api/battleship/games/<code>/players/<player_id>/fire")
+    def battleship_fire(code: str, player_id: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        try:
+            row, col = int(body.get("row")), int(body.get("col"))
+        except (TypeError, ValueError):
+            return jsonify({"error": "Aim at a grid square."}), 400
+        if not (0 <= row < BATTLESHIP_SIZE and 0 <= col < BATTLESHIP_SIZE):
+            return jsonify({"error": "That shot lands off the map."}), 400
+
+        with BATTLESHIP_GAMES_LOCK:
+            game = BATTLESHIP_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "The battle is not in progress."}), 409
+            if game["turnId"] != player_id:
+                return jsonify({"error": "Hold fire — it is not your turn."}), 403
+            shooter = game["players"].get(player_id)
+            if not shooter:
+                return jsonify({"error": "Player was not found."}), 404
+            target = battleship_opponent(game, player_id)
+            if not target:
+                return jsonify({"error": "Waiting on an opponent."}), 409
+
+            key = battleship_cell_key(row, col)
+            if key in shooter["shots"]:
+                return jsonify({"error": "You already fired at that square."}), 409
+
+            col_label = chr(ord("A") + col)
+            cell_label = f"{col_label}{row + 1}"
+            hit_ship_name = None
+            for ship in target["ships"].values():
+                if [row, col] in ship["cells"]:
+                    hit_ship_name = ship["name"]
+                    ship["hits"].append([row, col])
+                    break
+
+            sunk_now = False
+            if hit_ship_name:
+                ship = target["ships"][hit_ship_name]
+                sunk_now = battleship_fleet_is_sunk(ship)
+                result_text = f"hit on the {hit_ship_name.title()}"
+                if sunk_now:
+                    result_text = f"sank the {hit_ship_name.title()}!"
+            else:
+                result_text = "miss"
+            shooter["shots"][key] = {"hit": bool(hit_ship_name), "ship": hit_ship_name, "row": row, "col": col}
+            shooter_name = shooter["name"]
+            battleship_append_log(game, f"{shooter_name} fired at {cell_label} — {result_text}")
+
+            remaining = sum(
+                1 for ship in target["ships"].values() if not battleship_fleet_is_sunk(ship)
+            )
+            if remaining == 0:
+                game["status"] = "finished"
+                game["winnerId"] = player_id
+                game["winReason"] = "fleet_sunk"
+                game["turnId"] = None
+                battleship_append_log(game, f"{shooter_name} wins the battle!")
+            else:
+                game["turnId"] = next(pid for pid in game["players"] if pid != player_id)
+            public_view = battleship_player_view(game, player_id)
+
+        battleship_publish(code, "shot")
+        return jsonify({"game": public_view})
+
+    @app.post("/api/battleship/games/<code>/rematch")
+    def battleship_rematch(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with BATTLESHIP_GAMES_LOCK:
+            game = BATTLESHIP_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] not in {"finished"}:
+                return jsonify({"error": "Finish the current battle first."}), 409
+            if player_id and player_id not in game["players"]:
+                return jsonify({"error": "Player was not found."}), 404
+            game["round"] += 1
+            game["status"] = "placement"
+            game["winnerId"] = None
+            game["winReason"] = None
+            game["turnId"] = None
+            for player in game["players"].values():
+                player["ships"] = None
+                player["shots"] = {}
+            battleship_append_log(game, f"Round {game['round']}! Place your fleets.")
+
+        battleship_publish(code, "rematch")
+        with BATTLESHIP_GAMES_LOCK:
+            return jsonify({"game": battleship_player_view(BATTLESHIP_GAMES[code], player_id or None)})
+
+    @app.get("/api/battleship/games/<code>/events")
+    def battleship_game_events(code: str):
+        code = code.upper()
+        player_id = str(request.args.get("playerId") or "").strip() or None
+        event_queue: queue.Queue[dict[str, Any]] = queue.Queue()
+        subscriber = {"queue": event_queue, "playerId": player_id}
+        with BATTLESHIP_GAMES_LOCK:
+            game = BATTLESHIP_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            BATTLESHIP_GAME_SUBSCRIBERS.setdefault(code, []).append(subscriber)
+            initial_game = battleship_player_view(game, player_id)
+
+        def stream():
+            yield sse_message("game", initial_game)
+            try:
+                while True:
+                    try:
+                        message = event_queue.get(timeout=25)
+                        yield sse_message(message["event"], message["data"])
+                    except queue.Empty:
+                        yield sse_message("ping", {"ok": True})
+            finally:
+                with BATTLESHIP_GAMES_LOCK:
+                    subscribers = BATTLESHIP_GAME_SUBSCRIBERS.get(code, [])
                     if subscriber in subscribers:
                         subscribers.remove(subscriber)
 

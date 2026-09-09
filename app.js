@@ -105,6 +105,18 @@ const icons = {
       <text x="48" y="20" font-family="ui-monospace, monospace" font-weight="900" font-size="9">A</text>
       <text x="54" y="20" font-family="ui-monospace, monospace" font-weight="900" font-size="9">_</text>
     </svg>`,
+  battleship: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M8 40h48l-6 10H16z"></path>
+      <path d="M20 40v-8h20l6 8"></path>
+      <path d="M28 32v-8h8v8"></path>
+      <path d="M32 24v-6"></path>
+      <circle cx="16" cy="46" r="1.6"></circle>
+      <circle cx="24" cy="46" r="1.6"></circle>
+      <circle cx="32" cy="46" r="1.6"></circle>
+      <circle cx="40" cy="46" r="1.6"></circle>
+      <path d="M6 56c3-2.5 6-2.5 9 0s6 2.5 9 0 6-2.5 9 0 6 2.5 9 0 6-2.5 9 0"></path>
+    </svg>`,
 };
 
 const games = [
@@ -260,6 +272,23 @@ const games = [
       Players: "1-2",
     },
     icon: "hangman",
+  },
+  {
+    id: "battleship",
+    title: "Battleship",
+    type: "Fleet duel",
+    status: "ready",
+    category: "board",
+    href: "/battleship/",
+    accent: "#173042",
+    tilt: "1.1deg",
+    description: "Hide a five-ship fleet, then trade salvos over a share code. Hits ping on a live radar board, sunk ships surface where they lie, and the captain's log calls every shot.",
+    features: {
+      Mode: "Remote duel",
+      Storage: "In-memory share code",
+      Players: "2",
+    },
+    icon: "battleship",
   },
   {
     id: "tools",
