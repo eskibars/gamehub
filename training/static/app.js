@@ -10,7 +10,9 @@ const state = {
   eventSource: null,
   streamKey: "",
   maps: {},            // mapId -> map data (cities/routes)
+  mapList: [],
   chosenMap: "coastline",
+  previewMapId: "",
   chosenColor: "",
   pendingKeep: [],
   resultShown: false,
@@ -20,11 +22,14 @@ const els = {
   setupView: document.querySelector("#setupView"),
   choicePanel: document.querySelector("#choicePanel"),
   createForm: document.querySelector("#createForm"),
+  creatorName: document.querySelector("#creatorName"),
   joinForm: document.querySelector("#joinForm"),
   showCreate: document.querySelector("#showCreate"),
   showJoin: document.querySelector("#showJoin"),
   joinCode: document.querySelector("#joinCode"),
   mapPicker: document.querySelector("#mapPicker"),
+  mapPreview: document.querySelector("#mapPreview"),
+  mapPreviewSvg: document.querySelector("#mapPreviewSvg"),
   factMap: document.querySelector("#factMap"),
   connectionStatus: document.querySelector("#connectionStatus"),
   lobbyPanel: document.querySelector("#lobbyPanel"),
@@ -136,11 +141,11 @@ function myTurn() {
 }
 
 function canDraw() {
-  return myTurn() && state.game.status === "active" && state.game.drawn < 2 && (me()?.pendingTickets?.length || 0) === 0;
+  return myTurn() && state.game.status === "active" && state.game.drawn < 2 && (state.game.pendingTickets?.length || 0) === 0;
 }
 
 function canClaim() {
-  return myTurn() && state.game.status === "active" && state.game.drawn === 0 && (me()?.pendingTickets?.length || 0) === 0;
+  return myTurn() && state.game.status === "active" && state.game.drawn === 0 && (state.game.pendingTickets?.length || 0) === 0;
 }
 
 async function loadMapById(mapId) {
@@ -148,6 +153,18 @@ async function loadMapById(mapId) {
   const data = await requestJson(`/api/training/map?map=${encodeURIComponent(mapId)}`);
   state.maps[mapId] = data;
   return data;
+}
+
+async function showMapPreview(mapId) {
+  state.previewMapId = mapId;
+  try {
+    const map = await loadMapById(mapId);
+    if (state.previewMapId !== mapId) return; // another map was picked meanwhile
+    window.TrainingBoard.render(els.mapPreviewSvg, map, {});
+    els.mapPreview.hidden = false;
+  } catch {
+    els.mapPreview.hidden = true;
+  }
 }
 
 function suitFill(suit) {
@@ -165,6 +182,11 @@ function adoptGame(game) {
   if (game.playerId) {
     state.playerId = game.playerId;
     if (game.code) savePlayerId(game.code, game.playerId);
+  }
+  try {
+    localStorage.setItem("training-last-game", game.code);
+  } catch {
+    /* ignore */
   }
   els.setupView.hidden = true;
   const streamKey = `${game.code}:${state.playerId}`;
@@ -188,14 +210,26 @@ function adoptGame(game) {
 
 async function createGame(event) {
   event.preventDefault();
+  const name = els.creatorName.value.trim();
+  if (!name) {
+    setConnection("Enter your name first", true);
+    return;
+  }
   try {
     const data = await requestJson("/api/training/games", {
       method: "POST",
       body: JSON.stringify({ map: state.chosenMap }),
     });
-    state.playerId = "";
+    const game = data.game;
+    // Seat the creator right away so the opponent can never start without them.
+    const joined = await requestJson(`/api/training/games/${game.code}/players`, {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    });
+    state.playerId = joined.playerId;
+    savePlayerId(game.code, state.playerId);
     state.resultShown = false;
-    adoptGame(data.game);
+    adoptGame(joined.game);
   } catch (error) {
     setConnection(error.message, true);
   }
@@ -424,10 +458,10 @@ function renderMarket() {
 }
 
 function renderHand() {
-  const mine = me();
+  const game = state.game;
   els.handRow.innerHTML = "";
-  if (!mine) return;
-  const hand = mine.hand || {};
+  if (!me()) return;
+  const hand = game.yourHand || {};
   const order = ["red", "orange", "yellow", "green", "blue", "pink", "black", "white", "wild"];
   let total = 0;
   for (const suit of order) {
@@ -449,15 +483,14 @@ function renderHand() {
     empty.textContent = "No cards yet.";
     els.handRow.append(empty);
   }
-  els.handHint.textContent = `${total} cards · ${mine.trains} trains`;
+  els.handHint.textContent = `${total} cards · ${game.yourTrains} trains`;
 }
 
 function renderTickets() {
   const game = state.game;
-  const mine = me();
   els.ticketList.innerHTML = "";
-  if (!mine) return;
-  const tickets = mine.yourTickets || [];
+  if (!me()) return;
+  const tickets = game.yourTickets || [];
   if (!tickets.length) {
     const empty = document.createElement("p");
     empty.className = "hint small";
@@ -478,7 +511,7 @@ function renderTickets() {
     row.append(state1, route, points);
     els.ticketList.append(row);
   });
-  const drawable = myTurn() && state.game.status === "active" && state.game.drawn === 0 && (mine.pendingTickets?.length || 0) === 0;
+  const drawable = myTurn() && state.game.status === "active" && state.game.drawn === 0 && (game.pendingTickets?.length || 0) === 0;
   els.drawTicketsButton.disabled = !drawable;
 }
 
@@ -580,8 +613,8 @@ function renderHeading() {
       els.turnBanner.classList.add("mine");
       els.gameMessage.textContent =
         game.drawn === 0
-          ? "Draw two cards, claim a route, or survey new tickets."
-          : "Draw one more card to finish your turn.";
+          ? "Draw two cards from the glowing deck or market \u2014 or claim a route."
+          : "One more draw (glowing) and your turn passes.";
     } else {
       const opp = game.players.find((p) => p.id === game.turnId);
       els.phaseLabel.textContent = `Round ${game.round}${final}`;
@@ -601,33 +634,37 @@ function renderHeading() {
 
 function render() {
   if (!state.game) return;
-  const inLobby = state.game.status === "lobby";
-  els.playArea.hidden = inLobby;
-  els.lobbyPanel.hidden = !inLobby;
-  if (inLobby) {
-    renderLobby();
-    return;
-  }
-  renderHeading();
-  renderBoard();
-  renderPlayers();
-  renderMarket();
-  renderHand();
-  renderTickets();
-  renderLog();
-  // Ticket selection modal is blocking when tickets are pending.
-  if ((me()?.pendingTickets?.length || 0) > 0) {
-    openTicketModal();
+  try {
+    const inLobby = state.game.status === "lobby";
+    els.playArea.hidden = inLobby;
+    els.lobbyPanel.hidden = !inLobby;
+    if (inLobby) {
+      renderLobby();
+      return;
+    }
+    renderHeading();
+    renderBoard();
+    renderPlayers();
+    renderMarket();
+    renderHand();
+    renderTickets();
+    renderLog();
+    if ((state.game.pendingTickets?.length || 0) > 0 && els.ticketBackdrop.hidden) {
+      openTicketModal();
+    }
+  } catch (error) {
+    setConnection("Render error: " + error.message, true);
+    window.__renderError = error.stack || error.message;
   }
 }
 
 function openTicketModal() {
-  const mine = me();
   const minKeep = state.game.status === "tickets" ? 2 : 1;
   els.ticketKeepHint.textContent = `Keep at least ${minKeep}. Unkept tickets return to the deck.`;
   els.ticketChoice.innerHTML = "";
   state.pendingKeep = [];
-  mine.pendingTickets.forEach((ticket) => {
+  const tickets = state.game.pendingTickets || [];
+  tickets.forEach((ticket) => {
     const option = document.createElement("button");
     option.type = "button";
     option.className = "ticket-option";
@@ -697,6 +734,11 @@ function showStartMode(mode) {
   state.streamKey = "";
   state.game = null;
   state.playerId = "";
+  try {
+    localStorage.removeItem("training-last-game");
+  } catch {
+    /* ignore */
+  }
   state.resultShown = false;
   els.setupView.hidden = false;
   els.playArea.hidden = true;
@@ -750,12 +792,13 @@ function bindEvents() {
   els.newGameButton.addEventListener("click", () => showStartMode("choice"));
 }
 
-function renderMapPicker(maps) {
+function renderMapPicker() {
   els.mapPicker.innerHTML = "";
-  maps.forEach((map) => {
+  state.mapList.forEach((map) => {
     const option = document.createElement("button");
     option.type = "button";
     option.className = "map-option" + (map.id === state.chosenMap ? " is-active" : "");
+    option.setAttribute("aria-pressed", String(map.id === state.chosenMap));
     const name = document.createElement("strong");
     name.textContent = `${map.name} — ${map.cities} cities, ${map.routes} routes`;
     const blurb = document.createElement("span");
@@ -763,8 +806,10 @@ function renderMapPicker(maps) {
     blurb.textContent = map.blurb;
     option.append(name, blurb);
     option.addEventListener("click", () => {
+      if (state.chosenMap === map.id) return;
       state.chosenMap = map.id;
-      renderMapPicker(maps);
+      renderMapPicker();
+      showMapPreview(map.id);
     });
     els.mapPicker.append(option);
   });
@@ -773,10 +818,9 @@ function renderMapPicker(maps) {
 async function loadMapList() {
   try {
     const data = await requestJson("/api/training/maps");
-    if (!state.maps[data.maps[0].id]) {
-      // nothing cached yet — the picker alone is enough
-    }
-    renderMapPicker(data.maps);
+    state.mapList = data.maps;
+    renderMapPicker();
+    showMapPreview(state.chosenMap);
   } catch {
     /* picker stays empty; create still works with the default map */
   }
@@ -785,5 +829,11 @@ async function loadMapList() {
 bindEvents();
 loadMapList();
 const params = new URLSearchParams(window.location.search);
-const gameCode = params.get("game");
+const gameCode = params.get("game") || (() => {
+  try {
+    return localStorage.getItem("training-last-game") || "";
+  } catch {
+    return "";
+  }
+})();
 if (gameCode) loadGame(gameCode.toUpperCase());

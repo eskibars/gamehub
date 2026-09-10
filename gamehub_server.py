@@ -4525,7 +4525,7 @@ def create_app() -> Flask:
                     card = training_draw_from_pile(game)
                     if card:
                         player["hand"][card] = player["hand"].get(card, 0) + 1
-                player["pendingTickets"] = [game["ticketDeck"].pop() for _ in range(min(4, len(game["ticketDeck"])))]
+                player["pendingTickets"] = [game["ticketDeck"].pop() for _ in range(min(3, len(game["ticketDeck"])))]
                 player["ready"] = False
             training_refill_market(game)
             game["status"] = "tickets"

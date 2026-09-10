@@ -195,6 +195,61 @@ h3 {
   background: rgba(223, 180, 78, 0.2);
 }
 
+.map-preview {
+  border: 6px solid var(--wood-dark);
+  border-radius: 10px;
+  overflow: hidden;
+  background: linear-gradient(155deg, #f7eeda, #ecd9b4);
+  box-shadow: inset 0 2px 0 rgba(255, 235, 200, 0.35);
+  margin-bottom: 14px;
+}
+
+.map-preview svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.map-preview .city-label {
+  font-size: 13px;
+  font-weight: 800;
+  fill: #4a3524;
+  letter-spacing: 0.02em;
+}
+
+.map-preview .city-dot {
+  fill: #5e3c20;
+  stroke: #3f2917;
+  stroke-width: 2;
+}
+
+.map-preview .city-inner {
+  fill: #a86f44;
+}
+
+.map-preview .map-title {
+  font-size: 22px;
+  font-weight: 900;
+  fill: rgba(94, 60, 32, 0.5);
+  letter-spacing: 0.35em;
+}
+
+.map-preview .compass-ring {
+  fill: none;
+  stroke: rgba(94, 60, 32, 0.5);
+  stroke-width: 2;
+}
+
+.map-preview .compass-needle {
+  fill: rgba(94, 60, 32, 0.7);
+}
+
+.map-preview .compass-n {
+  font-size: 11px;
+  font-weight: 900;
+  fill: rgba(94, 60, 32, 0.7);
+}
+
 /* ----- Entry + lobby ----- */
 
 .setup {
@@ -484,6 +539,19 @@ h3 {
 
 .deck-pile.is-drawable {
   outline: 3px solid var(--gold);
+  outline-offset: 2px;
+  animation: deck-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes deck-pulse {
+  0%,
+  100% {
+    outline-color: rgba(223, 180, 78, 0.95);
+  }
+
+  50% {
+    outline-color: rgba(223, 180, 78, 0.2);
+  }
 }
 
 .deck-pile:disabled {
@@ -527,6 +595,20 @@ h3 {
 
 .train-card.is-drawable {
   cursor: pointer;
+  outline: 3px solid var(--gold);
+  outline-offset: -3px;
+  animation: card-glow 1.6s ease-in-out infinite;
+}
+
+@keyframes card-glow {
+  0%,
+  100% {
+    outline-color: rgba(223, 180, 78, 0.95);
+  }
+
+  50% {
+    outline-color: rgba(223, 180, 78, 0.25);
+  }
 }
 
 .train-card.is-drawable:hover {

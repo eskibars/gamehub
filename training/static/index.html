@@ -31,8 +31,15 @@
           <div class="section-heading">
             <h2>Create Game</h2>
           </div>
-          <p class="hint">Draw train cards, claim routes between cities, and complete destination tickets before your rails run out. Pick the map for this journey, then share the code.</p>
+          <p class="hint">Draw train cards, claim routes between cities, and complete destination tickets before your rails run out. Pick the map for this journey, then share the code with your opponent.</p>
+          <label class="field">
+            <span>Your name</span>
+            <input id="creatorName" type="text" maxlength="24" autocomplete="nickname" placeholder="Your name" required>
+          </label>
           <div class="map-picker" id="mapPicker" aria-label="Map choice"></div>
+          <div class="map-preview" id="mapPreview" hidden>
+            <svg id="mapPreviewSvg" aria-label="Map preview"></svg>
+          </div>
           <button class="primary-button" type="submit">Create Share Code</button>
         </form>
 
@@ -117,9 +124,9 @@
             <section class="market-panel" aria-label="Train card market">
               <h3>Train market</h3>
               <div class="market-row">
-                <button class="deck-pile" id="deckPile" type="button" aria-label="Draw from deck">
+                <button class="deck-pile" id="deckPile" type="button" aria-label="Draw a card from the deck">
                   <span class="deck-count" id="deckCount">0</span>
-                  <span class="deck-label">deck</span>
+                  <span class="deck-label">draw</span>
                 </button>
                 <div class="market-slots" id="marketSlots"></div>
               </div>
@@ -178,7 +185,7 @@
     </main>
 
     <script src="/shared/game-entry.js" defer></script>
-    <script src="board.js" defer></script>
-    <script src="app.js" defer></script>
+    <script src="board.js?v=2" defer></script>
+    <script src="app.js?v=2" defer></script>
   </body>
 </html>
