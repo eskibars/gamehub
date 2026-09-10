@@ -117,6 +117,22 @@ const icons = {
       <circle cx="40" cy="46" r="1.6"></circle>
       <path d="M6 56c3-2.5 6-2.5 9 0s6 2.5 9 0 6-2.5 9 0 6 2.5 9 0 6-2.5 9 0"></path>
     </svg>`,
+  checkers: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="8" width="48" height="48" rx="4"></rect>
+      <path d="M8 24h48M8 40h48M24 8v48M40 8v48"></path>
+      <circle cx="16" cy="16" r="5"></circle>
+      <circle cx="48" cy="16" r="5"></circle>
+      <circle cx="32" cy="32" r="5"></circle>
+      <circle cx="16" cy="48" r="5"></circle>
+      <circle cx="48" cy="48" r="5"></circle>
+    </svg>`,
+  oracle: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M6 32C13 20 23 14 32 14s19 6 26 18c-7 12-17 18-26 18S13 44 6 32z"></path>
+      <circle cx="32" cy="32" r="8"></circle>
+      <circle cx="32" cy="32" r="2.5"></circle>
+    </svg>`,
 };
 
 const games = [
@@ -289,6 +305,40 @@ const games = [
       Players: "2",
     },
     icon: "battleship",
+  },
+  {
+    id: "checkers",
+    title: "Checkers",
+    type: "Draughts board",
+    status: "ready",
+    category: "board",
+    href: "/checkers/",
+    accent: "#8a5a34",
+    tilt: "-1.2deg",
+    description: "Draughts over a share code on the board width you pick — 8×8 classic, 10×10, or a huge 12×12. Forced captures, chained jumps, crowning, and colors that swap on rematch.",
+    features: {
+      Mode: "Remote duel",
+      Storage: "In-memory share code",
+      Players: "2",
+    },
+    icon: "checkers",
+  },
+  {
+    id: "oracle",
+    title: "The Oracle",
+    type: "Word visions",
+    status: "ready",
+    category: "board",
+    href: "/oracle/",
+    accent: "#3565b8",
+    tilt: "0.9deg",
+    description: "Codenames-style team play for four: spymasters see the secret key and give one-word clues while operatives guess the visions — and one card hides the assassin.",
+    features: {
+      Mode: "Two teams of two",
+      Storage: "In-memory share code",
+      Players: "4",
+    },
+    icon: "oracle",
   },
   {
     id: "tools",

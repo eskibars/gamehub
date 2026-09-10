@@ -77,6 +77,61 @@ BATTLESHIP_FLEET = (
 )
 BATTLESHIP_MAX_PLAYERS = 2
 BATTLESHIP_MAX_LOG = 12
+CHECKERS_GAMES: dict[str, dict[str, Any]] = {}
+CHECKERS_GAME_SUBSCRIBERS: dict[str, list[dict[str, Any]]] = {}
+CHECKERS_GAMES_LOCK = threading.Lock()
+CHECKERS_SIZES = (8, 10, 12)
+CHECKERS_MAX_LOG = 12
+# Moves without a capture before a game is declared a draw.
+CHECKERS_DRAW_QUIET = 60
+ORACLE_GAMES: dict[str, dict[str, Any]] = {}
+ORACLE_GAME_SUBSCRIBERS: dict[str, list[dict[str, Any]]] = {}
+ORACLE_GAMES_LOCK = threading.Lock()
+ORACLE_GRID = 5
+ORACLE_MAX_LOG = 15
+# Role ids in the order open seats are auto-assigned.
+ORACLE_ROLES = ("red-spymaster", "blue-spymaster", "red-operative", "blue-operative")
+ORACLE_WORDS = (
+    "AIRPLANE", "ALPS", "ANCHOR", "ANGEL", "ANTARCTICA", "APPLE", "ARM", "ATLANTIS",
+    "AUSTRALIA", "AZTEC", "BACK", "BALL", "BANK", "BARK", "BAT", "BEACH", "BEAR",
+    "BEAT", "BERLIN", "BILL", "BLOCK", "BOARD", "BOLT", "BOMB", "BOND", "BOOM",
+    "BOOT", "BOTTLE", "BOW", "BOX", "BRAIN", "BRANCH", "BRIDGE", "BRUSH", "BUCK",
+    "BUFFALO", "BUG", "BURN", "BUTTON", "CAPITAL", "CAR", "CARD", "CARRY", "CAST",
+    "CASTLE", "CAT", "CELL", "CENTAUR", "CENTER", "CHANGE", "CHARGE", "CHART",
+    "CHECK", "CHINA", "CIRCLE", "CLIFF", "CLOAK", "CLUB", "COAST", "COMB",
+    "COMMANDER", "COMPOUND", "CONCERT", "COPPER", "CRANE", "CRASH", "CREAM",
+    "CROWN", "CYCLOPS", "DANCE", "DAY", "DEATH", "DECK", "DEGREE", "DEPUTY",
+    "DESERT", "DIAMOND", "DINOSAUR", "DISEASE", "DOCTOR", "DOG", "DRAFT", "DRAGON",
+    "DRESS", "DRILL", "DRINK", "DROP", "DUCK", "EAGLE", "EARTH", "EGG", "EGYPT",
+    "EMPIRE", "ENGLAND", "EUROPE", "FAIR", "FALL", "FAN", "FENCE", "FIELD", "FILM",
+    "FIRE", "FISH", "FLUTE", "FLY", "FOOT", "FORCE", "FORK", "FRANCE", "GAMBLER",
+    "GATE", "GIANT", "GLASS", "GOLD", "GRASS", "GREEN", "GUITAR", "GUN", "HAIR",
+    "HALL", "HAM", "HAWK", "HELICOPTER", "HOLE", "HOLLYWOOD", "HONEY", "HOOK",
+    "HORN", "HORSE", "HORSESHOE", "HOSPITAL", "HOTEL", "ICE", "IRON", "ISLAND",
+    "IVORY", "JACK", "JAM", "JET", "JUPITER", "KANGAROO", "KEY", "KID", "KING",
+    "KITCHEN", "KNIFE", "KNIGHT", "LABOR", "LASER", "LAW", "LEAD", "LEMON",
+    "LEPRECHAUN", "LIFE", "LIGHT", "LION", "LITTER", "LOCK", "LONDON", "LUCK",
+    "MAMMOTH", "MAP", "MARBLE", "MARSHMALLOW", "MASK", "MASS", "MATCH", "MEDIC",
+    "MERCURY", "METAL", "MICROSCOPE", "MILITARY", "MOON", "MOUNT", "MOUTH", "MUD",
+    "MUG", "NAIL", "NEEDLE", "NIGHT", "NOBLE", "NOSE", "NOVEL", "NURSE", "OASIS",
+    "OCEAN", "OCTOPUS", "OIL", "OLIVE", "OLYMPUS", "ORANGE", "ORGAN", "OUTFIT",
+    "OXYGEN", "PAPER", "PART", "PASS", "PASTE", "PENGUIN", "PIANO", "PILGRIM",
+    "PIN", "PIRATE", "PLANE", "PLANT", "PLATE", "PLAY", "PLUTO", "POCKET", "POISON",
+    "POLICE", "POND", "POOL", "PORT", "POST", "PUPIL", "PYRAMID", "QUEEN", "RACKET",
+    "RAIN", "RAY", "RING", "ROBIN", "ROBOT", "ROCKET", "ROOF", "ROOT", "ROPE",
+    "ROSE", "ROULETTE", "ROUND", "RULER", "SALT", "SATURN", "SCHOOL", "SCIENCE",
+    "SCORPION", "SCREEN", "SCUBA", "SEASON", "SECOND", "SHADOW", "SHELL", "SHIP",
+    "SHOE", "SHOOT", "SHOWER", "SINK", "SKY", "SLIP", "SNOW", "SOUL", "SPACE",
+    "SPELL", "SPIDER", "SPIKE", "SPINE", "SPOT", "SPRING", "SPY", "SQUARE",
+    "STADIUM", "STAFF", "STAIR", "STAMP", "STAR", "STEEL", "STICK", "STOLEN",
+    "STONE", "STRAW", "STREAM", "STREET", "SUB", "SUGAR", "SUIT", "SUN",
+    "SUPERHERO", "SWAMP", "SWAN", "SWING", "TABLE", "TAP", "TEACHER", "TELESCOPE",
+    "TEMPLE", "THEATER", "THIEF", "THUMB", "TICK", "TIE", "TIME", "TOKYO", "TOOTH",
+    "TORCH", "TOWER", "TRACK", "TRAIN", "TRIANGLE", "TRUNK", "TUBE", "TURKEY",
+    "UNICORN", "VACUUM", "VAMPIRE", "VAN", "VET", "WAKE", "WALL", "WAR", "WARDROBE",
+    "WASHINGTON", "WATCH", "WATER", "WAVE", "WEB", "WEREWOLF", "WHALE", "WHIP",
+    "WIND", "WINE", "WIRE", "WITCH", "WORM", "YARD", "ZEUS",
+)
 # Idle remote tables are swept from memory so abandoned game codes do not
 # accumulate until restart. TTL <= 0 disables the sweeper entirely.
 GAME_TTL_SECONDS = int(os.environ.get("GAME_TTL_SECONDS", 6 * 60 * 60))
@@ -293,6 +348,8 @@ def sweep_stale_games(now: float | None = None) -> list[str]:
         (WHOAMI_GAMES_LOCK, WHOAMI_GAMES, WHOAMI_GAME_SUBSCRIBERS, None),
         (HANGMAN_GAMES_LOCK, HANGMAN_GAMES, HANGMAN_GAME_SUBSCRIBERS, None),
         (BATTLESHIP_GAMES_LOCK, BATTLESHIP_GAMES, BATTLESHIP_GAME_SUBSCRIBERS, None),
+        (CHECKERS_GAMES_LOCK, CHECKERS_GAMES, CHECKERS_GAME_SUBSCRIBERS, None),
+        (ORACLE_GAMES_LOCK, ORACLE_GAMES, ORACLE_GAME_SUBSCRIBERS, None),
     )
     for lock, games, subscribers, timers in namespaces:
         closed_queues: list[queue.Queue] = []
@@ -927,6 +984,34 @@ def create_app() -> Flask:
     def battleship_static(filename: str):
         return send_from_directory(BATTLESHIP_STATIC_DIR, filename)
 
+    CHECKERS_STATIC_DIR = BASE_DIR / "checkers" / "static"
+
+    @app.get("/checkers")
+    def checkers_redirect():
+        return redirect("/checkers/")
+
+    @app.get("/checkers/")
+    def checkers_index():
+        return send_from_directory(CHECKERS_STATIC_DIR, "index.html")
+
+    @app.get("/checkers/<path:filename>")
+    def checkers_static(filename: str):
+        return send_from_directory(CHECKERS_STATIC_DIR, filename)
+
+    ORACLE_STATIC_DIR = BASE_DIR / "oracle" / "static"
+
+    @app.get("/oracle")
+    def oracle_redirect():
+        return redirect("/oracle/")
+
+    @app.get("/oracle/")
+    def oracle_index():
+        return send_from_directory(ORACLE_STATIC_DIR, "index.html")
+
+    @app.get("/oracle/<path:filename>")
+    def oracle_static(filename: str):
+        return send_from_directory(ORACLE_STATIC_DIR, filename)
+
     @app.get("/share/<share_id>")
     def shared_card(share_id: str):
         return redirect(f"/bingo/?share={share_id}")
@@ -949,6 +1034,10 @@ def create_app() -> Flask:
             hangman_count = len(HANGMAN_GAMES)
         with BATTLESHIP_GAMES_LOCK:
             battleship_count = len(BATTLESHIP_GAMES)
+        with CHECKERS_GAMES_LOCK:
+            checkers_count = len(CHECKERS_GAMES)
+        with ORACLE_GAMES_LOCK:
+            oracle_count = len(ORACLE_GAMES)
         return jsonify(
             {
                 "ok": True,
@@ -959,6 +1048,8 @@ def create_app() -> Flask:
                     "whoami": whoami_count,
                     "hangman": hangman_count,
                     "battleship": battleship_count,
+                    "checkers": checkers_count,
+                    "oracle": oracle_count,
                 },
             }
         )
@@ -2421,6 +2512,433 @@ def create_app() -> Flask:
         return Response(stream_with_context(stream()), mimetype="text/event-stream")
 
     # ============================================================
+    # CHECKERS — perfect-information board game with a creator-chosen
+    # board width (8/10/12). The host plays red from the bottom, the
+    # guest black from the top, and black opens. American rules:
+    # mandatory captures, chained multi-jumps, crowning ends a move.
+    # ============================================================
+
+    def checkers_starting_rows(size: int) -> int:
+        return size // 2 - 1
+
+    def checkers_new_board(size: int) -> list[list[dict[str, Any] | None]]:
+        rows = checkers_starting_rows(size)
+        board: list[list[dict[str, Any] | None]] = [[None] * size for _ in range(size)]
+        for r in range(rows):
+            for c in range(size):
+                if (r + c) % 2 == 1:
+                    board[r][c] = {"color": "black", "king": False}
+        for r in range(size - rows, size):
+            for c in range(size):
+                if (r + c) % 2 == 1:
+                    board[r][c] = {"color": "red", "king": False}
+        return board
+
+    def checkers_create_game(size: int) -> dict[str, Any]:
+        now = utc_now()
+        return {
+            "code": uuid.uuid4().hex[:8].upper(),
+            "size": size,
+            "status": "lobby",
+            "round": 1,
+            "turnId": None,
+            "turnColor": None,
+            "chainFrom": None,
+            "quiet": 0,
+            "winnerId": None,
+            "winReason": None,
+            "players": {},
+            "board": checkers_new_board(size),
+            "log": [],
+            "createdAt": now,
+            "updatedAt": now,
+        }
+
+    def checkers_append_log(game: dict[str, Any], text: str) -> None:
+        game["log"].append({"text": text, "at": utc_now()})
+        if len(game["log"]) > CHECKERS_MAX_LOG:
+            del game["log"][: len(game["log"]) - CHECKERS_MAX_LOG]
+        game["updatedAt"] = utc_now()
+
+    def checkers_cell_label(size: int, row: int, col: int) -> str:
+        # Rank numbers count up from the RED side (bottom) so both players
+        # can reference squares the same way regardless of orientation.
+        return f"{chr(ord('A') + col)}{size - row}"
+
+    def checkers_piece_jumps(board: list[list[dict[str, Any] | None]], size: int, r: int, c: int) -> list[list[int]]:
+        piece = board[r][c]
+        if not piece:
+            return []
+        if piece["king"]:
+            directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+        elif piece["color"] == "black":
+            directions = [(1, -1), (1, 1)]
+        else:
+            directions = [(-1, -1), (-1, 1)]
+        jumps = []
+        for dr, dc in directions:
+            mr, mc = r + dr, c + dc
+            lr, lc = r + 2 * dr, c + 2 * dc
+            if not (0 <= lr < size and 0 <= lc < size):
+                continue
+            over = board[mr][mc]
+            if over and over["color"] != piece["color"] and board[lr][lc] is None:
+                jumps.append([lr, lc])
+        return jumps
+
+    def checkers_piece_steps(board: list[list[dict[str, Any] | None]], size: int, r: int, c: int) -> list[list[int]]:
+        piece = board[r][c]
+        if not piece:
+            return []
+        if piece["king"]:
+            directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+        elif piece["color"] == "black":
+            directions = [(1, -1), (1, 1)]
+        else:
+            directions = [(-1, -1), (-1, 1)]
+        steps = []
+        for dr, dc in directions:
+            sr, sc = r + dr, c + dc
+            if 0 <= sr < size and 0 <= sc < size and board[sr][sc] is None:
+                steps.append([sr, sc])
+        return steps
+
+    def checkers_any_jumps(board: list[list[dict[str, Any] | None]], size: int, color: str) -> bool:
+        for r in range(size):
+            for c in range(size):
+                piece = board[r][c]
+                if piece and piece["color"] == color and checkers_piece_jumps(board, size, r, c):
+                    return True
+        return False
+
+    def checkers_legal_targets(game: dict[str, Any], r: int, c: int) -> list[list[int]]:
+        """Targets for one piece, honoring mandatory captures and jump chains."""
+        board, size = game["board"], game["size"]
+        piece = board[r][c]
+        if not piece or piece["color"] != game["turnColor"]:
+            return []
+        if game["chainFrom"] and game["chainFrom"] != [r, c]:
+            return []
+        jumps = checkers_piece_jumps(board, size, r, c)
+        if jumps or game["chainFrom"] or checkers_any_jumps(board, size, piece["color"]):
+            return jumps
+        return checkers_piece_steps(board, size, r, c)
+
+    def checkers_player_view(game: dict[str, Any], player_id: str | None) -> dict[str, Any]:
+        players = []
+        for pid, info in game["players"].items():
+            players.append(
+                {
+                    "id": pid,
+                    "name": info["name"],
+                    "isHost": info.get("isHost", False),
+                    "connectedAt": info.get("connectedAt"),
+                    "color": info["color"],
+                }
+            )
+        players.sort(key=lambda item: item["connectedAt"] or "")
+        view: dict[str, Any] = {
+            "code": game["code"],
+            "status": game["status"],
+            "round": game["round"],
+            "size": game["size"],
+            "players": players,
+            "board": game["board"],
+            "turnId": game["turnId"],
+            "turnColor": game.get("turnColor"),
+            "chainFrom": game["chainFrom"],
+            "winnerId": game["winnerId"],
+            "winReason": game["winReason"],
+            "log": list(game["log"]),
+            "createdAt": game["createdAt"],
+            "updatedAt": game["updatedAt"],
+        }
+        if not player_id or player_id not in game["players"]:
+            return view
+        me = game["players"][player_id]
+        view["playerId"] = player_id
+        view["youAreHost"] = me.get("isHost", False)
+        view["yourName"] = me["name"]
+        view["yourColor"] = me["color"]
+        view["yourTurn"] = game["status"] == "active" and game["turnId"] == player_id
+        view["opponents"] = [
+            {"id": pid, "name": p["name"], "color": p["color"]}
+            for pid, p in game["players"].items()
+            if pid != player_id
+        ]
+        return view
+
+    def checkers_publish(code: str, event_name: str = "game") -> None:
+        with CHECKERS_GAMES_LOCK:
+            game = CHECKERS_GAMES.get(code)
+            subscribers = list(CHECKERS_GAME_SUBSCRIBERS.get(code, []))
+        if not game:
+            return
+        for subscriber in subscribers:
+            player_id = subscriber.get("playerId")
+            subscriber["queue"].put({"event": event_name, "data": checkers_player_view(game, player_id)})
+
+    @app.post("/api/checkers/games")
+    def create_checkers_game():
+        body = request.get_json(silent=True) or {}
+        try:
+            size = int(body.get("size") or 8)
+        except (TypeError, ValueError):
+            return jsonify({"error": "Board size must be 8, 10, or 12."}), 400
+        if size not in CHECKERS_SIZES:
+            return jsonify({"error": "Board size must be 8, 10, or 12."}), 400
+        game = checkers_create_game(size)
+        with CHECKERS_GAMES_LOCK:
+            CHECKERS_GAMES[game["code"]] = game
+            CHECKERS_GAME_SUBSCRIBERS.setdefault(game["code"], [])
+        return jsonify({"game": checkers_player_view(game, None), "shareUrl": f"/checkers/?game={game['code']}"}), 201
+
+    @app.get("/api/checkers/games/<code>")
+    def get_checkers_game(code: str):
+        code = code.upper()
+        player_id = str(request.args.get("playerId") or "").strip() or None
+        with CHECKERS_GAMES_LOCK:
+            game = CHECKERS_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            return jsonify({"game": checkers_player_view(game, player_id)})
+
+    @app.post("/api/checkers/games/<code>/players")
+    def join_checkers_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        name = str(body.get("name") or "").strip()
+        provided_id = str(body.get("playerId") or "").strip()
+        if not name:
+            return jsonify({"error": "Name is required."}), 400
+        if len(name) > 24:
+            return jsonify({"error": "Name must be 24 characters or fewer."}), 400
+
+        now = utc_now()
+        with CHECKERS_GAMES_LOCK:
+            game = CHECKERS_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "lobby":
+                return jsonify({"error": "This game has already started."}), 409
+            if provided_id and provided_id in game["players"]:
+                player = game["players"][provided_id]
+                player["name"] = name
+                player_id = provided_id
+            else:
+                if len(game["players"]) >= 2:
+                    return jsonify({"error": "This game is full."}), 409
+                player_id = secrets.token_urlsafe(8)
+                is_host = not game["players"]
+                color = "red" if is_host else "black"
+                game["players"][player_id] = {
+                    "id": player_id,
+                    "name": name,
+                    "isHost": is_host,
+                    "connectedAt": now,
+                    "color": color,
+                }
+            game["updatedAt"] = now
+
+        checkers_publish(code, "joined")
+        with CHECKERS_GAMES_LOCK:
+            return jsonify({"game": checkers_player_view(CHECKERS_GAMES[code], player_id), "playerId": player_id})
+
+    @app.post("/api/checkers/games/<code>/start")
+    def start_checkers_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with CHECKERS_GAMES_LOCK:
+            game = CHECKERS_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "lobby":
+                return jsonify({"error": "This game has already started."}), 409
+            if len(game["players"]) < 2:
+                return jsonify({"error": "Wait for your opponent to join."}), 409
+            if player_id and player_id not in game["players"]:
+                return jsonify({"error": "Player was not found."}), 404
+            game["status"] = "active"
+            # Black opens, per convention.
+            game["turnId"] = next(pid for pid, p in game["players"].items() if p["color"] == "black")
+            game["turnColor"] = "black"
+            game["updatedAt"] = utc_now()
+            checkers_append_log(game, f"Round {game['round']}. Black moves first!")
+
+        checkers_publish(code, "started")
+        with CHECKERS_GAMES_LOCK:
+            return jsonify({"game": checkers_player_view(CHECKERS_GAMES[code], player_id or None)})
+
+    @app.post("/api/checkers/games/<code>/players/<player_id>/move")
+    def checkers_move(code: str, player_id: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        move = body.get("move") or {}
+        try:
+            fr, fc = int(move["from"][0]), int(move["from"][1])
+            tr, tc = int(move["to"][0]), int(move["to"][1])
+        except (KeyError, TypeError, ValueError, IndexError):
+            return jsonify({"error": "A move needs from/to squares."}), 400
+
+        with CHECKERS_GAMES_LOCK:
+            game = CHECKERS_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "The game is not in progress."}), 409
+            if game["turnId"] != player_id:
+                return jsonify({"error": "It is not your turn."}), 403
+            player = game["players"].get(player_id)
+            if not player:
+                return jsonify({"error": "Player was not found."}), 404
+
+            board, size = game["board"], game["size"]
+            game["turnColor"] = player["color"]
+            targets = checkers_legal_targets(game, fr, fc)
+            if not targets:
+                return jsonify({"error": "That piece cannot move right now."}), 400
+            if [tr, tc] not in targets:
+                return jsonify({"error": "That move is not legal."}), 400
+
+            piece = board[fr][fc]
+            is_jump = abs(tr - fr) == 2
+            captured_label = None
+            if is_jump:
+                mid = board[(fr + tr) // 2][(fc + tc) // 2]
+                captured_label = "a king" if mid and mid["king"] else "a man"
+                board[(fr + tr) // 2][(fc + tc) // 2] = None
+                game["quiet"] = 0
+            else:
+                game["quiet"] += 1
+            board[tr][tc] = piece
+            board[fr][fc] = None
+
+            moved_label = "king" if piece["king"] else "man"
+            text = f"{player['name']} moved the {player['color']} {moved_label} {checkers_cell_label(size, fr, fc)} to {checkers_cell_label(size, tr, tc)}"
+            crowned = False
+            if not piece["king"]:
+                home_row = size - 1 if piece["color"] == "black" else 0
+                if tr == home_row:
+                    piece["king"] = True
+                    crowned = True
+                    text += " — crowned!"
+            if is_jump and not captured_label:
+                captured_label = "a man"
+            if is_jump:
+                text += f", capturing {captured_label}"
+            checkers_append_log(game, text + ".")
+
+            # Chained captures continue the same turn (a freshly crowned king
+            # stops, per American rules).
+            chained = is_jump and not crowned and checkers_piece_jumps(board, size, tr, tc)
+            if chained:
+                game["chainFrom"] = [tr, tc]
+                checkers_append_log(game, f"{player['name']} must keep jumping!")
+                public_view = checkers_player_view(game, player_id)
+            else:
+                game["chainFrom"] = None
+
+                next_pid = next(pid for pid in game["players"] if pid != player_id)
+                next_color = game["players"][next_pid]["color"]
+                if game["quiet"] >= CHECKERS_DRAW_QUIET:
+                    game["status"] = "finished"
+                    game["winnerId"] = None
+                    game["winReason"] = "draw"
+                    game["turnId"] = None
+                    checkers_append_log(game, "Draw — sixty quiet moves.")
+                elif not checkers_any_legal_moves(game, next_color):
+                    game["status"] = "finished"
+                    game["winnerId"] = player_id
+                    game["winReason"] = "no_moves"
+                    game["turnId"] = None
+                    checkers_append_log(game, f"{player['name']} wins!")
+                else:
+                    game["turnId"] = next_pid
+                    game["turnColor"] = next_color
+                public_view = checkers_player_view(game, player_id)
+
+        # Publish outside the lock: threading.Lock is not reentrant and
+        # checkers_publish takes it itself.
+        checkers_publish(code, "move")
+        return jsonify({"game": public_view})
+
+    def checkers_any_legal_moves(game: dict[str, Any], color: str) -> bool:
+        board, size = game["board"], game["size"]
+        for r in range(size):
+            for c in range(size):
+                piece = board[r][c]
+                if piece and piece["color"] == color:
+                    if checkers_piece_jumps(board, size, r, c) or checkers_piece_steps(board, size, r, c):
+                        return True
+        return False
+
+    @app.post("/api/checkers/games/<code>/rematch")
+    def checkers_rematch(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with CHECKERS_GAMES_LOCK:
+            game = CHECKERS_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "finished":
+                return jsonify({"error": "Finish the current game first."}), 409
+            if player_id and player_id not in game["players"]:
+                return jsonify({"error": "Player was not found."}), 404
+            game["round"] += 1
+            game["status"] = "lobby"
+            game["turnId"] = None
+            game["turnColor"] = None
+            game["chainFrom"] = None
+            game["quiet"] = 0
+            game["winnerId"] = None
+            game["winReason"] = None
+            game["board"] = checkers_new_board(game["size"])
+            # Swap colors so the other side opens the rematch.
+            colors = ["red", "black"]
+            for info in game["players"].values():
+                info["color"] = colors.pop() if colors else "red"
+            checkers_append_log(
+                game,
+                f"Round {game['round']}! Colors swapped — {' and '.join(p['name'] + ' plays ' + p['color'] for p in game['players'].values())}.",
+            )
+
+        checkers_publish(code, "rematch")
+        with CHECKERS_GAMES_LOCK:
+            return jsonify({"game": checkers_player_view(CHECKERS_GAMES[code], player_id or None)})
+
+    @app.get("/api/checkers/games/<code>/events")
+    def checkers_game_events(code: str):
+        code = code.upper()
+        player_id = str(request.args.get("playerId") or "").strip() or None
+        event_queue: queue.Queue[dict[str, Any]] = queue.Queue()
+        subscriber = {"queue": event_queue, "playerId": player_id}
+        with CHECKERS_GAMES_LOCK:
+            game = CHECKERS_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            CHECKERS_GAME_SUBSCRIBERS.setdefault(code, []).append(subscriber)
+            initial_game = checkers_player_view(game, player_id)
+
+        def stream():
+            yield sse_message("game", initial_game)
+            try:
+                while True:
+                    try:
+                        message = event_queue.get(timeout=25)
+                        yield sse_message(message["event"], message["data"])
+                    except queue.Empty:
+                        yield sse_message("ping", {"ok": True})
+            finally:
+                with CHECKERS_GAMES_LOCK:
+                    subscribers = CHECKERS_GAME_SUBSCRIBERS.get(code, [])
+                    if subscriber in subscribers:
+                        subscribers.remove(subscriber)
+
+        return Response(stream_with_context(stream()), mimetype="text/event-stream")
+
+    # ============================================================
     # BATTLESHIP — remote two-player fleet game. Ship placements are
     # private: every view only exposes a player's own fleet plus the
     # public shot record, and sunk enemy ships are revealed cell by cell.
@@ -2856,6 +3374,455 @@ def create_app() -> Flask:
             finally:
                 with BATTLESHIP_GAMES_LOCK:
                     subscribers = BATTLESHIP_GAME_SUBSCRIBERS.get(code, [])
+                    if subscriber in subscribers:
+                        subscribers.remove(subscriber)
+
+        return Response(stream_with_context(stream()), mimetype="text/event-stream")
+
+    # ============================================================
+    # THE ORACLE — a Codenames-style word game for four roles: a red and a
+    # blue team, each with a spymaster (sees the key) and an operative
+    # (guesses). The key map is the hidden information: it is only ever sent
+    # to spymasters, and to everyone once the game is over.
+    # ============================================================
+
+    def oracle_role_parts(role: str) -> tuple[str, str]:
+        team, _, kind = role.partition("-")
+        return team, kind
+
+    def oracle_new_game() -> dict[str, Any]:
+        now = utc_now()
+        return {
+            "code": uuid.uuid4().hex[:8].upper(),
+            "status": "lobby",
+            "round": 1,
+            "players": {},
+            "words": [],
+            "key": [],
+            "revealed": [False] * (ORACLE_GRID * ORACLE_GRID),
+            "turnTeam": None,
+            "phase": None,
+            "clue": None,
+            "guessesLeft": 0,
+            "winnerTeam": None,
+            "winReason": None,
+            "log": [],
+            "createdAt": now,
+            "updatedAt": now,
+        }
+
+    def oracle_open_roles(game: dict[str, Any]) -> list[str]:
+        taken = {p["role"] for p in game["players"].values()}
+        return [role for role in ORACLE_ROLES if role not in taken]
+
+    def oracle_append_log(game: dict[str, Any], text: str) -> None:
+        game["log"].append({"text": text, "at": utc_now()})
+        if len(game["log"]) > ORACLE_MAX_LOG:
+            del game["log"][: len(game["log"]) - ORACLE_MAX_LOG]
+        game["updatedAt"] = utc_now()
+
+    def oracle_team_counts(game: dict[str, Any]) -> dict[str, int]:
+        counts = {}
+        for color in ("red", "blue"):
+            counts[color] = sum(
+                1 for i, color_at in enumerate(game["key"])
+                if color_at == color and not game["revealed"][i]
+            )
+        return counts
+
+    def oracle_deal(game: dict[str, Any]) -> None:
+        words = random.SystemRandom().sample(ORACLE_WORDS, ORACLE_GRID * ORACLE_GRID)
+        first = secrets.choice(["red", "blue"])
+        key = (
+            [first] * 9
+            + [("blue" if first == "red" else "red")] * 8
+            + ["neutral"] * 7
+            + ["assassin"]
+        )
+        random.SystemRandom().shuffle(key)
+        game["words"] = words
+        game["key"] = key
+        game["revealed"] = [False] * (ORACLE_GRID * ORACLE_GRID)
+        game["turnTeam"] = first
+        game["phase"] = "clue"
+        game["clue"] = None
+        game["guessesLeft"] = 0
+
+    def oracle_player_view(game: dict[str, Any], player_id: str | None) -> dict[str, Any]:
+        players = []
+        for pid, info in game["players"].items():
+            players.append(
+                {
+                    "id": pid,
+                    "name": info["name"],
+                    "role": info["role"],
+                    "isHost": info.get("isHost", False),
+                    "connectedAt": info.get("connectedAt"),
+                }
+            )
+        players.sort(key=lambda item: (item["connectedAt"] or ""))
+        clue = game["clue"]
+        view: dict[str, Any] = {
+            "code": game["code"],
+            "status": game["status"],
+            "round": game["round"],
+            "grid": ORACLE_GRID,
+            "players": players,
+            "openRoles": oracle_open_roles(game),
+            "turnTeam": game["turnTeam"],
+            "phase": game["phase"],
+            "clue": dict(clue) if clue else None,
+            "guessesLeft": game["guessesLeft"],
+            "words": list(game["words"]),
+            "revealed": list(game["revealed"]),
+            "revealedColors": [
+                {"index": i, "color": game["key"][i]}
+                for i in range(len(game["key"])) if game["revealed"][i]
+            ],
+            "remaining": oracle_team_counts(game) if game["key"] else {"red": 0, "blue": 0},
+            "winnerTeam": game["winnerTeam"],
+            "winReason": game["winReason"],
+            "log": list(game["log"]),
+            "createdAt": game["createdAt"],
+            "updatedAt": game["updatedAt"],
+        }
+        # Once the game is over the board is public — everyone gets the key.
+        if game["status"] == "finished":
+            view["key"] = list(game["key"])
+        if not player_id or player_id not in game["players"]:
+            return view
+        me = game["players"][player_id]
+        view["playerId"] = player_id
+        view["youAreHost"] = me.get("isHost", False)
+        view["yourName"] = me["name"]
+        view["yourRole"] = me["role"]
+        team, kind = oracle_role_parts(me["role"])
+        view["yourTeam"] = team
+        view["yourKind"] = kind
+        # The key map is the whole point of the game: spymasters only (the
+        # finished-game reveal already went out to everyone above).
+        if kind == "spymaster":
+            view["key"] = list(game["key"])
+        return view
+
+    def oracle_publish(code: str, event_name: str = "game") -> None:
+        with ORACLE_GAMES_LOCK:
+            game = ORACLE_GAMES.get(code)
+            subscribers = list(ORACLE_GAME_SUBSCRIBERS.get(code, []))
+        if not game:
+            return
+        for subscriber in subscribers:
+            player_id = subscriber.get("playerId")
+            subscriber["queue"].put({"event": event_name, "data": oracle_player_view(game, player_id)})
+
+    def oracle_pass_turn(game: dict[str, Any]) -> None:
+        game["turnTeam"] = "blue" if game["turnTeam"] == "red" else "red"
+        game["phase"] = "clue"
+        game["clue"] = None
+        game["guessesLeft"] = 0
+
+    @app.post("/api/oracle/games")
+    def create_oracle_game():
+        game = oracle_new_game()
+        with ORACLE_GAMES_LOCK:
+            ORACLE_GAMES[game["code"]] = game
+            ORACLE_GAME_SUBSCRIBERS.setdefault(game["code"], [])
+        return jsonify({"game": oracle_player_view(game, None), "shareUrl": f"/oracle/?game={game['code']}"}), 201
+
+    @app.get("/api/oracle/games/<code>")
+    def get_oracle_game(code: str):
+        code = code.upper()
+        player_id = str(request.args.get("playerId") or "").strip() or None
+        with ORACLE_GAMES_LOCK:
+            game = ORACLE_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            return jsonify({"game": oracle_player_view(game, player_id)})
+
+    @app.post("/api/oracle/games/<code>/players")
+    def join_oracle_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        name = str(body.get("name") or "").strip()
+        role = str(body.get("role") or "").strip().lower()
+        provided_id = str(body.get("playerId") or "").strip()
+        if not name:
+            return jsonify({"error": "Name is required."}), 400
+        if len(name) > 24:
+            return jsonify({"error": "Name must be 24 characters or fewer."}), 400
+
+        now = utc_now()
+        with ORACLE_GAMES_LOCK:
+            game = ORACLE_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "lobby":
+                return jsonify({"error": "The game has already started."}), 409
+            if provided_id and provided_id in game["players"]:
+                player = game["players"][provided_id]
+                player["name"] = name
+                player_id = provided_id
+            else:
+                open_roles = oracle_open_roles(game)
+                if not open_roles:
+                    return jsonify({"error": "All four seats are taken."}), 409
+                if role:
+                    if role not in ORACLE_ROLES:
+                        return jsonify({"error": "Unknown role."}), 400
+                    if role not in open_roles:
+                        return jsonify({"error": f"That seat is taken. Open: {', '.join(open_roles)}."}), 409
+                else:
+                    role = open_roles[0]
+                player_id = secrets.token_urlsafe(8)
+                is_host = not game["players"]
+                game["players"][player_id] = {
+                    "id": player_id,
+                    "name": name,
+                    "role": role,
+                    "isHost": is_host,
+                    "connectedAt": now,
+                }
+            game["updatedAt"] = now
+
+        oracle_publish(code, "joined")
+        with ORACLE_GAMES_LOCK:
+            return jsonify({"game": oracle_player_view(ORACLE_GAMES[code], player_id), "playerId": player_id})
+
+    @app.post("/api/oracle/games/<code>/start")
+    def start_oracle_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with ORACLE_GAMES_LOCK:
+            game = ORACLE_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "lobby":
+                return jsonify({"error": "The game has already started."}), 409
+            if player_id and player_id not in game["players"]:
+                return jsonify({"error": "Player was not found."}), 404
+            if oracle_open_roles(game):
+                return jsonify({"error": "All four seats must be filled first."}), 409
+            oracle_deal(game)
+            game["status"] = "active"
+            game["updatedAt"] = utc_now()
+            first_name = next(
+                p["name"] for p in game["players"].values()
+                if oracle_role_parts(p["role"])[0] == game["turnTeam"]
+            )
+            oracle_append_log(game, f"Round {game['round']}. The {game['turnTeam']} team acts first — {first_name}'s spymaster gives the first clue.")
+
+        oracle_publish(code, "started")
+        with ORACLE_GAMES_LOCK:
+            return jsonify({"game": oracle_player_view(ORACLE_GAMES[code], player_id or None)})
+
+    @app.post("/api/oracle/games/<code>/clue")
+    def oracle_give_clue(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        word = str(body.get("word") or "").strip()
+        raw_count = body.get("count")
+
+        with ORACLE_GAMES_LOCK:
+            game = ORACLE_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "The game is not in progress."}), 409
+            player = game["players"].get(player_id)
+            if not player:
+                return jsonify({"error": "Player was not found."}), 404
+            team, kind = oracle_role_parts(player["role"])
+            if kind != "spymaster" or team != game["turnTeam"]:
+                return jsonify({"error": "Only the acting team's spymaster gives clues."}), 403
+            if game["phase"] != "clue":
+                return jsonify({"error": "Your operative is still guessing."}), 409
+
+            if not re.fullmatch(r"[A-Za-z][A-Za-z'-]*", word):
+                return jsonify({"error": "Clues must be a single English word (letters, hyphen or apostrophe)."}), 400
+            word_upper = word.upper()
+            for i, board_word in enumerate(game["words"]):
+                if game["revealed"][i]:
+                    continue
+                if word_upper == board_word or (len(word_upper) >= 3 and (word_upper in board_word or board_word in word_upper)):
+                    return jsonify({"error": "Clues can't use a word (or part of one) that is on the board."}), 400
+
+            unlimited = raw_count in {"infinite", "∞", -1, "-1"}
+            if not unlimited:
+                try:
+                    count = int(raw_count)
+                except (TypeError, ValueError):
+                    return jsonify({"error": "Clue count must be 1-8 or unlimited."}), 400
+                if not 1 <= count <= 8:
+                    return jsonify({"error": "Clue count must be 1-8 or unlimited."}), 400
+
+            game["clue"] = {
+                "word": word_upper,
+                "count": -1 if unlimited else count,
+                "team": team,
+                "by": player["name"],
+            }
+            game["phase"] = "guessing"
+            game["guessesLeft"] = 99 if unlimited else count + 1
+            oracle_append_log(game, f"{player['name']} ({team} spymaster) clues: {word_upper} {'∞' if unlimited else count}.")
+
+        oracle_publish(code, "clue")
+        with ORACLE_GAMES_LOCK:
+            return jsonify({"game": oracle_player_view(ORACLE_GAMES[code], player_id)})
+
+    @app.post("/api/oracle/games/<code>/guess")
+    def oracle_guess(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        try:
+            index = int(body.get("index"))
+        except (TypeError, ValueError):
+            return jsonify({"error": "Pick a card."}), 400
+
+        with ORACLE_GAMES_LOCK:
+            game = ORACLE_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "The game is not in progress."}), 409
+            player = game["players"].get(player_id)
+            if not player:
+                return jsonify({"error": "Player was not found."}), 404
+            team, kind = oracle_role_parts(player["role"])
+            if kind != "operative" or team != game["turnTeam"]:
+                return jsonify({"error": "Only the acting team's operative guesses."}), 403
+            if game["phase"] != "guessing":
+                return jsonify({"error": "Wait for your spymaster's clue."}), 409
+            if not 0 <= index < ORACLE_GRID * ORACLE_GRID:
+                return jsonify({"error": "That card is not on the board."}), 400
+            if game["revealed"][index]:
+                return jsonify({"error": "That card was already revealed."}), 409
+
+            color = game["key"][index]
+            game["revealed"][index] = True
+            word = game["words"][index]
+            other = "blue" if team == "red" else "red"
+            finished = False
+
+            if color == "assassin":
+                game["winnerTeam"] = other
+                game["winReason"] = "assassin"
+                finished = True
+                oracle_append_log(game, f"{player['name']} revealed {word} — THE ASSASSIN. The {other} team wins!")
+            elif color == team:
+                game["guessesLeft"] -= 1
+                oracle_append_log(game, f"{player['name']} revealed {word} — it serves the {team} team.")
+                if oracle_team_counts(game)[team] == 0:
+                    game["winnerTeam"] = team
+                    game["winReason"] = "all_words"
+                    finished = True
+                    oracle_append_log(game, f"The {team} team uncovered every one of their words. Victory!")
+                elif game["guessesLeft"] <= 0:
+                    oracle_pass_turn(game)
+                    oracle_append_log(game, f"Out of guesses. The {game['turnTeam']} team is up.")
+            elif color == other:
+                oracle_append_log(game, f"{player['name']} revealed {word} — it belonged to the {other} team. Turn over.")
+                if oracle_team_counts(game)[other] == 0:
+                    game["winnerTeam"] = other
+                    game["winReason"] = "all_words"
+                    finished = True
+                    oracle_append_log(game, f"That was the {other} team's last word. They win!")
+                else:
+                    oracle_pass_turn(game)
+            else:
+                oracle_append_log(game, f"{player['name']} revealed {word} — a bystander. Turn over.")
+                oracle_pass_turn(game)
+
+            if finished:
+                game["status"] = "finished"
+                game["phase"] = None
+                game["guessesLeft"] = 0
+            public_view = oracle_player_view(game, player_id)
+
+        oracle_publish(code, "guess")
+        return jsonify({"game": public_view})
+
+    @app.post("/api/oracle/games/<code>/end-turn")
+    def oracle_end_turn(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with ORACLE_GAMES_LOCK:
+            game = ORACLE_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "The game is not in progress."}), 409
+            player = game["players"].get(player_id)
+            if not player:
+                return jsonify({"error": "Player was not found."}), 404
+            team, kind = oracle_role_parts(player["role"])
+            if kind != "operative" or team != game["turnTeam"]:
+                return jsonify({"error": "Only the acting team's operative can end the turn."}), 403
+            if game["phase"] != "guessing":
+                return jsonify({"error": "There is nothing to end yet."}), 409
+            oracle_append_log(game, f"{player['name']} ends the {team} team's turn.")
+            oracle_pass_turn(game)
+
+        oracle_publish(code, "turn")
+        with ORACLE_GAMES_LOCK:
+            return jsonify({"game": oracle_player_view(ORACLE_GAMES[code], player_id)})
+
+    @app.post("/api/oracle/games/<code>/rematch")
+    def oracle_rematch(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with ORACLE_GAMES_LOCK:
+            game = ORACLE_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "finished":
+                return jsonify({"error": "Finish the current game first."}), 409
+            if player_id and player_id not in game["players"]:
+                return jsonify({"error": "Player was not found."}), 404
+            game["round"] += 1
+            game["winnerTeam"] = None
+            game["winReason"] = None
+            game["status"] = "active"
+            oracle_deal(game)
+            first_name = next(
+                p["name"] for p in game["players"].values()
+                if oracle_role_parts(p["role"])[0] == game["turnTeam"]
+            )
+            oracle_append_log(game, f"Round {game['round']}! Fresh visions — the {game['turnTeam']} team acts first ({first_name}'s spymaster).")
+
+        oracle_publish(code, "rematch")
+        with ORACLE_GAMES_LOCK:
+            return jsonify({"game": oracle_player_view(ORACLE_GAMES[code], player_id or None)})
+
+    @app.get("/api/oracle/games/<code>/events")
+    def oracle_game_events(code: str):
+        code = code.upper()
+        player_id = str(request.args.get("playerId") or "").strip() or None
+        event_queue: queue.Queue[dict[str, Any]] = queue.Queue()
+        subscriber = {"queue": event_queue, "playerId": player_id}
+        with ORACLE_GAMES_LOCK:
+            game = ORACLE_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            ORACLE_GAME_SUBSCRIBERS.setdefault(code, []).append(subscriber)
+            initial_game = oracle_player_view(game, player_id)
+
+        def stream():
+            yield sse_message("game", initial_game)
+            try:
+                while True:
+                    try:
+                        message = event_queue.get(timeout=25)
+                        yield sse_message(message["event"], message["data"])
+                    except queue.Empty:
+                        yield sse_message("ping", {"ok": True})
+            finally:
+                with ORACLE_GAMES_LOCK:
+                    subscribers = ORACLE_GAME_SUBSCRIBERS.get(code, [])
                     if subscriber in subscribers:
                         subscribers.remove(subscriber)
 

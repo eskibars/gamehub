@@ -41,8 +41,8 @@ python-dotenv. See `.env.example` for the full list with comments.
 
 The ready tools are Bingo Card Builder, Color Guesser, Yahtzee Scorepad,
 Boggle Table, Word Find Creator, Backgammon, Find 'em, Table Tools,
-Who Am I? — a Guess Who-style character guessing game, Hangman, and
-Battleship.
+Who Am I? — a Guess Who-style character guessing game, Hangman,
+Battleship, Checkers, and The Oracle.
 
 ## Local-first storage
 
@@ -95,6 +95,23 @@ exposes a player's own ships plus the public shot record — sunk enemy
 ships surface cell by cell, and full fleets are revealed only after the
 game ends. A short captain's log records each salvo, and the loser of a
 round fires first in the rematch.
+
+Checkers is a remote two-player draughts game where the creator picks the
+board width — 8×8, 10×10, or 12×12 — which also sets the starting rows
+(3, 4, or 5 rows of men). American rules apply: mandatory captures,
+chained multi-jumps that keep the turn, and crowning ends a move. The
+host plays red from the bottom, black opens, and colors swap on rematch.
+A draw is called after sixty moves without a capture.
+
+The Oracle is a Codenames-style word game for exactly four players: two
+teams of a spymaster and an operative. A 5×5 board of English words is
+dealt with a secret key — nine words for the first team, eight for the
+other, seven bystanders, and one assassin. The key map is sent only to
+spymasters; operatives see plain cards until words are revealed. The
+acting spymaster gives one word plus a number (or unlimited), the
+operative guesses until they miss, hit their limit, or pass; revealing
+the assassin loses instantly. Rematches deal a fresh board with the same
+seats.
 
 ## Legacy Bingo command
 

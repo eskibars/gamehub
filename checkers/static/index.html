@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Checkers — two-player draughts</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/shared/game-entry.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Two-player draughts</p>
+          <h1>Checkers</h1>
+        </div>
+        <p class="connection" id="connectionStatus">Ready</p>
+      </header>
+
+      <section class="setup entry-view" id="setupView">
+        <section class="entry-choice" id="choicePanel">
+          <h2>Choose a Mode</h2>
+          <div class="entry-actions">
+            <button class="entry-choice-button" id="showJoin" type="button">Join Game</button>
+            <button class="entry-choice-button" id="showCreate" type="button">Create Game</button>
+          </div>
+        </section>
+
+        <form class="entry-panel" id="createForm" hidden>
+          <div class="section-heading">
+            <h2>Create Game</h2>
+          </div>
+          <p class="hint">You will get a share code to send to a friend. You play red from the bottom; your opponent answers with black. Captures are mandatory and chains keep going.</p>
+          <div class="size-picker" role="radiogroup" aria-label="Board size">
+            <button class="size-option is-active" type="button" data-size="8" aria-pressed="true">
+              <strong>8 × 8</strong>
+              <span>Classic — 12 men each</span>
+            </button>
+            <button class="size-option" type="button" data-size="10" aria-pressed="false">
+              <strong>10 × 10</strong>
+              <span>Wide — 20 men each</span>
+            </button>
+            <button class="size-option" type="button" data-size="12" aria-pressed="false">
+              <strong>12 × 12</strong>
+              <span>Huge — 30 men each</span>
+            </button>
+          </div>
+          <button class="primary-button" type="submit">Create Share Code</button>
+        </form>
+
+        <form class="entry-panel" id="joinForm" hidden>
+          <div class="section-heading">
+            <h2>Join Game</h2>
+          </div>
+          <label class="field">
+            <span>Share link or code</span>
+            <input id="joinCode" type="text" autocomplete="off" placeholder="Paste a link or short code">
+          </label>
+          <button class="primary-button" type="submit">Open Game</button>
+        </form>
+      </section>
+
+      <section class="lobby-panel" id="lobbyPanel" hidden>
+        <div class="section-heading">
+          <h2>Table</h2>
+          <button class="small-button" id="newGameButton" type="button">New</button>
+        </div>
+        <div class="share-row" id="shareTools" hidden>
+          <strong id="shareCode">--------</strong>
+          <button class="small-button" id="copyShare" type="button">Copy</button>
+        </div>
+        <dl class="facts">
+          <dt>Mode</dt>
+          <dd>Remote</dd>
+          <dt>Status</dt>
+          <dd id="factStatus">Lobby</dd>
+          <dt>Board</dt>
+          <dd id="factBoard">8 × 8</dd>
+        </dl>
+        <form class="name-form" id="nameForm">
+          <label class="field">
+            <span>Your name</span>
+            <input id="playerName" type="text" maxlength="24" autocomplete="nickname" placeholder="Your name">
+          </label>
+          <button class="secondary-button" type="submit">Sit Down</button>
+        </form>
+        <div class="lobby-actions" id="lobbyActions" hidden>
+          <button class="primary-button" id="startButton" type="button">Start game</button>
+        </div>
+        <p class="lobby-message" id="lobbyMessage">Waiting for an opponent…</p>
+      </section>
+
+      <section class="play-area" id="playArea" hidden>
+        <div class="play-heading">
+          <div class="play-status">
+            <p class="eyebrow" id="phaseLabel">Battle</p>
+            <h2 id="turnBanner">—</h2>
+          </div>
+          <p class="game-message" id="gameMessage">Black moves first.</p>
+        </div>
+
+        <div class="table-grid">
+          <div class="board-card">
+            <div class="board-frame">
+              <div class="board" id="board" aria-label="Checkers board"></div>
+            </div>
+          </div>
+
+          <aside class="side-panel">
+            <section class="players-panel" aria-label="Players">
+              <div class="player-chip" id="chipBlack">
+                <span class="piece-dot black"></span>
+                <strong id="blackName">Black</strong>
+                <em id="blackCaptured">0 taken</em>
+              </div>
+              <div class="player-chip" id="chipRed">
+                <span class="piece-dot red"></span>
+                <strong id="redName">Red</strong>
+                <em id="redCaptured">0 taken</em>
+              </div>
+            </section>
+            <section class="log-panel" aria-label="Game log">
+              <h3>Table talk</h3>
+              <ol id="moveLog"></ol>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <div class="modal-backdrop" id="resultBackdrop" hidden>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+          <h2 id="resultTitle">Game over</h2>
+          <p id="resultBody">…</p>
+          <div class="modal-actions">
+            <button class="secondary-button" id="resultClose" type="button">Review board</button>
+            <button class="primary-button" id="rematchButton" type="button">Rematch</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="/shared/game-entry.js" defer></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

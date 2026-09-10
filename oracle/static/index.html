@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>The Oracle — a word vision game</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/shared/game-entry.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Four seats · two teams · one assassin</p>
+          <h1>The Oracle</h1>
+        </div>
+        <p class="connection" id="connectionStatus">Ready</p>
+      </header>
+
+      <section class="setup entry-view" id="setupView">
+        <section class="entry-choice" id="choicePanel">
+          <h2>Choose a Mode</h2>
+          <div class="entry-actions">
+            <button class="entry-choice-button" id="showJoin" type="button">Join Game</button>
+            <button class="entry-choice-button" id="showCreate" type="button">Create Game</button>
+          </div>
+        </section>
+
+        <form class="entry-panel" id="createForm" hidden>
+          <div class="section-heading">
+            <h2>Create Game</h2>
+          </div>
+          <p class="hint">Four players: each team has a spymaster who sees the secret key and gives one-word clues, and an operative who guesses the words. One card hides the assassin — find it and you lose. You will get a share code for the table.</p>
+          <button class="primary-button" type="submit">Create Share Code</button>
+        </form>
+
+        <form class="entry-panel" id="joinForm" hidden>
+          <div class="section-heading">
+            <h2>Join Game</h2>
+          </div>
+          <label class="field">
+            <span>Share link or code</span>
+            <input id="joinCode" type="text" autocomplete="off" placeholder="Paste a link or short code">
+          </label>
+          <button class="primary-button" type="submit">Open Game</button>
+        </form>
+      </section>
+
+      <section class="lobby-panel" id="lobbyPanel" hidden>
+        <div class="section-heading">
+          <h2>Sanctum</h2>
+          <button class="small-button" id="newGameButton" type="button">New</button>
+        </div>
+        <div class="share-row" id="shareTools" hidden>
+          <strong id="shareCode">--------</strong>
+          <button class="small-button" id="copyShare" type="button">Copy</button>
+        </div>
+        <div class="seats" id="seats"></div>
+        <form class="name-form" id="nameForm">
+          <label class="field">
+            <span>Your name</span>
+            <input id="playerName" type="text" maxlength="24" autocomplete="nickname" placeholder="Your name">
+          </label>
+          <p class="hint small" id="seatHint">Pick an open seat above, then take it.</p>
+          <button class="secondary-button" type="submit">Take a Seat</button>
+        </form>
+        <div class="lobby-actions" id="lobbyActions" hidden>
+          <button class="primary-button" id="startButton" type="button">Consult the Oracle</button>
+        </div>
+        <p class="lobby-message" id="lobbyMessage">Waiting for the table to fill…</p>
+      </section>
+
+      <section class="play-area" id="playArea" hidden>
+        <div class="play-heading">
+          <div class="play-status">
+            <p class="eyebrow" id="phaseLabel">Round 1</p>
+            <h2 id="turnBanner">—</h2>
+          </div>
+          <p class="game-message" id="gameMessage">—</p>
+        </div>
+
+        <div class="table-grid">
+          <div class="board-card">
+            <div class="board" id="board" aria-label="Vision cards"></div>
+          </div>
+
+          <aside class="side-panel">
+            <section class="clue-panel" aria-label="Clue">
+              <p class="eyebrow">The clue</p>
+              <div class="clue-display" id="clueDisplay">—</div>
+              <div class="clue-form" id="clueForm" hidden>
+                <form id="clueFormEl">
+                  <input id="clueWord" type="text" maxlength="40" autocomplete="off" placeholder="One word">
+                  <div class="count-row" id="countRow"></div>
+                  <button class="primary-button" type="submit">Speak the clue</button>
+                </form>
+              </div>
+              <div class="guess-controls" id="guessControls" hidden>
+                <p class="guess-left" id="guessLeftLabel"></p>
+                <button class="secondary-button" id="endTurnButton" type="button">End our turn</button>
+              </div>
+            </section>
+
+            <section class="teams-panel" aria-label="Teams">
+              <div class="team-chip red" id="chipRed">
+                <strong>Red</strong>
+                <em id="redRemaining">9 left</em>
+              </div>
+              <div class="team-chip blue" id="chipBlue">
+                <strong>Blue</strong>
+                <em id="blueRemaining">8 left</em>
+              </div>
+            </section>
+
+            <section class="log-panel" aria-label="Game log">
+              <h3>Prophecies</h3>
+              <ol id="gameLog"></ol>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <div class="modal-backdrop" id="resultBackdrop" hidden>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+          <h2 id="resultTitle">Game over</h2>
+          <p id="resultBody">…</p>
+          <div class="modal-actions">
+            <button class="secondary-button" id="resultClose" type="button">Review board</button>
+            <button class="primary-button" id="rematchButton" type="button">Rematch</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="/shared/game-entry.js" defer></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>
