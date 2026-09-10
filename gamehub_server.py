@@ -91,8 +91,7 @@ ORACLE_GRID = 5
 ORACLE_MAX_LOG = 15
 # Role ids in the order open seats are auto-assigned.
 ORACLE_ROLES = ("red-spymaster", "blue-spymaster", "red-operative", "blue-operative")
-ORACLE_WORDS = (
-    "AIRPLANE", "ALPS", "ANCHOR", "ANGEL", "ANTARCTICA", "APPLE", "ARM", "ATLANTIS",
+ORACLE_WORDS = (    "AIRPLANE", "ALPS", "ANCHOR", "ANGEL", "ANTARCTICA", "APPLE", "ARM", "ATLANTIS",
     "AUSTRALIA", "AZTEC", "BACK", "BALL", "BANK", "BARK", "BAT", "BEACH", "BEAR",
     "BEAT", "BERLIN", "BILL", "BLOCK", "BOARD", "BOLT", "BOMB", "BOND", "BOOM",
     "BOOT", "BOTTLE", "BOW", "BOX", "BRAIN", "BRANCH", "BRIDGE", "BRUSH", "BUCK",
@@ -132,6 +131,324 @@ ORACLE_WORDS = (
     "WASHINGTON", "WATCH", "WATER", "WAVE", "WEB", "WEREWOLF", "WHALE", "WHIP",
     "WIND", "WINE", "WIRE", "WITCH", "WORM", "YARD", "ZEUS",
 )
+
+TRAINING_GAMES: dict[str, dict[str, Any]] = {}
+TRAINING_GAME_SUBSCRIBERS: dict[str, list[dict[str, Any]]] = {}
+TRAINING_GAMES_LOCK = threading.Lock()
+TRAINING_MAX_LOG = 15
+
+# ============================================================
+# TRAINING — a Ticket-to-Ride-style rail game. Each map below is the
+# single source of truth for its games: the server plays on it and the
+# client renders it from GET /api/training/map?map=<id>. Cities carry
+# (x, y) in a 1000x640 viewBox plus a label placement hint; routes
+# reference cities by id.
+# ============================================================
+
+TRAINING_MAPS = {
+    "coastline": {
+        "name": "Coastline",
+        "blurb": "Twenty ports along a wide Atlantic shore.",
+        "cities": (
+
+    {"id": "seattle", "name": "Seattle", "x": 110, "y": 88, "label": "n"},
+    {"id": "portland", "name": "Portland", "x": 92, "y": 176, "label": "w"},
+    {"id": "sanfrancisco", "name": "San Francisco", "x": 108, "y": 330, "label": "w"},
+    {"id": "losangeles", "name": "Los Angeles", "x": 214, "y": 480, "label": "sw"},
+    {"id": "phoenix", "name": "Phoenix", "x": 330, "y": 448, "label": "n"},
+    {"id": "elpaso", "name": "El Paso", "x": 432, "y": 505, "label": "s"},
+    {"id": "saltlake", "name": "Salt Lake City", "x": 280, "y": 236, "label": "w"},
+    {"id": "denver", "name": "Denver", "x": 402, "y": 266, "label": "e"},
+    {"id": "minneapolis", "name": "Minneapolis", "x": 586, "y": 112, "label": "n"},
+    {"id": "dallas", "name": "Dallas", "x": 546, "y": 468, "label": "w"},
+    {"id": "houston", "name": "Houston", "x": 588, "y": 556, "label": "s"},
+    {"id": "neworleans", "name": "New Orleans", "x": 722, "y": 538, "label": "s"},
+    {"id": "miami", "name": "Miami", "x": 892, "y": 556, "label": "e"},
+    {"id": "atlanta", "name": "Atlanta", "x": 800, "y": 430, "label": "e"},
+    {"id": "washington", "name": "Washington", "x": 896, "y": 300, "label": "e"},
+    {"id": "newyork", "name": "New York", "x": 922, "y": 208, "label": "w"},
+    {"id": "boston", "name": "Boston", "x": 972, "y": 132, "label": "n"},
+    {"id": "chicago", "name": "Chicago", "x": 658, "y": 234, "label": "w"},
+    {"id": "toronto", "name": "Toronto", "x": 758, "y": 164, "label": "e"},
+    {"id": "montreal", "name": "Montreal", "x": 878, "y": 92, "label": "n"},
+        ),
+        # (a, b, color, length) — colors: gray routes may be claimed with
+        # any single suit. Lengths cap at 5 on this map.
+        "routes": (
+
+    ("seattle", "portland", "gray", 1),
+    ("seattle", "minneapolis", "yellow", 4),
+    ("portland", "sanfrancisco", "green", 3),
+    ("portland", "saltlake", "blue", 3),
+    ("sanfrancisco", "saltlake", "orange", 3),
+    ("sanfrancisco", "losangeles", "pink", 3),
+    ("losangeles", "phoenix", "yellow", 2),
+    ("losangeles", "elpaso", "black", 3),
+    ("phoenix", "elpaso", "white", 3),
+    ("saltlake", "denver", "yellow", 3),
+    ("denver", "minneapolis", "red", 4),
+    ("denver", "dallas", "orange", 4),
+    ("elpaso", "dallas", "red", 3),
+    ("elpaso", "houston", "green", 4),
+    ("dallas", "houston", "gray", 1),
+    ("houston", "neworleans", "orange", 2),
+    ("neworleans", "atlanta", "white", 4),
+    ("neworleans", "miami", "blue", 3),
+    ("atlanta", "miami", "green", 4),
+    ("atlanta", "washington", "blue", 3),
+    ("chicago", "atlanta", "green", 5),
+    ("chicago", "toronto", "gray", 3),
+    ("chicago", "minneapolis", "orange", 2),
+    ("toronto", "montreal", "gray", 2),
+    ("montreal", "boston", "pink", 2),
+    ("montreal", "newyork", "orange", 3),
+    ("boston", "newyork", "yellow", 2),
+    ("newyork", "washington", "gray", 2),
+        ),
+        "tickets": (
+
+    ("seattle", "portland", 4),
+    ("sanfrancisco", "losangeles", 5),
+    ("dallas", "houston", 4),
+    ("boston", "newyork", 5),
+    ("newyork", "washington", 5),
+    ("toronto", "montreal", 5),
+    ("houston", "neworleans", 5),
+    ("losangeles", "phoenix", 5),
+    ("seattle", "sanfrancisco", 8),
+    ("portland", "saltlake", 8),
+    ("sanfrancisco", "saltlake", 8),
+    ("losangeles", "elpaso", 8),
+    ("phoenix", "elpaso", 8),
+    ("saltlake", "denver", 8),
+    ("dallas", "neworleans", 9),
+    ("neworleans", "miami", 8),
+    ("atlanta", "miami", 9),
+    ("washington", "boston", 9),
+    ("newyork", "montreal", 8),
+    ("chicago", "toronto", 8),
+    ("minneapolis", "chicago", 6),
+    ("denver", "minneapolis", 10),
+    ("denver", "dallas", 10),
+    ("elpaso", "dallas", 8),
+    ("elpaso", "houston", 10),
+    ("losangeles", "saltlake", 9),
+    ("seattle", "losangeles", 12),
+    ("seattle", "denver", 12),
+    ("portland", "dallas", 13),
+    ("losangeles", "houston", 13),
+    ("miami", "washington", 12),
+    ("toronto", "washington", 12),
+    ("miami", "newyork", 14),
+    ("seattle", "newyork", 17),
+    ("losangeles", "miami", 16),
+        ),
+    },
+    "continent": {
+        "name": "Continent",
+        "blurb": "A dense European web of capitals, canals, and passes.",
+        "cities": (
+    {"id": "dublin", "name": "Dublin", "x": 84, "y": 231, "label": "w"},
+    {"id": "edinburgh", "name": "Edinburgh", "x": 235, "y": 119, "label": "n"},
+    {"id": "london", "name": "London", "x": 292, "y": 237, "label": "sw"},
+    {"id": "amsterdam", "name": "Amsterdam", "x": 413, "y": 179, "label": "w"},
+    {"id": "copenhagen", "name": "Copenhagen", "x": 537, "y": 112, "label": "s"},
+    {"id": "oslo", "name": "Oslo", "x": 521, "y": 45, "label": "w"},
+    {"id": "stockholm", "name": "Stockholm", "x": 692, "y": 78, "label": "n"},
+    {"id": "paris", "name": "Paris", "x": 363, "y": 318, "label": "w"},
+    {"id": "frankfurt", "name": "Frankfurt", "x": 554, "y": 271, "label": "e"},
+    {"id": "munich", "name": "Munich", "x": 655, "y": 329, "label": "e"},
+    {"id": "zurich", "name": "Zurich", "x": 534, "y": 369, "label": "w"},
+    {"id": "venice", "name": "Venice", "x": 678, "y": 396, "label": "e"},
+    {"id": "rome", "name": "Rome", "x": 769, "y": 481, "label": "e"},
+    {"id": "barcelona", "name": "Barcelona", "x": 390, "y": 475, "label": "w"},
+    {"id": "madrid", "name": "Madrid", "x": 255, "y": 546, "label": "w"},
+    {"id": "lisbon", "name": "Lisbon", "x": 84, "y": 582, "label": "w"},
+    {"id": "berlin", "name": "Berlin", "x": 689, "y": 181, "label": "n"},
+    {"id": "warsaw", "name": "Warsaw", "x": 857, "y": 168, "label": "e"},
+    {"id": "vienna", "name": "Vienna", "x": 840, "y": 296, "label": "s"},
+    {"id": "budapest", "name": "Budapest", "x": 941, "y": 313, "label": "s"},
+        ),
+        "routes": (
+    ("dublin", "london", "blue", 2),
+    ("edinburgh", "london", "orange", 2),
+    ("london", "amsterdam", "gray", 2),
+    ("london", "paris", "pink", 2),
+    ("amsterdam", "copenhagen", "green", 3),
+    ("amsterdam", "frankfurt", "yellow", 2),
+    ("copenhagen", "oslo", "white", 2),
+    ("copenhagen", "stockholm", "blue", 2),
+    ("copenhagen", "berlin", "yellow", 3),
+    ("oslo", "stockholm", "gray", 2),
+    ("stockholm", "warsaw", "gray", 3),
+    ("berlin", "warsaw", "pink", 3),
+    ("berlin", "frankfurt", "red", 2),
+    ("berlin", "munich", "blue", 3),
+    ("frankfurt", "paris", "red", 3),
+    ("frankfurt", "munich", "green", 2),
+    ("paris", "zurich", "yellow", 3),
+    ("zurich", "munich", "pink", 2),
+    ("zurich", "venice", "orange", 2),
+    ("munich", "venice", "gray", 2),
+    ("venice", "rome", "green", 3),
+    ("munich", "vienna", "white", 3),
+    ("vienna", "budapest", "red", 2),
+    ("vienna", "warsaw", "blue", 3),
+    ("paris", "barcelona", "green", 4),
+    ("barcelona", "madrid", "orange", 3),
+    ("madrid", "lisbon", "pink", 3),
+    ("budapest", "warsaw", "orange", 4),
+        ),
+        "tickets": (
+    ("dublin", "london", 5),
+    ("edinburgh", "london", 5),
+    ("london", "paris", 5),
+    ("madrid", "lisbon", 5),
+    ("vienna", "budapest", 5),
+    ("copenhagen", "oslo", 5),
+    ("zurich", "munich", 5),
+    ("amsterdam", "frankfurt", 5),
+    ("oslo", "stockholm", 5),
+    ("frankfurt", "munich", 5),
+    ("london", "amsterdam", 5),
+    ("berlin", "warsaw", 7),
+    ("berlin", "munich", 7),
+    ("venice", "rome", 7),
+    ("munich", "vienna", 7),
+    ("paris", "zurich", 7),
+    ("stockholm", "warsaw", 7),
+    ("copenhagen", "berlin", 7),
+    ("barcelona", "madrid", 7),
+    ("london", "frankfurt", 9),
+    ("paris", "barcelona", 9),
+    ("stockholm", "berlin", 9),
+    ("amsterdam", "paris", 8),
+    ("dublin", "paris", 8),
+    ("edinburgh", "paris", 8),
+    ("paris", "munich", 9),
+    ("lisbon", "barcelona", 10),
+    ("munich", "warsaw", 10),
+    ("venice", "vienna", 10),
+    ("rome", "munich", 10),
+    ("rome", "zurich", 10),
+    ("oslo", "warsaw", 10),
+    ("copenhagen", "warsaw", 10),
+    ("madrid", "paris", 13),
+    ("copenhagen", "paris", 13),
+    ("budapest", "berlin", 13),
+    ("venice", "copenhagen", 13),
+    ("venice", "warsaw", 12),
+    ("rome", "vienna", 12),
+    ("warsaw", "paris", 15),
+        ),
+    },
+    "orient": {
+        "name": "Orient",
+        "blurb": "Steam ferries and mountain passes across monsoon coasts.",
+        "cities": (
+    {"id": "tokyo", "name": "Tokyo", "x": 906, "y": 92, "label": "n"},
+    {"id": "osaka", "name": "Osaka", "x": 856, "y": 174, "label": "e"},
+    {"id": "seoul", "name": "Seoul", "x": 758, "y": 118, "label": "n"},
+    {"id": "beijing", "name": "Beijing", "x": 640, "y": 104, "label": "n"},
+    {"id": "xian", "name": "Xi'an", "x": 560, "y": 196, "label": "w"},
+    {"id": "shanghai", "name": "Shanghai", "x": 742, "y": 234, "label": "e"},
+    {"id": "taipei", "name": "Taipei", "x": 818, "y": 266, "label": "e"},
+    {"id": "manila", "name": "Manila", "x": 906, "y": 378, "label": "e"},
+    {"id": "hongkong", "name": "Hong Kong", "x": 702, "y": 360, "label": "w"},
+    {"id": "bangkok", "name": "Bangkok", "x": 572, "y": 470, "label": "s"},
+    {"id": "singapore", "name": "Singapore", "x": 522, "y": 584, "label": "s"},
+    {"id": "jakarta", "name": "Jakarta", "x": 398, "y": 606, "label": "s"},
+    {"id": "kolkata", "name": "Kolkata", "x": 446, "y": 330, "label": "e"},
+    {"id": "kathmandu", "name": "Kathmandu", "x": 372, "y": 300, "label": "n"},
+    {"id": "delhi", "name": "Delhi", "x": 300, "y": 250, "label": "n"},
+    {"id": "tashkent", "name": "Tashkent", "x": 226, "y": 160, "label": "w"},
+    {"id": "karachi", "name": "Karachi", "x": 142, "y": 320, "label": "w"},
+    {"id": "mumbai", "name": "Mumbai", "x": 214, "y": 402, "label": "w"},
+    {"id": "dubai", "name": "Dubai", "x": 56, "y": 432, "label": "w"},
+    {"id": "colombo", "name": "Colombo", "x": 240, "y": 546, "label": "s"},
+        ),
+        "routes": (
+    ("tokyo", "osaka", "pink", 2),
+    ("tokyo", "seoul", "blue", 3),
+    ("osaka", "shanghai", "green", 3),
+    ("osaka", "taipei", "gray", 2),
+    ("seoul", "beijing", "yellow", 2),
+    ("seoul", "shanghai", "red", 2),
+    ("beijing", "xian", "orange", 2),
+    ("xian", "shanghai", "gray", 3),
+    ("beijing", "shanghai", "white", 3),
+    ("shanghai", "hongkong", "red", 3),
+    ("hongkong", "taipei", "gray", 2),
+    ("taipei", "manila", "orange", 3),
+    ("manila", "hongkong", "blue", 3),
+    ("hongkong", "bangkok", "green", 3),
+    ("bangkok", "singapore", "yellow", 3),
+    ("singapore", "jakarta", "pink", 2),
+    ("bangkok", "kolkata", "white", 3),
+    ("kolkata", "kathmandu", "yellow", 2),
+    ("kathmandu", "delhi", "gray", 2),
+    ("delhi", "tashkent", "blue", 2),
+    ("tashkent", "karachi", "red", 3),
+    ("delhi", "karachi", "white", 3),
+    ("delhi", "mumbai", "orange", 3),
+    ("mumbai", "dubai", "white", 3),
+    ("dubai", "karachi", "pink", 2),
+    ("mumbai", "colombo", "green", 3),
+    ("colombo", "singapore", "blue", 4),
+        ),
+        "tickets": (
+    ("tokyo", "osaka", 5),
+    ("seoul", "beijing", 5),
+    ("beijing", "xian", 5),
+    ("xian", "shanghai", 7),
+    ("kolkata", "kathmandu", 5),
+    ("kathmandu", "delhi", 5),
+    ("dubai", "karachi", 5),
+    ("hongkong", "taipei", 5),
+    ("singapore", "jakarta", 5),
+    ("seoul", "shanghai", 5),
+    ("delhi", "tashkent", 5),
+    ("osaka", "taipei", 5),
+    ("tokyo", "seoul", 7),
+    ("osaka", "shanghai", 7),
+    ("shanghai", "hongkong", 7),
+    ("hongkong", "bangkok", 7),
+    ("bangkok", "singapore", 7),
+    ("beijing", "shanghai", 7),
+    ("delhi", "mumbai", 7),
+    ("delhi", "karachi", 7),
+    ("mumbai", "dubai", 7),
+    ("mumbai", "colombo", 7),
+    ("tashkent", "karachi", 7),
+    ("taipei", "manila", 7),
+    ("manila", "hongkong", 7),
+    ("colombo", "singapore", 9),
+    ("tokyo", "hongkong", 14),
+    ("beijing", "hongkong", 14),
+    ("singapore", "kolkata", 12),
+    ("delhi", "dubai", 10),
+    ("delhi", "singapore", 13),
+    ("tokyo", "manila", 13),
+    ("shanghai", "singapore", 15),
+    ("osaka", "bangkok", 15),
+    ("beijing", "delhi", 18),
+    ("mumbai", "singapore", 13),
+    ("taipei", "singapore", 14),
+    ("colombo", "bangkok", 13),
+        ),
+    },
+}
+TRAINING_DEFAULT_MAP = "coastline"
+
+TRAINING_ROUTE_POINTS = {1: 1, 2: 2, 3: 4, 4: 7, 5: 10}
+TRAINING_TRAINS_PER_PLAYER = 25
+TRAINING_END_TRAINS = 2
+TRAINING_HAND_START = 4
+TRAINING_MARKET_SIZE = 5
+TRAINING_CARD_SUITS = ("red", "orange", "yellow", "green", "blue", "pink", "black", "white")
+TRAINING_CARDS_PER_SUIT = 10
+TRAINING_WILD_CARDS = 10
+
 # Idle remote tables are swept from memory so abandoned game codes do not
 # accumulate until restart. TTL <= 0 disables the sweeper entirely.
 GAME_TTL_SECONDS = int(os.environ.get("GAME_TTL_SECONDS", 6 * 60 * 60))
@@ -350,6 +667,7 @@ def sweep_stale_games(now: float | None = None) -> list[str]:
         (BATTLESHIP_GAMES_LOCK, BATTLESHIP_GAMES, BATTLESHIP_GAME_SUBSCRIBERS, None),
         (CHECKERS_GAMES_LOCK, CHECKERS_GAMES, CHECKERS_GAME_SUBSCRIBERS, None),
         (ORACLE_GAMES_LOCK, ORACLE_GAMES, ORACLE_GAME_SUBSCRIBERS, None),
+        (TRAINING_GAMES_LOCK, TRAINING_GAMES, TRAINING_GAME_SUBSCRIBERS, None),
     )
     for lock, games, subscribers, timers in namespaces:
         closed_queues: list[queue.Queue] = []
@@ -1012,6 +1330,20 @@ def create_app() -> Flask:
     def oracle_static(filename: str):
         return send_from_directory(ORACLE_STATIC_DIR, filename)
 
+    TRAINING_STATIC_DIR = BASE_DIR / "training" / "static"
+
+    @app.get("/training")
+    def training_redirect():
+        return redirect("/training/")
+
+    @app.get("/training/")
+    def training_index():
+        return send_from_directory(TRAINING_STATIC_DIR, "index.html")
+
+    @app.get("/training/<path:filename>")
+    def training_static(filename: str):
+        return send_from_directory(TRAINING_STATIC_DIR, filename)
+
     @app.get("/share/<share_id>")
     def shared_card(share_id: str):
         return redirect(f"/bingo/?share={share_id}")
@@ -1038,6 +1370,8 @@ def create_app() -> Flask:
             checkers_count = len(CHECKERS_GAMES)
         with ORACLE_GAMES_LOCK:
             oracle_count = len(ORACLE_GAMES)
+        with TRAINING_GAMES_LOCK:
+            training_count = len(TRAINING_GAMES)
         return jsonify(
             {
                 "ok": True,
@@ -1050,6 +1384,7 @@ def create_app() -> Flask:
                     "battleship": battleship_count,
                     "checkers": checkers_count,
                     "oracle": oracle_count,
+                    "training": training_count,
                 },
             }
         )
@@ -3823,6 +4158,626 @@ def create_app() -> Flask:
             finally:
                 with ORACLE_GAMES_LOCK:
                     subscribers = ORACLE_GAME_SUBSCRIBERS.get(code, [])
+                    if subscriber in subscribers:
+                        subscribers.remove(subscriber)
+
+        return Response(stream_with_context(stream()), mimetype="text/event-stream")
+
+    # ============================================================
+    # TRAINING — a Ticket-to-Ride-style rail game for two players. Draw
+    # train cards (two per turn from the deck or face-up market), claim
+    # routes with matching cards (wilds fill any gap; gray routes accept
+    # any single suit), and hold destination tickets that pay on a
+    # connected path of your rails — or cost you if unfinished. When a
+    # player is down to their last trains, everyone gets one final turn.
+    # ============================================================
+
+    def training_map_data(map_id: str) -> dict[str, Any]:
+        return TRAINING_MAPS[map_id]
+
+    def training_routes_for(map_id: str) -> list[dict[str, Any]]:
+        return [
+            {"id": i, "a": a, "b": b, "color": color, "length": length, "owner": None}
+            for i, (a, b, color, length) in enumerate(training_map_data(map_id)["routes"])
+        ]
+
+    def training_build_deck() -> list[str]:
+        deck = []
+        for suit in TRAINING_CARD_SUITS:
+            deck.extend([suit] * TRAINING_CARDS_PER_SUIT)
+        deck.extend(["wild"] * TRAINING_WILD_CARDS)
+        return random.SystemRandom().shuffle(deck) or deck
+
+    def training_build_ticket_deck(map_id: str) -> list[dict[str, Any]]:
+        tickets = [
+            {"id": i, "a": a, "b": b, "points": points}
+            for i, (a, b, points) in enumerate(training_map_data(map_id)["tickets"])
+        ]
+        random.SystemRandom().shuffle(tickets)
+        return tickets
+
+    def training_new_game(map_id: str) -> dict[str, Any]:
+        now = utc_now()
+        return {
+            "code": uuid.uuid4().hex[:8].upper(),
+            "mapId": map_id,
+            "status": "lobby",
+            "round": 1,
+            "players": {},
+            "deck": training_build_deck(),
+            "discard": [],
+            "market": [],
+            "ticketDeck": training_build_ticket_deck(map_id),
+            "routes": {route["id"]: None for route in training_routes_for(map_id)},
+            "turnId": None,
+            "drawn": 0,
+            "endTriggeredBy": None,
+            "turnsRemaining": 0,
+            "winnerColor": None,
+            "standings": None,
+            "log": [],
+            "createdAt": now,
+            "updatedAt": now,
+        }
+
+    def training_draw_from_pile(game: dict[str, Any]) -> str | None:
+        if not game["deck"]:
+            if not game["discard"]:
+                return None
+            game["deck"] = random.SystemRandom().shuffle(game["discard"]) or game["discard"]
+            game["discard"] = []
+        return game["deck"].pop()
+
+    def training_refill_market(game: dict[str, Any]) -> None:
+        while len(game["market"]) < TRAINING_MARKET_SIZE:
+            card = training_draw_from_pile(game)
+            if card is None:
+                break
+            game["market"].append(card)
+
+    def training_append_log(game: dict[str, Any], text: str) -> None:
+        game["log"].append({"text": text, "at": utc_now()})
+        if len(game["log"]) > TRAINING_MAX_LOG:
+            del game["log"][: len(game["log"]) - TRAINING_MAX_LOG]
+        game["updatedAt"] = utc_now()
+
+    def training_opponent(game: dict[str, Any], player_id: str) -> dict[str, Any]:
+        for pid, player in game["players"].items():
+            if pid != player_id:
+                return player
+        raise KeyError("opponent")
+
+    def training_ticket_complete(game: dict[str, Any], player: dict[str, Any], ticket: dict[str, Any]) -> bool:
+        routes = training_routes_for(game["mapId"])
+        owned: dict[str, set[str]] = {}
+        for route_id, owner in game["routes"].items():
+            if owner != player["color"]:
+                continue
+            route = routes[route_id]
+            owned.setdefault(route["a"], set()).add(route["b"])
+            owned.setdefault(route["b"], set()).add(route["a"])
+        if not owned:
+            return False
+        seen = {ticket["a"]}
+        frontier = [ticket["a"]]
+        while frontier:
+            city = frontier.pop()
+            if city == ticket["b"]:
+                return True
+            for neighbor in owned.get(city, ()):  # noqa: B007
+                if neighbor not in seen:
+                    seen.add(neighbor)
+                    frontier.append(neighbor)
+        return False
+
+    def training_spend_cards(player: dict[str, Any], suit: str, length: int) -> list[str]:
+        """Spend `length` cards of `suit` (wilds fill the gap). Returns the discard."""
+        spent = []
+        use_suit = min(player["hand"].get(suit, 0), length)
+        for _ in range(use_suit):
+            player["hand"][suit] -= 1
+            spent.append(suit)
+        wilds_needed = length - use_suit
+        for _ in range(wilds_needed):
+            player["hand"]["wild"] -= 1
+            spent.append("wild")
+        return spent
+
+    def training_end_turn(game: dict[str, Any]) -> None:
+        mover = game["players"].get(game["turnId"])
+        game["drawn"] = 0
+        if game["turnsRemaining"] > 0:
+            game["turnsRemaining"] -= 1
+            if game["turnsRemaining"] == 0:
+                training_finish(game)
+                return
+        if mover and mover["trains"] <= TRAINING_END_TRAINS and game["endTriggeredBy"] is None:
+            game["endTriggeredBy"] = mover["color"]
+            game["turnsRemaining"] = len(game["players"])
+            training_append_log(game, f"{mover['name']} is down to {mover['trains']} trains — the final round begins!")
+        game["turnId"] = training_opponent(game, game["turnId"])["id"]
+
+    def training_score_player(game: dict[str, Any], player: dict[str, Any]) -> dict[str, Any]:
+        ticket_lines = []
+        ticket_points = 0
+        for ticket in player["keptTickets"]:
+            complete = training_ticket_complete(game, player, ticket)
+            delta = ticket["points"] if complete else -ticket["points"]
+            ticket_points += delta
+            ticket_lines.append({"a": ticket["a"], "b": ticket["b"], "points": ticket["points"], "complete": complete, "delta": delta})
+        return {
+            "color": player["color"],
+            "name": player["name"],
+            "routePoints": player["score"],
+            "ticketPoints": ticket_points,
+            "tickets": ticket_lines,
+            "total": player["score"] + ticket_points,
+        }
+
+    def training_finish(game: dict[str, Any]) -> None:
+        game["status"] = "finished"
+        game["phase"] = None
+        standings = sorted(
+            (training_score_player(game, player) for player in game["players"].values()),
+            key=lambda entry: entry["total"],
+            reverse=True,
+        )
+        if len(standings) == 2 and standings[0]["total"] == standings[1]["total"]:
+            game["winnerColor"] = None
+        else:
+            game["winnerColor"] = standings[0]["color"]
+        game["standings"] = standings
+        winner_name = standings[0]["name"]
+        training_append_log(
+            game,
+            f"Final whistle! {winner_name} leads {standings[0]['total']} to {standings[1]['total']}.",
+        )
+
+    def training_player_view(game: dict[str, Any], player_id: str | None) -> dict[str, Any]:
+        players = []
+        for pid, info in game["players"].items():
+            players.append(
+                {
+                    "id": pid,
+                    "name": info["name"],
+                    "color": info["color"],
+                    "isHost": info.get("isHost", False),
+                    "connectedAt": info.get("connectedAt"),
+                    "trains": info["trains"],
+                    "score": info["score"],
+                    "handCount": sum(info["hand"].values()),
+                    "ticketCount": len(info["keptTickets"]),
+                    "ticketsDone": sum(
+                        1 for t in info["keptTickets"] if training_ticket_complete(game, info, t)
+                    ),
+                }
+            )
+        players.sort(key=lambda item: item["connectedAt"] or "")
+        view: dict[str, Any] = {
+            "code": game["code"],
+            "status": game["status"],
+            "round": game["round"],
+            "mapId": game["mapId"],
+            "mapName": training_map_data(game["mapId"])["name"],
+            "players": players,
+            "turnId": game["turnId"],
+            "drawn": game["drawn"],
+            "endTriggeredBy": game["endTriggeredBy"],
+            "turnsRemaining": game["turnsRemaining"],
+            "market": list(game["market"]),
+            "deckCount": len(game["deck"]),
+            "discardCount": len(game["discard"]),
+            "routes": {str(rid): owner for rid, owner in game["routes"].items() if owner},
+            "winnerColor": game["winnerColor"],
+            "standings": game["standings"],
+            "log": list(game["log"]),
+            "createdAt": game["createdAt"],
+            "updatedAt": game["updatedAt"],
+        }
+        if not player_id or player_id not in game["players"]:
+            return view
+        me = game["players"][player_id]
+        view["playerId"] = player_id
+        view["youAreHost"] = me.get("isHost", False)
+        view["yourName"] = me["name"]
+        view["yourColor"] = me["color"]
+        view["yourHand"] = dict(me["hand"])
+        view["yourTrains"] = me["trains"]
+        view["yourScore"] = me["score"]
+        view["yourTickets"] = [
+            {**ticket, "complete": training_ticket_complete(game, me, ticket)}
+            for ticket in me["keptTickets"]
+        ]
+        view["pendingTickets"] = list(me["pendingTickets"])
+        view["yourTurn"] = game["status"] == "active" and game["turnId"] == player_id
+        return view
+
+    def training_publish(code: str, event_name: str = "game") -> None:
+        with TRAINING_GAMES_LOCK:
+            game = TRAINING_GAMES.get(code)
+            subscribers = list(TRAINING_GAME_SUBSCRIBERS.get(code, []))
+        if not game:
+            return
+        for subscriber in subscribers:
+            player_id = subscriber.get("playerId")
+            subscriber["queue"].put({"event": event_name, "data": training_player_view(game, player_id)})
+
+    @app.get("/api/training/maps")
+    def training_maps():
+        return jsonify(
+            {
+                "maps": [
+                    {
+                        "id": map_id,
+                        "name": data["name"],
+                        "blurb": data["blurb"],
+                        "cities": len(data["cities"]),
+                        "routes": len(data["routes"]),
+                    }
+                    for map_id, data in TRAINING_MAPS.items()
+                ]
+            }
+        )
+
+    @app.get("/api/training/map")
+    def training_map():
+        map_id = (request.args.get("map") or TRAINING_DEFAULT_MAP).strip().lower()
+        if map_id not in TRAINING_MAPS:
+            return jsonify({"error": "Unknown map."}), 404
+        data = training_map_data(map_id)
+        return jsonify(
+            {
+                "id": map_id,
+                "name": data["name"],
+                "cities": list(data["cities"]),
+                "routes": [
+                    {"id": i, "a": a, "b": b, "color": color, "length": length, "points": TRAINING_ROUTE_POINTS[length]}
+                    for i, (a, b, color, length) in enumerate(data["routes"])
+                ],
+            }
+        )
+
+    @app.post("/api/training/games")
+    def create_training_game():
+        body = request.get_json(silent=True) or {}
+        map_id = str(body.get("map") or TRAINING_DEFAULT_MAP).strip().lower()
+        if map_id not in TRAINING_MAPS:
+            return jsonify({"error": "Unknown map."}), 400
+        game = training_new_game(map_id)
+        with TRAINING_GAMES_LOCK:
+            TRAINING_GAMES[game["code"]] = game
+            TRAINING_GAME_SUBSCRIBERS.setdefault(game["code"], [])
+        return jsonify({"game": training_player_view(game, None), "shareUrl": f"/training/?game={game['code']}"}), 201
+
+    @app.get("/api/training/games/<code>")
+    def get_training_game(code: str):
+        code = code.upper()
+        player_id = str(request.args.get("playerId") or "").strip() or None
+        with TRAINING_GAMES_LOCK:
+            game = TRAINING_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            return jsonify({"game": training_player_view(game, player_id)})
+
+    @app.post("/api/training/games/<code>/players")
+    def join_training_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        name = str(body.get("name") or "").strip()
+        provided_id = str(body.get("playerId") or "").strip()
+        if not name:
+            return jsonify({"error": "Name is required."}), 400
+        if len(name) > 24:
+            return jsonify({"error": "Name must be 24 characters or fewer."}), 400
+
+        now = utc_now()
+        with TRAINING_GAMES_LOCK:
+            game = TRAINING_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "lobby":
+                return jsonify({"error": "This game has already started."}), 409
+            if provided_id and provided_id in game["players"]:
+                player = game["players"][provided_id]
+                player["name"] = name
+                player_id = provided_id
+            else:
+                if len(game["players"]) >= 2:
+                    return jsonify({"error": "This game is full."}), 409
+                player_id = secrets.token_urlsafe(8)
+                color = "red" if not game["players"] else "blue"
+                game["players"][player_id] = {
+                    "id": player_id,
+                    "name": name,
+                    "color": color,
+                    "isHost": not game["players"],
+                    "connectedAt": now,
+                    "hand": {suit: 0 for suit in TRAINING_CARD_SUITS} | {"wild": 0},
+                    "keptTickets": [],
+                    "pendingTickets": [],
+                    "trains": TRAINING_TRAINS_PER_PLAYER,
+                    "score": 0,
+                    "ready": False,
+                }
+            game["updatedAt"] = now
+
+        training_publish(code, "joined")
+        with TRAINING_GAMES_LOCK:
+            return jsonify({"game": training_player_view(TRAINING_GAMES[code], player_id), "playerId": player_id})
+
+    @app.post("/api/training/games/<code>/start")
+    def start_training_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with TRAINING_GAMES_LOCK:
+            game = TRAINING_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "lobby":
+                return jsonify({"error": "This game has already started."}), 409
+            if len(game["players"]) < 2:
+                return jsonify({"error": "Wait for your opponent to join."}), 409
+            if player_id and player_id not in game["players"]:
+                return jsonify({"error": "Player was not found."}), 404
+            for player in game["players"].values():
+                for _ in range(TRAINING_HAND_START):
+                    card = training_draw_from_pile(game)
+                    if card:
+                        player["hand"][card] = player["hand"].get(card, 0) + 1
+                player["pendingTickets"] = [game["ticketDeck"].pop() for _ in range(min(4, len(game["ticketDeck"])))]
+                player["ready"] = False
+            training_refill_market(game)
+            game["status"] = "tickets"
+            game["turnId"] = secrets.choice(list(game["players"].keys()))
+            game["updatedAt"] = utc_now()
+            training_append_log(game, "All aboard! Choose your destination tickets (keep at least two).")
+
+        training_publish(code, "started")
+        with TRAINING_GAMES_LOCK:
+            return jsonify({"game": training_player_view(TRAINING_GAMES[code], player_id or None)})
+
+    @app.post("/api/training/games/<code>/keep")
+    def training_keep_tickets(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        keep_ids = body.get("keep") or []
+        with TRAINING_GAMES_LOCK:
+            game = TRAINING_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            player = game["players"].get(player_id)
+            if not player:
+                return jsonify({"error": "Player was not found."}), 404
+            if not player["pendingTickets"]:
+                return jsonify({"error": "No tickets are waiting."}), 409
+            if not isinstance(keep_ids, list):
+                return jsonify({"error": "Pick which tickets to keep."}), 400
+            min_keep = 2 if game["status"] == "tickets" else 1
+            pending_by_id = {t["id"]: t for t in player["pendingTickets"]}
+            try:
+                kept = [pending_by_id[int(tid)] for tid in keep_ids]
+            except (KeyError, TypeError, ValueError):
+                return jsonify({"error": "Unknown ticket selected."}), 400
+            if len(kept) < min_keep or len(kept) > len(player["pendingTickets"]):
+                return jsonify({"error": f"Keep at least {min_keep} ticket(s)."}), 400
+            player["keptTickets"].extend(kept)
+            player["pendingTickets"] = []
+
+            if game["status"] == "tickets":
+                player["ready"] = True
+                if all(p["ready"] for p in game["players"].values()):
+                    game["status"] = "active"
+                    first = game["players"][game["turnId"]]
+                    training_append_log(game, f"Tickets sealed. {first['name']} drives first!")
+                else:
+                    training_append_log(game, f"{player['name']} sealed their tickets.")
+            else:
+                training_append_log(game, f"{player['name']} drew new tickets.")
+                if game["status"] == "active" and game["turnId"] == player_id:
+                    training_end_turn(game)
+
+        training_publish(code, "kept")
+        with TRAINING_GAMES_LOCK:
+            return jsonify({"game": training_player_view(TRAINING_GAMES[code], player_id)})
+
+    @app.post("/api/training/games/<code>/draw")
+    def training_draw_card(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        source = str(body.get("source") or "deck")
+        try:
+            market_index = int(body.get("index")) if body.get("index") is not None else None
+        except (TypeError, ValueError):
+            return jsonify({"error": "Bad market slot."}), 400
+
+        with TRAINING_GAMES_LOCK:
+            game = TRAINING_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "The game is not in progress."}), 409
+            player = game["players"].get(player_id)
+            if not player:
+                return jsonify({"error": "Player was not found."}), 404
+            if game["turnId"] != player_id:
+                return jsonify({"error": "It is not your turn."}), 403
+            if game["drawn"] >= 2:
+                return jsonify({"error": "You already drew two cards."}), 409
+
+            if source == "market":
+                if market_index is None or not 0 <= market_index < len(game["market"]):
+                    return jsonify({"error": "That market slot is empty."}), 400
+                card = game["market"].pop(market_index)
+                training_refill_market(game)
+            elif source == "deck":
+                card = training_draw_from_pile(game)
+                if card is None:
+                    return jsonify({"error": "No cards left to draw."}), 409
+            else:
+                return jsonify({"error": "Draw from the deck or the market."}), 400
+
+            player["hand"][card] = player["hand"].get(card, 0) + 1
+            game["drawn"] += 1
+            training_append_log(game, f"{player['name']} drew a {card} card.")
+            if game["drawn"] >= 2:
+                training_end_turn(game)
+
+        training_publish(code, "draw")
+        with TRAINING_GAMES_LOCK:
+            return jsonify({"game": training_player_view(TRAINING_GAMES[code], player_id)})
+
+    @app.post("/api/training/games/<code>/claim")
+    def training_claim_route(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        try:
+            route_id = int(body.get("routeId"))
+        except (TypeError, ValueError):
+            return jsonify({"error": "Pick a route."}), 400
+        suit = str(body.get("color") or "").strip().lower()
+
+        with TRAINING_GAMES_LOCK:
+            game = TRAINING_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "The game is not in progress."}), 409
+            player = game["players"].get(player_id)
+            if not player:
+                return jsonify({"error": "Player was not found."}), 404
+            if game["turnId"] != player_id:
+                return jsonify({"error": "It is not your turn."}), 403
+            if game["drawn"] > 0:
+                return jsonify({"error": "You already drew this turn."}), 409
+            route = next((r for r in training_routes_for(game["mapId"]) if r["id"] == route_id), None)
+            if not route:
+                return jsonify({"error": "That route does not exist."}), 404
+            if game["routes"].get(route_id):
+                return jsonify({"error": "That line is already claimed."}), 409
+            if player["trains"] < route["length"]:
+                return jsonify({"error": "Not enough trains left."}), 400
+
+            claim_suit = route["color"] if route["color"] != "gray" else suit
+            if claim_suit not in TRAINING_CARD_SUITS:
+                return jsonify({"error": "Pick a suit for the gray route."}), 400
+            available = player["hand"].get(claim_suit, 0) + player["hand"].get("wild", 0)
+            if available < route["length"]:
+                return jsonify({"error": f"You need {route['length']} {claim_suit} (wilds help)."}), 400
+
+            spent = training_spend_cards(player, claim_suit, route["length"])
+            game["discard"].extend(spent)
+            player["trains"] -= route["length"]
+            player["score"] += TRAINING_ROUTE_POINTS[route["length"]]
+            game["routes"][route_id] = player["color"]
+            training_append_log(
+                game,
+                f"{player['name']} claimed {route['a'].title()}–{route['b'].title()} ({route['length']}) for {TRAINING_ROUTE_POINTS[route['length']]} points.",
+            )
+            training_end_turn(game)
+
+        training_publish(code, "claim")
+        with TRAINING_GAMES_LOCK:
+            return jsonify({"game": training_player_view(TRAINING_GAMES[code], player_id)})
+
+    @app.post("/api/training/games/<code>/tickets")
+    def training_draw_tickets(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with TRAINING_GAMES_LOCK:
+            game = TRAINING_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "The game is not in progress."}), 409
+            player = game["players"].get(player_id)
+            if not player:
+                return jsonify({"error": "Player was not found."}), 404
+            if game["turnId"] != player_id:
+                return jsonify({"error": "It is not your turn."}), 403
+            if game["drawn"] > 0:
+                return jsonify({"error": "You already drew this turn."}), 409
+            if player["pendingTickets"]:
+                return jsonify({"error": "Tickets are already waiting."}), 409
+            if not game["ticketDeck"]:
+                return jsonify({"error": "The ticket deck is empty."}), 409
+            count = min(3, len(game["ticketDeck"]))
+            player["pendingTickets"] = [game["ticketDeck"].pop() for _ in range(count)]
+            training_append_log(game, f"{player['name']} surveying new destinations...")
+
+        training_publish(code, "tickets")
+        with TRAINING_GAMES_LOCK:
+            return jsonify({"game": training_player_view(TRAINING_GAMES[code], player_id)})
+
+    @app.post("/api/training/games/<code>/rematch")
+    def training_rematch(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with TRAINING_GAMES_LOCK:
+            game = TRAINING_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            if game["status"] != "finished":
+                return jsonify({"error": "Finish the current game first."}), 409
+            if player_id and player_id not in game["players"]:
+                return jsonify({"error": "Player was not found."}), 404
+            fresh = training_new_game(game["mapId"])
+            game["round"] += 1
+            game["deck"] = fresh["deck"]
+            game["discard"] = []
+            game["market"] = []
+            game["ticketDeck"] = fresh["ticketDeck"]
+            game["routes"] = fresh["routes"]
+            game["turnId"] = None
+            game["drawn"] = 0
+            game["endTriggeredBy"] = None
+            game["turnsRemaining"] = 0
+            game["winnerColor"] = None
+            game["standings"] = None
+            game["status"] = "lobby"
+            for player in game["players"].values():
+                player["hand"] = {suit: 0 for suit in TRAINING_CARD_SUITS} | {"wild": 0}
+                player["keptTickets"] = []
+                player["pendingTickets"] = []
+                player["trains"] = TRAINING_TRAINS_PER_PLAYER
+                player["score"] = 0
+                player["ready"] = False
+            training_append_log(game, f"Round {game['round']}! Fresh track, fresh tickets.")
+
+        training_publish(code, "rematch")
+        with TRAINING_GAMES_LOCK:
+            return jsonify({"game": training_player_view(TRAINING_GAMES[code], player_id or None)})
+
+    @app.get("/api/training/games/<code>/events")
+    def training_game_events(code: str):
+        code = code.upper()
+        player_id = str(request.args.get("playerId") or "").strip() or None
+        event_queue: queue.Queue[dict[str, Any]] = queue.Queue()
+        subscriber = {"queue": event_queue, "playerId": player_id}
+        with TRAINING_GAMES_LOCK:
+            game = TRAINING_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Game was not found."}), 404
+            TRAINING_GAME_SUBSCRIBERS.setdefault(code, []).append(subscriber)
+            initial_game = training_player_view(game, player_id)
+
+        def stream():
+            yield sse_message("game", initial_game)
+            try:
+                while True:
+                    try:
+                        message = event_queue.get(timeout=25)
+                        yield sse_message(message["event"], message["data"])
+                    except queue.Empty:
+                        yield sse_message("ping", {"ok": True})
+            finally:
+                with TRAINING_GAMES_LOCK:
+                    subscribers = TRAINING_GAME_SUBSCRIBERS.get(code, [])
                     if subscriber in subscribers:
                         subscribers.remove(subscriber)
 

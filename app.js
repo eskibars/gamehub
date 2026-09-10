@@ -133,6 +133,15 @@ const icons = {
       <circle cx="32" cy="32" r="8"></circle>
       <circle cx="32" cy="32" r="2.5"></circle>
     </svg>`,
+  training: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="16" y="8" width="32" height="38" rx="6"></rect>
+      <path d="M16 30h32"></path>
+      <circle cx="25" cy="38" r="3"></circle>
+      <circle cx="39" cy="38" r="3"></circle>
+      <path d="M20 46l-6 10M44 46l6 10M14 56h36"></path>
+      <path d="M24 8V4h16v4"></path>
+    </svg>`,
 };
 
 const games = [
@@ -339,6 +348,23 @@ const games = [
       Players: "4",
     },
     icon: "oracle",
+  },
+  {
+    id: "training",
+    title: "Training",
+    type: "Rail empire",
+    status: "ready",
+    category: "board",
+    href: "/training/",
+    accent: "#8a5a34",
+    tilt: "-1deg",
+    description: "Claim railway lines across a 20-city map with matching train cards, and complete destination tickets before your engines run out. Hand-built map, live board.",
+    features: {
+      Mode: "Remote duel",
+      Storage: "In-memory share code",
+      Players: "2",
+    },
+    icon: "training",
   },
   {
     id: "tools",
