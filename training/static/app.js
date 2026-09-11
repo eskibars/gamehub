@@ -446,7 +446,7 @@ function renderMarket() {
     card.style.background = suit === "wild" ? "" : suitFill(suit);
     card.style.borderColor = suitStroke(suit);
     card.style.color = ["white", "yellow", "gray"].includes(suit) ? "#3a3532" : "#fffdf7";
-    card.textContent = suit === "wild" ? "★" : suit;
+    if (suit === "wild") card.textContent = "★";
     card.setAttribute("aria-label", `Draw ${suit} card`);
     if (drawable) {
       card.classList.add("is-drawable");
