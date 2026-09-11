@@ -396,10 +396,12 @@ function renderLobby() {
   els.nameForm.hidden = seated;
   const full = state.game.players.length === 2;
   els.lobbyActions.hidden = !seated;
-  els.startButton.disabled = !full;
-  els.lobbyMessage.textContent = full
+  els.startButton.disabled = !full || !state.game.youAreHost;
+  els.lobbyMessage.textContent = !full
+    ? "Waiting for an opponent…"
+    : state.game.youAreHost
     ? "Both engineers aboard. All set to start."
-    : "Waiting for an opponent…";
+    : "Both engineers aboard — waiting for the host to start.";
 }
 
 function renderPlayers() {

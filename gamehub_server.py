@@ -4522,6 +4522,8 @@ def create_app() -> Flask:
                 return jsonify({"error": "Wait for your opponent to join."}), 409
             if player_id and player_id not in game["players"]:
                 return jsonify({"error": "Player was not found."}), 404
+            if player_id and not game["players"][player_id].get("isHost"):
+                return jsonify({"error": "Only the host can start the game."}), 403
             for player in game["players"].values():
                 for _ in range(TRAINING_HAND_START):
                     card = training_draw_from_pile(game)
