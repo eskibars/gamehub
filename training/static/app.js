@@ -30,6 +30,7 @@ const els = {
   mapPreview: document.querySelector("#mapPreview"),
   mapPreviewSvg: document.querySelector("#mapPreviewSvg"),
   factMap: document.querySelector("#factMap"),
+  factTrains: document.querySelector("#factTrains"),
   connectionStatus: document.querySelector("#connectionStatus"),
   lobbyPanel: document.querySelector("#lobbyPanel"),
   shareTools: document.querySelector("#shareTools"),
@@ -391,6 +392,7 @@ function renderLobby() {
   els.shareCode.textContent = state.game.code;
   els.factStatus.textContent = "Lobby";
   els.factMap.textContent = state.game.mapName;
+  els.factTrains.textContent = `${state.game.trainsPerPlayer} each`;
   els.shareTools.hidden = !state.game.youAreHost;
   els.newGameButton.hidden = !state.game.youAreHost;
   els.nameForm.hidden = seated;

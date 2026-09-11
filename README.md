@@ -114,16 +114,19 @@ the assassin loses instantly. Rematches deal a fresh board with the same
 seats.
 
 Training is a Ticket-to-Ride-style rail game where the creator picks the
-map at setup: **Coastline** (20 cities along an Atlantic shore), 
-**Continent** (a dense European web), or **Orient** (monsoon coasts and
-mountain passes across southern Asia). Each turn you draw two train cards
-from the deck or face-up market, claim a route by spending a matching
-suit (wilds fill gaps, gray routes take any suit), or survey new
-destination tickets. Tickets pay their points when a connected path of
-your rails links the two cities, and cost the same when they don't.
+map at setup. There are thirteen: **Coastline**, **Continent**, and
+**Orient** at region scale (20 cities each), plus ten city-scale maps —
+Cleveland, San Francisco, Seattle, Los Angeles, Atlanta, New York,
+Melbourne, Sydney, Detroit, and Minneapolis — whose stops are real
+neighborhoods (Embarcadero, Fremont, Fitzroy, Corktown...). Each turn you
+draw two train cards from the deck or face-up market, claim a route by
+spending a matching suit (wilds fill gaps, gray routes take any suit), or
+survey new destination tickets. Tickets pay their points when a connected
+path of your rails links the two stops, and cost the same when they don't.
 Route points score immediately; when a player drops to two trains the
 final round starts, and unfinished tickets turn negative at scoring.
-A board-only preview for map tuning lives at `/training/board.html`
+City maps deal 3 starting tickets and a smaller train pool to match their
+size. A board-only preview for map tuning lives at `/training/board.html`
 (use the map dropdown or `?map=`).
 
 ## Legacy Bingo command

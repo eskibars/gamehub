@@ -8,6 +8,7 @@
   body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #241f1a; color: #f5ead9; margin: 16px; }
   h1 { font-size: 15px; }
   p { font-size: 12px; color: #c9b9a4; }
+  select { font: inherit; }
   .board-frame {
     width: min(1180px, 96vw);
     background: linear-gradient(155deg, #f6ecd8, #efe0c4);
@@ -30,54 +31,52 @@
 <h1>Training — board preview</h1>
 <p>
   Map:
-  <select id="mapSelect">
-    <option value="coastline">Coastline</option>
-    <option value="continent">Continent</option>
-    <option value="orient">Orient</option>
-  </select>
-  <span id="note">Sample claims: red holds Portland–Salt Lake City and Los Angeles–Phoenix; blue holds Denver–Dallas and Boston–New York.</span>
+  <select id="mapSelect"></select>
+  <span id="note"></span>
 </p>
 <div class="board-frame"><svg id="board"></svg></div>
 <script src="board.js"></script>
 <script>
   const SAMPLES = {
-    coastline: {
-      claims: { "portland|saltlake": "red", "losangeles|phoenix": "red", "denver|dallas": "blue", "boston|newyork": "blue" },
-      note: "Sample claims: red holds Portland–Salt Lake City and Los Angeles–Phoenix; blue holds Denver–Dallas and Boston–New York.",
-    },
-    continent: {
-      claims: { "amsterdam|frankfurt": "red", "zurich|venice": "red", "berlin|warsaw": "blue", "barcelona|madrid": "blue" },
-      note: "Sample claims: red holds Amsterdam–Frankfurt and Zurich–Venice; blue holds Berlin–Warsaw and Barcelona–Madrid.",
-    },
-    orient: {
-      claims: { "seoul|beijing": "red", "hongkong|bangkok": "red", "osaka|taipei": "blue", "delhi|mumbai": "blue" },
-      note: "Sample claims: red holds Seoul–Beijing and Hong Kong–Bangkok; blue holds Osaka–Taipei and Delhi–Mumbai.",
-    },
+    coastline: { claims: { "portland|saltlake": "red", "losangeles|phoenix": "red", "denver|dallas": "blue", "boston|newyork": "blue" } },
+    continent: { claims: { "amsterdam|frankfurt": "red", "zurich|venice": "red", "berlin|warsaw": "blue", "barcelona|madrid": "blue" } },
+    orient: { claims: { "seoul|beijing": "red", "hongkong|bangkok": "red", "osaka|taipei": "blue", "delhi|mumbai": "blue" } },
   };
   const select = document.querySelector("#mapSelect");
-  select.value = new URLSearchParams(location.search).get("map") || "coastline";
+  const note = document.querySelector("#note");
   function draw(mapId) {
-    TrainingBoard.loadMapById
-      ? null
-      : null;
-    fetch(`/api/training/map?map=${mapId}`)
+    fetch(`/api/training/map?map=${encodeURIComponent(mapId)}`)
       .then((r) => r.json())
       .then((map) => {
-        const spec = SAMPLES[mapId];
+        const spec = SAMPLES[mapId] || { claims: {} };
         const idOf = (key) => {
           const [a, b] = key.split("|");
-          return map.routes.find((r) => (r.a === a && r.b === b) || (r.a === b && r.b === a)).id;
+          const route = map.routes.find((r) => (r.a === a && r.b === b) || (r.a === b && r.b === a));
+          return route ? route.id : null;
         };
         const claimed = {};
         Object.keys(spec.claims).forEach((key) => {
-          claimed[idOf(key)] = spec.claims[key];
+          const id = idOf(key);
+          if (id !== null) claimed[id] = spec.claims[key];
         });
-        document.querySelector("#note").textContent = spec.note;
         TrainingBoard.render(document.querySelector("#board"), map, { claimed });
+        note.textContent = `${map.name} — ${map.cities.length} stops, ${map.routes.length} routes.`;
       });
   }
+  fetch("/api/training/maps")
+    .then((r) => r.json())
+    .then((data) => {
+      data.maps.forEach((m) => {
+        const opt = document.createElement("option");
+        opt.value = m.id;
+        opt.textContent = m.name;
+        select.append(opt);
+      });
+      const wanted = new URLSearchParams(location.search).get("map");
+      if (wanted && data.maps.some((m) => m.id === wanted)) select.value = wanted;
+      draw(select.value);
+    });
   select.addEventListener("change", () => draw(select.value));
-  draw(select.value);
 </script>
 </body>
 </html>
