@@ -63,7 +63,7 @@ const els = {
   ticketList: document.querySelector("#ticketList"),
   drawTicketsButton: document.querySelector("#drawTicketsButton"),
   gameLog: document.querySelector("#gameLog"),
-  ticketBackdrop: document.querySelector("#ticketBackdrop"),
+  ticketPicker: document.querySelector("#ticketPicker"),
   ticketKeepHint: document.querySelector("#ticketKeepHint"),
   ticketChoice: document.querySelector("#ticketChoice"),
   ticketConfirm: document.querySelector("#ticketConfirm"),
@@ -338,7 +338,7 @@ async function keepTickets(ids) {
       body: JSON.stringify({ playerId: state.playerId, keep: ids }),
     });
     state.pendingKeep = [];
-    els.ticketBackdrop.hidden = true;
+    els.ticketPicker.hidden = true;
     adoptGame(data.game);
     if (data.game.status === "finished" && !state.resultShown) showResult(data.game);
   } catch (error) {
@@ -656,7 +656,7 @@ function render() {
     renderHand();
     renderTickets();
     renderLog();
-    if ((state.game.pendingTickets?.length || 0) > 0 && els.ticketBackdrop.hidden) {
+    if ((state.game.pendingTickets?.length || 0) > 0 && els.ticketPicker.hidden) {
       openTicketModal();
     }
   } catch (error) {
@@ -697,7 +697,8 @@ function openTicketModal() {
     els.ticketChoice.append(option);
   });
   els.ticketConfirm.disabled = true;
-  els.ticketBackdrop.hidden = false;
+  els.ticketPicker.hidden = false;
+  els.ticketPicker.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function showResult(game) {
@@ -750,7 +751,7 @@ function showStartMode(mode) {
   els.setupView.hidden = false;
   els.playArea.hidden = true;
   els.lobbyPanel.hidden = true;
-  els.ticketBackdrop.hidden = true;
+  els.ticketPicker.hidden = true;
   els.colorBackdrop.hidden = true;
   els.resultBackdrop.hidden = true;
   entryControls.showMode(mode || "choice");

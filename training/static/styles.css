@@ -448,6 +448,28 @@ h3 {
 .side-panel {
   display: grid;
   gap: 12px;
+  align-content: start;
+}
+
+.ticket-picker {
+  border: 2px solid var(--gold);
+  background: rgba(223, 180, 78, 0.1);
+  box-shadow: 0 0 0 4px rgba(223, 180, 78, 0.18);
+  animation: ticket-pulse 1.6s ease-in-out infinite;
+}
+
+.ticket-picker .ticket-choice {
+  margin-bottom: 10px;
+}
+
+@keyframes ticket-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 4px rgba(223, 180, 78, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(223, 180, 78, 0.05);
+  }
 }
 
 .side-panel section,
