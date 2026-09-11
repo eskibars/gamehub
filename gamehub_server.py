@@ -4186,7 +4186,8 @@ def create_app() -> Flask:
         for suit in TRAINING_CARD_SUITS:
             deck.extend([suit] * TRAINING_CARDS_PER_SUIT)
         deck.extend(["wild"] * TRAINING_WILD_CARDS)
-        return random.SystemRandom().shuffle(deck) or deck
+        random.SystemRandom().shuffle(deck)
+        return deck
 
     def training_build_ticket_deck(map_id: str) -> list[dict[str, Any]]:
         tickets = [
@@ -4224,7 +4225,8 @@ def create_app() -> Flask:
         if not game["deck"]:
             if not game["discard"]:
                 return None
-            game["deck"] = random.SystemRandom().shuffle(game["discard"]) or game["discard"]
+            random.SystemRandom().shuffle(game["discard"])
+            game["deck"] = game["discard"]
             game["discard"] = []
         return game["deck"].pop()
 

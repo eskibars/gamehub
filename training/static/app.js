@@ -13,7 +13,6 @@ const state = {
   mapList: [],
   chosenMap: "coastline",
   previewMapId: "",
-  chosenColor: "",
   pendingKeep: [],
   resultShown: false,
 };
@@ -497,17 +496,25 @@ function renderTickets() {
     empty.textContent = "No tickets yet.";
     els.ticketList.append(empty);
   }
+  const gameOver = game.status === "finished";
   tickets.forEach((ticket) => {
     const row = document.createElement("div");
-    row.className = "ticket" + (ticket.complete ? " is-done" : " is-failed");
+    let stateClass = " is-progress";
+    if (ticket.complete) stateClass = " is-done";
+    else if (gameOver) stateClass = " is-failed";
+    row.className = "ticket" + stateClass;
     const state1 = document.createElement("span");
     state1.className = "ticket-state";
-    state1.textContent = ticket.complete ? "✓" : "○";
+    state1.textContent = ticket.complete ? "✓" : (gameOver ? "✗" : "○");
     const route = document.createElement("span");
     route.textContent = `${cityName(ticket.a)} → ${cityName(ticket.b)}`;
     const points = document.createElement("span");
     points.className = "ticket-points";
-    points.textContent = `${ticket.complete ? "+" : "−"}${ticket.points}`;
+    let pointsText;
+    if (ticket.complete) pointsText = `+${ticket.points}`;
+    else if (gameOver) pointsText = `−${ticket.points}`;
+    else pointsText = `${ticket.points}`;
+    points.textContent = pointsText;
     row.append(state1, route, points);
     els.ticketList.append(row);
   });
@@ -555,9 +562,9 @@ function onRouteClick(routeId) {
 }
 
 function openColorModal(route) {
-  const mine = me();
-  const suits = Object.keys(mine.hand).filter(
-    (suit) => suit !== "wild" && (mine.hand[suit] || 0) + (mine.hand.wild || 0) >= route.length && mine.hand[suit] > 0
+  const hand = state.game.yourHand || {};
+  const suits = Object.keys(hand).filter(
+    (suit) => suit !== "wild" && (hand[suit] || 0) + (hand.wild || 0) >= route.length && hand[suit] > 0
   );
   els.suitChoice.innerHTML = "";
   if (!suits.length) {
@@ -602,7 +609,7 @@ function renderHeading() {
     els.phaseLabel.textContent = `Round ${game.round} · Tickets`;
     els.turnBanner.textContent = "Choose your destinations";
     els.turnBanner.classList.add("mine");
-    els.gameMessage.textContent = (me()?.pendingTickets?.length || 0) > 0
+    els.gameMessage.textContent = (game.pendingTickets?.length || 0) > 0
       ? "Pick the routes you swear to complete."
       : "Waiting for your opponent to seal their tickets.";
   } else if (game.status === "active") {
