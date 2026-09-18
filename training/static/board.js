@@ -78,6 +78,37 @@
     return Object.fromEntries(cities.map((c) => [c.id, c]));
   }
 
+  // Longer routes bow along a quadratic curve so parallel and converging
+  // lines stop smooshing together. The bow bends away from the map centre.
+  const CURVE_K = { 1: 0, 2: 0.09, 3: 0.14, 4: 0.14, 5: 0.17 };
+
+  function routeCurve(a, b, length) {
+    const ax = a.x, ay = a.y, bx = b.x, by = b.y;
+    const d = Math.hypot(bx - ax, by - ay);
+    const mx = (ax + bx) / 2, my = (ay + by) / 2;
+    let px = -(by - ay) / d, py = (bx - ax) / d;
+    if (px * (mx - 500) + py * (my - 320) < 0) {
+      px = -px;
+      py = -py;
+    }
+    const off = Math.min(64, d * (CURVE_K[length] || 0));
+    return { ax, ay, bx, by, cx: mx + px * off, cy: my + py * off };
+  }
+
+  function bezPoint(geo, t) {
+    const u = 1 - t;
+    return {
+      x: u * u * geo.ax + 2 * u * t * geo.cx + t * t * geo.bx,
+      y: u * u * geo.ay + 2 * u * t * geo.cy + t * t * geo.by,
+    };
+  }
+
+  function bezAngle(geo, t) {
+    const dx = 2 * (1 - t) * (geo.cx - geo.ax) + 2 * t * (geo.bx - geo.cx);
+    const dy = 2 * (1 - t) * (geo.cy - geo.ay) + 2 * t * (geo.by - geo.cy);
+    return (Math.atan2(dy, dx) * 180) / Math.PI;
+  }
+
   function labelPosition(city) {
     switch (city.label) {
       case "n":
@@ -140,6 +171,23 @@
     const bg = el("rect", { x: 0, y: 0, width: 1000, height: 640, fill: "url(#trainingPaper)" });
     svg.append(bg);
 
+    if (map.underlay) {
+      const ug = el("g", { class: "underlay" });
+      for (const shape of map.underlay) {
+        if (shape.kind === "water") {
+          ug.append(el("path", { d: shape.d, fill: "rgba(133, 171, 201, 0.5)" }));
+        } else if (shape.kind === "river") {
+          ug.append(el("path", { d: shape.d, fill: "none", stroke: "rgba(133, 171, 201, 0.55)", "stroke-width": 12, "stroke-linecap": "round", "stroke-linejoin": "round" }));
+          ug.append(el("path", { d: shape.d, fill: "none", stroke: "rgba(196, 217, 230, 0.9)", "stroke-width": 5, "stroke-linecap": "round", "stroke-linejoin": "round" }));
+        } else if (shape.kind === "park") {
+          ug.append(el("path", { d: shape.d, fill: "rgba(150, 175, 110, 0.42)" }));
+        } else if (shape.kind === "contour") {
+          ug.append(el("path", { d: shape.d, fill: "none", stroke: "rgba(150, 120, 90, 0.16)", "stroke-width": 2.5 }));
+        }
+      }
+      svg.append(ug);
+    }
+
     // Routes first so cities sit on top.
     for (const route of map.routes) {
       const a = cities[route.a];
@@ -153,12 +201,14 @@
         class: "route-group",
         "data-route-id": String(route.id),
       });
-      const sectionLength = (dist - LINE_PAD * 2) / route.length;
+      const geo = routeCurve(a, b, route.length);
+      const inset = 0.055; // keep sections clear of the city dots
       for (let i = 0; i < route.length; i += 1) {
-        const cx = a.x + ux * (LINE_PAD + sectionLength * (i + 0.5));
-        const cy = a.y + uy * (LINE_PAD + sectionLength * (i + 0.5));
-        const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-        const w = sectionLength * 0.72;
+        const t = inset + (1 - 2 * inset) * ((i + 0.5) / route.length);
+        const pt = bezPoint(geo, t);
+        const cx = pt.x, cy = pt.y;
+        const angle = bezAngle(geo, t);
+        const w = ((dist - LINE_PAD * 2) / route.length) * 0.72;
         const owner = claimed[route.id];
         const fill = owner ? PLAYER_FILL[owner] : SUIT_FILL[route.color];
         const stroke = owner ? PLAYER_STROKE[owner] : SUIT_STROKE[route.color];
@@ -203,14 +253,12 @@
         group.append(section);
       }
       if (opts.onRouteClick) {
-        const hit = el("line", {
-          x1: a.x + ux * CITY_RADIUS,
-          y1: a.y + uy * CITY_RADIUS,
-          x2: b.x - ux * CITY_RADIUS,
-          y2: b.y - uy * CITY_RADIUS,
+        const hit = el("path", {
+          d: `M ${geo.ax + ux * LINE_PAD} ${geo.ay + uy * LINE_PAD} Q ${geo.cx} ${geo.cy} ${geo.bx - ux * LINE_PAD} ${geo.by - uy * LINE_PAD}`,
           stroke: "rgba(0,0,0,0)",
-          "stroke-width": 24,
+          "stroke-width": 26,
           "stroke-linecap": "round",
+          fill: "none",
         });
         const clickable = !opts.clickable || opts.clickable[route.id];
         if (clickable) {
