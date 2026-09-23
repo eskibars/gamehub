@@ -1,4 +1,7 @@
 const STORAGE_KEY = "bingo-card-builder-state-v1";
+const IMAGE_MAX_EDGE = 1024;
+const IMAGE_QUALITY = 0.8;
+const STORAGE_LIMIT_MESSAGE = "Some images could not be saved on this device (storage limit reached).";
 
 const state = {
   title: "Movie Night Bingo",
@@ -8,6 +11,7 @@ const state = {
   currentCard: [],
   user: null,
   apiAvailable: true,
+  storageError: false,
 };
 
 const els = {
@@ -50,7 +54,14 @@ function saveLocal() {
     includeFreeSpace: state.includeFreeSpace,
     tiles: state.tiles,
   };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(localState));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(localState));
+    state.storageError = false;
+    return true;
+  } catch {
+    state.storageError = true;
+    return false;
+  }
 }
 
 function loadLocal() {
@@ -185,6 +196,10 @@ function renderLibrary() {
 }
 
 function updateMessage() {
+  if (state.storageError) {
+    els.cardMessage.textContent = STORAGE_LIMIT_MESSAGE;
+    return;
+  }
   const needed = requiredTileCount();
   const shortage = Math.max(0, needed - state.tiles.length);
   if (shortage > 0) {
@@ -238,11 +253,51 @@ function readImageFile(file) {
   });
 }
 
+function reencodeImage(image, dataUrl) {
+  const scale = Math.min(1, IMAGE_MAX_EDGE / Math.max(image.naturalWidth, image.naturalHeight));
+  const width = Math.max(1, Math.round(image.naturalWidth * scale));
+  const height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  context.drawImage(image, 0, 0, width, height);
+  return canvas.toDataURL(dataUrl.startsWith("data:image/png") ? "image/png" : "image/jpeg", IMAGE_QUALITY);
+}
+
+function shrinkImage(dataUrl) {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.addEventListener("load", () => {
+      if (!image.naturalWidth || !image.naturalHeight) {
+        resolve(dataUrl);
+        return;
+      }
+      let encoded = null;
+      try {
+        encoded = reencodeImage(image, dataUrl);
+      } catch {
+        encoded = null;
+      }
+      resolve(encoded && encoded.length < dataUrl.length ? encoded : dataUrl);
+    });
+    image.addEventListener("error", () => resolve(dataUrl));
+    image.src = dataUrl;
+  });
+}
+
 async function addImageFiles(files) {
   const images = [...files].filter((file) => file.type.startsWith("image/"));
   if (!images.length) return;
   for (const file of images) {
-    const image = await readImageFile(file);
+    let original;
+    try {
+      original = await readImageFile(file);
+    } catch {
+      continue;
+    }
+    const image = await shrinkImage(original);
     state.tiles.push({ id: uid(), type: "image", text: "", image });
   }
   saveLocal();
