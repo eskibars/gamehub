@@ -341,6 +341,7 @@ textarea:focus {
 .bingo-cell {
   position: relative;
   display: grid;
+  grid-template-rows: minmax(0, 1fr);
   place-items: center;
   min-width: 0;
   min-height: 0;
