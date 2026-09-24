@@ -164,4 +164,12 @@
     rank,
     levelProgress,
   };
+
+  // Register the root service worker so deep links into this game also get
+  // offline coverage. Idempotent: browsers dedupe by URL + scope.
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    });
+  }
 })();

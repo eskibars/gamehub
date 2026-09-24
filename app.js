@@ -219,6 +219,14 @@ const icons = {
       <path d="M12 12h20M12 12v20M32 12v20M12 32h20"></path>
       <rect x="17" y="17" width="10" height="10" rx="2" class="dots-fill"></rect>
     </svg>`,
+  lights: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="8" width="48" height="48" rx="6"></rect>
+      <circle cx="22" cy="22" r="7" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="42" cy="22" r="7"></circle>
+      <circle cx="22" cy="42" r="7"></circle>
+      <circle cx="42" cy="42" r="7" style="fill:currentColor;stroke:none"></circle>
+    </svg>`,
 };
 
 const games = [
@@ -612,6 +620,23 @@ const games = [
       Players: "1-2",
     },
     icon: "dots",
+  },
+  {
+    id: "lights-out",
+    title: "Lights Out",
+    type: "Toggle puzzle",
+    status: "ready",
+    category: "solo",
+    href: "/lights-out/",
+    accent: "#c07a2a",
+    tilt: "1deg",
+    description: "Tap a cell and it flips itself plus its four neighbors. Every deal is built from random taps, so it's always solvable — how few moves do you need?",
+    features: {
+      Mode: "Solo puzzle",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "lights",
   },
 ];
 

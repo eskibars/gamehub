@@ -1871,6 +1871,10 @@ def create_app() -> Flask:
     def hub_service_worker():
         return send_from_directory(BASE_DIR, "sw.js")
 
+    @app.get("/favicon.ico")
+    def hub_favicon():
+        return send_from_directory(BASE_DIR / "shared" / "icons", "icon-192.png")
+
     @app.get("/manifest.webmanifest")
     def hub_manifest():
         manifest = BASE_DIR / "manifest.webmanifest"
@@ -2184,6 +2188,20 @@ def create_app() -> Flask:
     @app.get("/dots-and-boxes/<path:filename>")
     def dots_and_boxes_static(filename: str):
         return send_from_directory(DOTS_AND_BOXES_STATIC_DIR, filename)
+
+    LIGHTS_OUT_STATIC_DIR = BASE_DIR / "lights-out" / "static"
+
+    @app.get("/lights-out")
+    def lights_out_redirect():
+        return redirect("/lights-out/")
+
+    @app.get("/lights-out/")
+    def lights_out_index():
+        return send_from_directory(LIGHTS_OUT_STATIC_DIR, "index.html")
+
+    @app.get("/lights-out/<path:filename>")
+    def lights_out_static(filename: str):
+        return send_from_directory(LIGHTS_OUT_STATIC_DIR, filename)
 
 
     @app.get("/share/<share_id>")

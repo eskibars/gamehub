@@ -41,6 +41,7 @@ GAMES = {
     "simon": "simon",
     "sliding-puzzle": "sliding-puzzle",
     "dots-and-boxes": "dots-and-boxes",
+    "lights-out": "lights-out",
 }
 
 ROOT_FILES = [
