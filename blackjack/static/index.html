@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Blackjack</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Beat the dealer to 21</p>
+          <h1>Blackjack</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="small-button" id="statsButton" type="button">Stats</button>
+          <button class="small-button" id="cashOut" type="button">Cash Out</button>
+        </div>
+      </header>
+
+      <section class="score-row" aria-label="Chips">
+        <div class="score-box">
+          <span class="score-label">Bank</span>
+          <span class="score-value" id="bank">200</span>
+        </div>
+        <div class="score-box" id="betBox">
+          <span class="score-label">Bet</span>
+          <span class="score-value" id="bet">0</span>
+        </div>
+        <div class="score-box">
+          <span class="score-label">Session</span>
+          <span class="score-value" id="net">±0</span>
+        </div>
+      </section>
+
+      <section class="table-wrap">
+        <div class="table" id="table">
+          <div class="seat dealer-seat" id="dealerSeat">
+            <div class="seat-head">
+              <span class="seat-name">Dealer</span>
+              <span class="hand-value" id="dealerValue" hidden></span>
+            </div>
+            <div class="cards" id="dealerCards"></div>
+          </div>
+
+          <div class="banner-strip">
+            <p class="banner" id="banner">Place your bet</p>
+          </div>
+
+          <div class="seat player-seat">
+            <div class="seat-head">
+              <span class="seat-name">You</span>
+            </div>
+            <div class="hands" id="hands"></div>
+            <div class="spot" id="playerSpot" aria-hidden="true"></div>
+          </div>
+
+          <div class="overlay" id="overlay" hidden>
+            <p class="overlay-title" id="overlayTitle"></p>
+            <p class="overlay-sub" id="overlaySub"></p>
+            <div class="overlay-actions" id="overlayActions"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="controls">
+        <div class="control-panel" id="betControls">
+          <div class="chip-rack">
+            <button class="chip chip-5" data-chip="5" type="button" aria-label="Bet 5"><span>5</span></button>
+            <button class="chip chip-25" data-chip="25" type="button" aria-label="Bet 25"><span>25</span></button>
+            <button class="chip chip-100" data-chip="100" type="button" aria-label="Bet 100"><span>100</span></button>
+          </div>
+          <div class="bet-actions">
+            <button class="small-button" id="clearBet" type="button">Clear</button>
+            <button class="small-button" id="rebet" type="button">Rebet</button>
+            <button class="primary-button deal-button" id="deal" type="button">Deal</button>
+          </div>
+        </div>
+
+        <div class="control-panel" id="actionControls" hidden>
+          <button class="action-button hit" id="hit" type="button">Hit</button>
+          <button class="action-button stand" id="stand" type="button">Stand</button>
+          <button class="action-button" id="double" type="button">Double</button>
+          <button class="action-button" id="split" type="button" hidden>Split</button>
+        </div>
+
+        <div class="control-panel" id="insuranceControls" hidden>
+          <p class="insurance-question">Insurance? Costs <b id="insuranceCostLabel">0</b> — pays 2:1 if dealer has blackjack.</p>
+          <div class="insurance-actions">
+            <button class="action-button hit" id="takeInsurance" type="button">Take Insurance</button>
+            <button class="action-button" id="declineInsurance" type="button">No Thanks</button>
+          </div>
+        </div>
+
+        <div class="control-panel" id="nextControls" hidden>
+          <button class="primary-button" id="nextHand" type="button">Next Hand</button>
+        </div>
+      </section>
+
+      <div class="stats-dialog" id="statsDialog" hidden>
+        <div class="stats-panel">
+          <div class="stats-head">
+            <h2 class="stats-title">Table Stats</h2>
+            <button class="small-button" id="statsClose" type="button">Close</button>
+          </div>
+          <div class="stats-row"><span>Hands played</span><span id="statHands">0</span></div>
+          <div class="stats-row"><span>Hands won</span><span id="statWins">0</span></div>
+          <div class="stats-row"><span>Blackjacks</span><span id="statBlackjacks">0</span></div>
+          <div class="stats-row"><span>Biggest bank</span><span id="statBigBank">200</span></div>
+          <div class="stats-row"><span>Lifetime net</span><span id="statNet">±0</span></div>
+          <div class="stats-row"><span>House refills</span><span id="statRefills">0</span></div>
+        </div>
+      </div>
+
+      <p class="hint">Tap chips to bet (min 5), then Deal. Get closer to 21 than the dealer without busting — dealer stands on all 17s, blackjack pays 3:2. Double on your first two cards; split one matching pair.</p>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

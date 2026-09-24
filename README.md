@@ -44,7 +44,8 @@ Boggle Table, Word Find Creator, Backgammon, Find 'em, Table Tools,
 Who Am I? — a Guess Who-style character guessing game, Hangman,
 Battleship, Checkers, The Oracle, Training, plus a solo/arcade shelf:
 2048, Word Guess, Minesweeper, Connect Four, Memory Match, Snake,
-Simon Says, Sliding Puzzle, and Dots and Boxes.
+Simon Says, Sliding Puzzle, Dots and Boxes, Lights Out, Sudoku,
+Block Drop, Solitaire, Reversi, and Blackjack.
 
 ## Player profile
 
@@ -57,6 +58,19 @@ player card keeps per-game personal bests. Everything lives in
 `localStorage` via `shared/profile.js`; games integrate with a single
 `GameHubProfile.award(...)` call, and the hub degrades gracefully when a
 game skips it.
+
+### Daily challenge
+
+Every calendar day the hub deals one deterministic challenge — rotate a
+featured game, table-hop across three games, harvest 25 chips, or beat a
+personal best. Progress is tracked automatically inside
+`shared/profile.js` (the same `award(...)` calls games already make), so
+every chip-granting game supports it with no extra code. Completing the
+daily pays a **+50 chip bonus** and extends a streak; the hub header
+shows the challenge card with a progress bar, a seven-day dot strip, and
+the current 🔥 streak, and a toast fires wherever you happen to be
+playing when it completes. Streaks and daily history live in the player
+card.
 
 ## Local-first storage
 
@@ -145,7 +159,7 @@ size. A board-only preview for map tuning lives at `/training/board.html`
 
 ## Solo & arcade shelf
 
-Seven instantly-playable one-player (or one-device) games — no share
+Thirteen instantly-playable one-player (or one-device) games — no share
 codes, no sign-in, best scores and streaks live in browser storage:
 
 - **2048** (`/2048/`) — slide and merge tiles on a 4×4 grid. Arrow keys,
@@ -175,6 +189,28 @@ codes, no sign-in, best scores and streaks live in browser storage:
   two players on one device, or against a robot that grabs free boxes and
   avoids handing you a third edge. Closing a box scores it and keeps your
   turn.
+- **Lights Out** (`/lights-out/`) — tap a cell and it flips itself plus its
+  neighbors; every deal is built from random taps, so it is always solvable.
+- **Sudoku** (`/sudoku/`) — a full generator that deals puzzles with exactly
+  one solution at four difficulties. Pencil-mark notes, three hints per
+  puzzle (each costs 5 chips of reward), conflict flagging, undo, pause,
+  keyboard or number-pad input, best times, and mid-game resume.
+- **Block Drop** (`/block-drop/`) — a Tetris-style stacker with the 7-bag
+  randomizer, SRS rotation with wall kicks, ghost piece, three-piece next
+  queue, hold, DAS key repeat, guideline gravity curve, and lock delay.
+  Keyboard, on-screen buttons, and swipe gestures; guideline scoring.
+- **Solitaire** (`/solitaire/`) — Klondike with drag-and-drop plus
+  tap-to-move, draw-1 or draw-3, unlimited undo, double-tap to foundation,
+  auto-finish, best times, and a winning celebration. The board resumes
+  where you left it.
+- **Reversi** (`/reversi/`) — the classic flip duel on a felt 8×8 board with
+  rippling disc-flip animations. Pass-and-play or three robot strengths;
+  the hard robot searches move trees with an endgame solver. Legal-move
+  hints, undo, and per-strength win/loss records.
+- **Blackjack** (`/blackjack/`) — casino rules on a six-deck shoe:
+  hit, stand, double, split, insurance, dealer stands on all 17s,
+  blackjack pays 3:2. A persistent chip bank survives between visits,
+  with lifetime stats and a cash-out that converts profit into hub chips.
 
 The hub launcher groups these under the "Solo & Robot" filter, supports
 text search across all games, and has a dice-button "Surprise me" that
@@ -183,7 +219,7 @@ jumps to a random game.
 ## Offline mode (tablet / airplane)
 
 The hub is a fully offline-capable web app. A root service worker (`sw.js`)
-pre-caches every game's page and static assets — 110 files — on first visit:
+pre-caches every game's page and static assets — 135 files — on first visit:
 
 - **Navigations** are fetched network-first (so updates land when you're
   online) and fall back to the cached copy offline; unknown pages fall back

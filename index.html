@@ -52,6 +52,30 @@
           </div>
         </header>
 
+        <section class="daily-card" id="dailyCard" aria-label="Daily challenge">
+          <div class="daily-main">
+            <div class="daily-head">
+              <span class="daily-flame" aria-hidden="true">🔥</span>
+              <div>
+                <p class="kicker">Daily challenge</p>
+                <h2 id="dailyTitle">Table hop</h2>
+              </div>
+            </div>
+            <p class="daily-desc" id="dailyDesc">Play 3 different games today.</p>
+            <div class="daily-progress">
+              <span class="daily-bar"><span id="dailyBarFill"></span></span>
+              <span class="daily-count" id="dailyCount">0 / 3</span>
+            </div>
+          </div>
+          <div class="daily-side">
+            <div class="daily-dots" id="dailyDots" aria-label="Last 7 days"></div>
+            <p class="daily-streak" id="dailyStreak">🔥 0-day streak</p>
+            <a class="launch-button daily-play" id="dailyPlay" href="/">
+              <span>Play now</span>
+            </a>
+          </div>
+        </section>
+
         <div class="table-grid">
           <section class="game-board" aria-label="Game table">
             <div class="felt-ring" aria-hidden="true"></div>
@@ -116,6 +140,8 @@
           <div><dt>Rank</dt><dd id="statRank">Newcomer</dd></div>
           <div><dt>Rounds</dt><dd id="statPlays">0</dd></div>
           <div><dt>To next level</dt><dd id="statNext">100</dd></div>
+          <div><dt>🔥 Streak</dt><dd id="statStreak">0 days</dd></div>
+          <div><dt>Dailies done</dt><dd id="statDailies">0</dd></div>
         </dl>
         <h3>Personal bests</h3>
         <ul class="profile-bests" id="bestsList"></ul>

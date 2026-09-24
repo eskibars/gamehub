@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Solitaire</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Stack the suits, king to ace</p>
+          <h1>Solitaire</h1>
+        </div>
+        <div class="controls">
+          <button class="small-button" id="newDeal" type="button">New deal</button>
+          <button class="small-button" id="drawToggle" type="button" title="Draw mode (applies to the next deal)">Draw 1</button>
+        </div>
+      </header>
+
+      <section class="score-row" aria-label="Game status">
+        <div class="score-box">
+          <span class="score-label">Time</span>
+          <span class="score-value" id="time">0:00</span>
+        </div>
+        <div class="score-box">
+          <span class="score-label">Moves</span>
+          <span class="score-value" id="moves">0</span>
+        </div>
+        <div class="score-box">
+          <span class="score-label">Best time</span>
+          <span class="score-value" id="bestTime">&mdash;</span>
+        </div>
+        <div class="score-actions">
+          <button class="small-button" id="undo" type="button">Undo</button>
+          <button class="primary-button small-primary" id="autoComplete" type="button" hidden>Finish</button>
+        </div>
+      </section>
+
+      <section class="board-wrap">
+        <div class="board" id="board" aria-label="Solitaire table">
+          <div class="slot" id="slot-stock" data-pile="stock"><span class="slot-mark" id="stockMark">&#8635;</span><span class="stock-count" id="stockCount" hidden>0</span></div>
+          <div class="slot" id="slot-waste" data-pile="waste"></div>
+          <div class="slot spacer-slot" aria-hidden="true"></div>
+          <div class="slot foundation-slot" id="slot-found0" data-pile="foundation0"><span class="slot-mark">A</span></div>
+          <div class="slot foundation-slot" id="slot-found1" data-pile="foundation1"><span class="slot-mark">A</span></div>
+          <div class="slot foundation-slot" id="slot-found2" data-pile="foundation2"><span class="slot-mark">A</span></div>
+          <div class="slot foundation-slot" id="slot-found3" data-pile="foundation3"><span class="slot-mark">A</span></div>
+          <div class="slot tableau-slot" id="slot-tab0" data-pile="tableau0"><span class="slot-mark">K</span></div>
+          <div class="slot tableau-slot" id="slot-tab1" data-pile="tableau1"><span class="slot-mark">K</span></div>
+          <div class="slot tableau-slot" id="slot-tab2" data-pile="tableau2"><span class="slot-mark">K</span></div>
+          <div class="slot tableau-slot" id="slot-tab3" data-pile="tableau3"><span class="slot-mark">K</span></div>
+          <div class="slot tableau-slot" id="slot-tab4" data-pile="tableau4"><span class="slot-mark">K</span></div>
+          <div class="slot tableau-slot" id="slot-tab5" data-pile="tableau5"><span class="slot-mark">K</span></div>
+          <div class="slot tableau-slot" id="slot-tab6" data-pile="tableau6"><span class="slot-mark">K</span></div>
+          <div class="card-layer" id="cardLayer"></div>
+          <div class="overlay" id="winOverlay" hidden>
+            <p class="overlay-title">You won! &#127183;</p>
+            <p class="overlay-sub" id="winStats"></p>
+            <div class="overlay-actions">
+              <button class="primary-button" id="winNewDeal" type="button">New deal</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <p class="hint">Drag cards or tap one then tap where it goes &middot; double-tap sends a card to its foundation &middot; tap the stock to draw, tap it empty to recycle &middot; builds run down in alternating colors, foundations up by suit.</p>
+    </main>
+
+    <canvas class="fx-canvas" id="fxCanvas" hidden></canvas>
+
+    <script src="/shared/profile.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

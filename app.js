@@ -227,6 +227,45 @@ const icons = {
       <circle cx="22" cy="42" r="7"></circle>
       <circle cx="42" cy="42" r="7" style="fill:currentColor;stroke:none"></circle>
     </svg>`,
+  sudoku: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="8" width="48" height="48" rx="6"></rect>
+      <path d="M8 24h48M8 40h48M24 8v48M40 8v48"></path>
+      <text x="13" y="20" font-family="ui-monospace, monospace" font-weight="900" font-size="10" style="fill:currentColor;stroke:none">5</text>
+      <text x="46" y="36" font-family="ui-monospace, monospace" font-weight="900" font-size="10" style="fill:currentColor;stroke:none">3</text>
+      <text x="29" y="52" font-family="ui-monospace, monospace" font-weight="900" font-size="10" style="fill:currentColor;stroke:none">7</text>
+    </svg>`,
+  blockdrop: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="16" y="8" width="32" height="48" rx="5"></rect>
+      <rect x="20" y="12" width="11" height="11" rx="2" style="fill:currentColor;stroke:none"></rect>
+      <rect x="33" y="12" width="11" height="11" rx="2"></rect>
+      <rect x="20" y="25" width="11" height="11" rx="2"></rect>
+      <rect x="33" y="25" width="11" height="11" rx="2" style="fill:currentColor;stroke:none"></rect>
+      <path d="M20 44h24M20 50h24"></path>
+    </svg>`,
+  solitaire: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="12" y="12" width="24" height="34" rx="4" transform="rotate(-10 24 29)"></rect>
+      <rect x="26" y="12" width="24" height="34" rx="4" transform="rotate(8 38 29)"></rect>
+      <path d="M38 22c-2.4 3.4-6 3.4-8 0 2-3.4 5.6-3.4 8 0z" transform="rotate(8 38 29)"></path>
+      <path d="M30 52h6" transform="rotate(8 38 29)"></path>
+    </svg>`,
+  reversi: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="8" width="48" height="48" rx="5"></rect>
+      <circle cx="24" cy="24" r="8" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="40" cy="40" r="8" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="40" cy="24" r="8"></circle>
+      <circle cx="24" cy="40" r="8"></circle>
+    </svg>`,
+  blackjack: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="10" y="14" width="26" height="38" rx="4" transform="rotate(-8 23 33)"></rect>
+      <rect x="28" y="12" width="26" height="38" rx="4" transform="rotate(9 41 31)"></rect>
+      <text x="16" y="30" font-family="ui-monospace, monospace" font-weight="900" font-size="13" transform="rotate(-8 23 33)" style="fill:currentColor;stroke:none">A</text>
+      <path d="M42 24c-2.6 4-6.6 4-8.6 0 2-4 6-4 8.6 0z" transform="rotate(9 41 31)"></path>
+    </svg>`,
 };
 
 const games = [
@@ -520,6 +559,42 @@ const games = [
     icon: "mine",
   },
   {
+    id: "sudoku",
+    title: "Sudoku",
+    type: "Number logic",
+    status: "ready",
+    category: "solo",
+    href: "/sudoku/",
+    accent: "#3565b8",
+    tilt: "1deg",
+    description: "Fill the grid so every row, column, and box holds 1–9. Four difficulties with exactly-one-solution deals, pencil notes, hints, and best times.",
+    features: {
+      Mode: "Solo puzzle",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "sudoku",
+    badge: "New",
+  },
+  {
+    id: "block-drop",
+    title: "Block Drop",
+    type: "Arcade stacker",
+    status: "ready",
+    category: "solo",
+    href: "/block-drop/",
+    accent: "#6e5cb8",
+    tilt: "-1.1deg",
+    description: "Rotate falling blocks, pack the well, and clear lines before it overflows. Hold pieces, ghost previews, and speeds that climb every ten lines.",
+    features: {
+      Mode: "Solo arcade",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "blockdrop",
+    badge: "New",
+  },
+  {
     id: "connect-four",
     title: "Connect Four",
     type: "Gravity duel",
@@ -537,6 +612,24 @@ const games = [
     icon: "connect4",
   },
   {
+    id: "reversi",
+    title: "Reversi",
+    type: "Flip duel",
+    status: "ready",
+    category: "board",
+    href: "/reversi/",
+    accent: "#1f5c46",
+    tilt: "0.9deg",
+    description: "Outflank your way to a disc majority on the classic 8×8 board. Pass-and-play, or take on three robot strengths — the hard one searches real move trees.",
+    features: {
+      Mode: "Pass-and-play or vs robot",
+      Storage: "Local browser",
+      Players: "1-2",
+    },
+    icon: "reversi",
+    badge: "New",
+  },
+  {
     id: "memory",
     title: "Memory Match",
     type: "Pair hunt",
@@ -552,6 +645,42 @@ const games = [
       Players: "1-4",
     },
     icon: "memory",
+  },
+  {
+    id: "solitaire",
+    title: "Solitaire",
+    type: "Card classic",
+    status: "ready",
+    category: "cards",
+    href: "/solitaire/",
+    accent: "#2f8c5a",
+    tilt: "-0.9deg",
+    description: "Klondike with drag-and-drop or tap-to-move, draw-1 or draw-3, unlimited undo, auto-finish, and a winning cascade. Best times get remembered.",
+    features: {
+      Mode: "Solo cards",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "solitaire",
+    badge: "New",
+  },
+  {
+    id: "blackjack",
+    title: "Blackjack",
+    type: "Card duel",
+    status: "ready",
+    category: "cards",
+    href: "/blackjack/",
+    accent: "#8a2f2f",
+    tilt: "1.2deg",
+    description: "Bet chips, hit, stand, double, and split pairs against the dealer on a six-deck shoe. Blackjack pays 3:2 and your bank survives between visits.",
+    features: {
+      Mode: "Solo vs dealer",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "blackjack",
+    badge: "New",
   },
   {
     id: "snake",
@@ -737,6 +866,7 @@ function isSoloFriendly(game) {
 
 function renderCards() {
   els.gameStack.innerHTML = "";
+  const daily = window.GameHubDaily ? GameHubDaily.today() : null;
   const sorted = [...games].sort((first, second) => {
     const firstPinned = state.pinned.has(first.id) ? -1 : 0;
     const secondPinned = state.pinned.has(second.id) ? -1 : 0;
@@ -776,6 +906,8 @@ function renderCards() {
       <div class="card-meta">
         <span class="chip ${game.status}">${statusLabel(game.status)}</span>
         <span class="chip">${state.pinned.has(game.id) ? "Pinned" : game.features.Mode}</span>
+        ${daily && daily.type === "featured" && daily.gameId === game.id && !daily.completed ? `<span class="chip badge-daily">🔥 Daily</span>` : ""}
+        ${game.badge ? `<span class="chip badge-new">${game.badge}</span>` : ""}
       </div>
     `;
 
@@ -854,6 +986,11 @@ function openProfileEditor() {
   els.statRank.textContent = GameHubProfile.rank();
   els.statPlays.textContent = profile.plays;
   els.statNext.textContent = GameHubProfile.levelProgress().next;
+  if (window.GameHubDaily) {
+    const streak = GameHubDaily.streak();
+    document.querySelector("#statStreak").textContent = `${streak.current} days · best ${streak.best}`;
+    document.querySelector("#statDailies").textContent = String(Object.keys(profile.dailyDone || {}).length);
+  }
   els.avatarRow.innerHTML = "";
   GameHubProfile.AVATARS.forEach((emoji) => {
     const choice = document.createElement("button");
@@ -902,6 +1039,53 @@ function bindProfile() {
     if (event.target === els.profileOverlay) els.profileOverlay.hidden = true;
   });
   renderProfile();
+}
+
+function renderDaily() {
+  if (!window.GameHubDaily) return;
+  const daily = GameHubDaily.today();
+  const card = document.querySelector("#dailyCard");
+  if (!card) return;
+  card.classList.toggle("is-done", daily.completed);
+  document.querySelector("#dailyTitle").textContent = daily.completed
+    ? `✅ ${daily.title} — done!`
+    : daily.title;
+  document.querySelector("#dailyDesc").textContent = `${daily.description} Worth +${daily.bonus} chips.`;
+  document.querySelector("#dailyBarFill").style.width = `${Math.min(100, (daily.progress / daily.target) * 100)}%`;
+  document.querySelector("#dailyCount").textContent = daily.completed
+    ? "Complete"
+    : `${daily.progress} / ${daily.target}`;
+
+  const streak = GameHubDaily.streak();
+  document.querySelector("#dailyStreak").textContent = `🔥 ${streak.current}-day streak · best ${streak.best}`;
+
+  const dots = document.querySelector("#dailyDots");
+  dots.innerHTML = "";
+  GameHubDaily.history(7).forEach((day, index) => {
+    const dot = document.createElement("span");
+    dot.className = "daily-dot";
+    if (day.done) dot.classList.add("is-done");
+    if (index === 6) dot.classList.add("is-today");
+    dot.title = day.dateKey;
+    dots.append(dot);
+  });
+
+  const play = document.querySelector("#dailyPlay");
+  if (daily.completed) {
+    play.querySelector("span").textContent = "Play more";
+    play.href = "/#all-games";
+  } else if (daily.type === "featured" && daily.gameId) {
+    const game = games.find((entry) => entry.id === daily.gameId);
+    play.querySelector("span").textContent = `Play ${game ? game.title : "now"}`;
+    play.href = game ? game.href : "/#all-games";
+  } else {
+    play.querySelector("span").textContent = "Pick a game 🎲";
+    play.href = "#";
+    play.onclick = (event) => {
+      event.preventDefault();
+      els.surprise.click();
+    };
+  }
 }
 
 function bindEvents() {
@@ -985,6 +1169,8 @@ bindEvents();
 bindProfile();
 bindOffline();
 render();
+renderDaily();
+window.addEventListener("gamehub-profile", renderDaily);
 
 function bindOffline() {
   const pill = document.querySelector("#offlinePill");

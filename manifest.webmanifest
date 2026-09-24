@@ -1,7 +1,7 @@
 {
   "name": "Local First Game Hub",
   "short_name": "Game Hub",
-  "description": "23 tabletop, solo, and arcade games that live on your device — cached for offline play.",
+  "description": "28 tabletop, solo, and arcade games that live on your device — cached for offline play.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
@@ -9,6 +9,30 @@
   "orientation": "any",
   "background_color": "#f6f1e6",
   "theme_color": "#236c5a",
+  "shortcuts": [
+    {
+      "name": "Daily Challenge",
+      "short_name": "Daily",
+      "url": "/?daily=1",
+      "description": "Today's challenge and your streak"
+    },
+    {
+      "name": "Sudoku",
+      "url": "/sudoku/"
+    },
+    {
+      "name": "Block Drop",
+      "url": "/block-drop/"
+    },
+    {
+      "name": "Solitaire",
+      "url": "/solitaire/"
+    },
+    {
+      "name": "Word Guess",
+      "url": "/word-guess/"
+    }
+  ],
   "icons": [
     {
       "src": "/shared/icons/icon-192.png",

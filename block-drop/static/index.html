@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Block Drop</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Stack. Clear. Don't top out.</p>
+          <h1>Block Drop</h1>
+        </div>
+        <button class="small-button" id="pauseButton" type="button">Pause</button>
+      </header>
+
+      <section class="score-row" aria-label="Score">
+        <div class="score-box" id="scoreBox">
+          <span class="score-label">Score</span>
+          <span class="score-value" id="score">0</span>
+        </div>
+        <div class="score-box">
+          <span class="score-label">Lines</span>
+          <span class="score-value" id="lines">0</span>
+        </div>
+        <div class="score-box">
+          <span class="score-label">Level</span>
+          <span class="score-value" id="level">1</span>
+        </div>
+        <div class="score-box">
+          <span class="score-label">Best</span>
+          <span class="score-value" id="high">0</span>
+        </div>
+      </section>
+
+      <section class="game-area">
+        <aside class="mini-box" aria-label="Hold">
+          <span class="score-label">Hold</span>
+          <canvas id="holdCanvas" aria-label="Held piece"></canvas>
+        </aside>
+        <div class="board-frame">
+          <canvas id="board" aria-label="Block Drop board"></canvas>
+          <div class="overlay" id="overlay" hidden>
+            <p class="overlay-title" id="overlayTitle">Ready?</p>
+            <p class="overlay-sub" id="overlaySub">Drop in — arrows to steer</p>
+            <div class="overlay-stats" id="overlayStats" hidden></div>
+            <button class="primary-button" id="startButton" type="button">Start</button>
+          </div>
+        </div>
+        <aside class="mini-box" aria-label="Next">
+          <span class="score-label">Next</span>
+          <canvas id="nextCanvas" aria-label="Next pieces"></canvas>
+        </aside>
+      </section>
+
+      <section class="touch-controls" aria-label="Touch controls">
+        <button id="btnLeft" type="button" aria-label="Move left">&#9664;</button>
+        <button id="btnDown" type="button" aria-label="Soft drop">&#9660;</button>
+        <button id="btnRight" type="button" aria-label="Move right">&#9654;</button>
+        <button id="btnRotate" type="button" aria-label="Rotate">&#10227;</button>
+        <button id="btnDrop" type="button" aria-label="Hard drop">Drop</button>
+        <button id="btnHold" type="button" aria-label="Hold">Hold</button>
+      </section>
+
+      <p class="hint">Steer &#8592; &#8594; &middot; rotate &#8593; or X (Z flips back) &middot; soft drop &#8595; &middot; hard drop Space &middot; hold C &middot; pause P &middot; restart R. On touch: drag to steer, tap to rotate, swipe down to drop.</p>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

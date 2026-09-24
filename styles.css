@@ -402,6 +402,144 @@ h1 {
   min-height: 0;
 }
 
+/* Daily challenge banner */
+.daily-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(14px, 2.4vw, 26px);
+  margin-bottom: clamp(14px, 2.2vw, 24px);
+  padding: clamp(14px, 2.2vw, 22px) clamp(16px, 2.6vw, 28px);
+  border: 1px solid rgba(226, 179, 79, 0.55);
+  border-radius: 18px;
+  background:
+    linear-gradient(120deg, rgba(226, 179, 79, 0.2), transparent 55%),
+    var(--felt);
+  box-shadow: var(--shadow);
+  color: var(--chalk);
+}
+
+.daily-card.is-done {
+  border-color: rgba(226, 179, 79, 0.85);
+}
+
+.daily-main {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.daily-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.daily-flame {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  font-size: 1.5rem;
+  border-radius: 14px;
+  background: rgba(226, 179, 79, 0.22);
+  border: 1px solid rgba(226, 179, 79, 0.5);
+}
+
+.daily-head h2 {
+  margin: 0;
+  font-size: 1.22rem;
+  color: var(--chalk);
+}
+
+.daily-desc {
+  margin: 0;
+  color: rgba(255, 250, 240, 0.82);
+  font-size: 0.92rem;
+}
+
+.daily-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.daily-bar {
+  flex: 1;
+  max-width: 320px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 250, 240, 0.18);
+  overflow: hidden;
+}
+
+.daily-bar span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--gold), #7fd4b8);
+  transition: width 0.5s ease;
+}
+
+.daily-count {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(255, 250, 240, 0.85);
+  white-space: nowrap;
+}
+
+.daily-side {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.daily-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.daily-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: rgba(255, 250, 240, 0.22);
+}
+
+.daily-dot.is-done {
+  background: var(--gold);
+}
+
+.daily-dot.is-today {
+  outline: 2px solid rgba(255, 250, 240, 0.75);
+  outline-offset: 2px;
+}
+
+.daily-streak {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 250, 240, 0.85);
+}
+
+.daily-card .daily-play {
+  min-width: 148px;
+  justify-content: center;
+  border-color: var(--chalk);
+  background: var(--chalk);
+  color: var(--felt-dark);
+}
+
+.daily-card .daily-play:hover {
+  background: #fff;
+}
+
+
 .game-board {
   position: relative;
   min-height: 520px;
@@ -512,6 +650,18 @@ h1 {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.chip.badge-new {
+  border-color: transparent;
+  background: var(--gold);
+  color: #2f2413;
+}
+
+.chip.badge-daily {
+  border-color: transparent;
+  background: rgba(255, 250, 240, 0.9);
+  color: #b34a1f;
 }
 
 .chip.ready {
@@ -673,6 +823,19 @@ h1 {
 @media (max-width: 680px) {
   .hub-shell {
     padding: 0;
+  }
+
+  .daily-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .daily-side {
+    justify-items: start;
+  }
+
+  .daily-play {
+    width: 100%;
   }
 
   .tabletop {

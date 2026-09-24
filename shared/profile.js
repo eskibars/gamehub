@@ -16,6 +16,8 @@
     "High Roller", "Legend", "Grandmaster", "Hall of Famer",
   ];
   const AVATARS = ["🎲", "🃏", "♟️", "🎯", "🧩", "🚂", "🐋", "🦊", "👾", "👑"];
+  const DAILY_BONUS = 50;
+  const DAILY_LOG_DAYS = 40;
 
   function defaults() {
     return {
@@ -24,6 +26,12 @@
       xp: 0,
       plays: 0,
       bests: {},
+      // Rolling per-day activity log that powers the Daily Challenge:
+      // { "2026-09-25": { games: { snake: { chips, plays } }, newBest: bool } }
+      dailyLog: {},
+      // Completed daily challenges: { "2026-09-25": { id: "featured", at: iso } }
+      dailyDone: {},
+      streakBest: 0,
     };
   }
 
@@ -32,7 +40,13 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return defaults();
       const saved = JSON.parse(raw);
-      return { ...defaults(), ...saved, bests: saved.bests || {} };
+      return {
+        ...defaults(),
+        ...saved,
+        bests: saved.bests || {},
+        dailyLog: saved.dailyLog || {},
+        dailyDone: saved.dailyDone || {},
+      };
     } catch {
       return defaults();
     }
@@ -64,6 +78,170 @@
     };
   }
 
+  function dateKey(d = new Date()) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function shiftDateKey(key, days) {
+    const [y, m, d] = key.split("-").map(Number);
+    const shifted = new Date(y, m - 1, d + days);
+    return dateKey(shifted);
+  }
+
+  function trimDailyLog() {
+    const keys = Object.keys(profile.dailyLog).sort();
+    while (keys.length > DAILY_LOG_DAYS) {
+      delete profile.dailyLog[keys.shift()];
+    }
+    const doneKeys = Object.keys(profile.dailyDone).sort();
+    while (doneKeys.length > DAILY_LOG_DAYS) {
+      delete profile.dailyDone[doneKeys.shift()];
+    }
+  }
+
+  /*
+   * Daily Challenge — one deterministic challenge per calendar day for every
+   * game on the hub. Progress is read from the dailyLog that award() keeps,
+   * so every game that grants chips automatically supports the daily with no
+   * per-game code. Completing it pays a +50 chip bonus and keeps a streak.
+   */
+  const DAILY_GAMES = [
+    { id: "g2048", title: "2048", href: "/2048/" },
+    { id: "snake", title: "Snake", href: "/snake/" },
+    { id: "word-guess", title: "Word Guess", href: "/word-guess/" },
+    { id: "minesweeper", title: "Minesweeper", href: "/minesweeper/" },
+    { id: "simon", title: "Simon Says", href: "/simon/" },
+    { id: "sliding-puzzle", title: "Sliding Puzzle", href: "/sliding-puzzle/" },
+    { id: "lights-out", title: "Lights Out", href: "/lights-out/" },
+    { id: "memory", title: "Memory Match", href: "/memory/" },
+    { id: "connect-four", title: "Connect Four", href: "/connect-four/" },
+    { id: "sudoku", title: "Sudoku", href: "/sudoku/" },
+    { id: "block-drop", title: "Block Drop", href: "/block-drop/" },
+    { id: "solitaire", title: "Solitaire", href: "/solitaire/" },
+    { id: "reversi", title: "Reversi", href: "/reversi/" },
+    { id: "blackjack", title: "Blackjack", href: "/blackjack/" },
+  ];
+  const DAILY_TYPES = ["featured", "explorer", "earner", "record"];
+
+  function hashKey(key) {
+    let h = 2166136261;
+    for (let i = 0; i < key.length; i += 1) {
+      h ^= key.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  function dayChallenge(key = dateKey()) {
+    const h = hashKey(`gamehub-daily-${key}`);
+    const type = DAILY_TYPES[h % DAILY_TYPES.length];
+    const game = DAILY_GAMES[(h >>> 4) % DAILY_GAMES.length];
+    if (type === "featured") {
+      return {
+        id: `featured-${game.id}`,
+        type,
+        gameId: game.id,
+        title: `${game.title} day`,
+        description: `Finish a round of ${game.title} today to bank the bonus.`,
+        target: 1,
+      };
+    }
+    if (type === "explorer") {
+      return {
+        id: "explorer",
+        type,
+        title: "Table hop",
+        description: "Play 3 different games today.",
+        target: 3,
+      };
+    }
+    if (type === "earner") {
+      return {
+        id: "earner",
+        type,
+        title: "Chip harvest",
+        description: "Earn 25 chips today, any way you like.",
+        target: 25,
+      };
+    }
+    return {
+      id: "record",
+      type: "record",
+      title: "Record run",
+      description: "Beat one of your personal bests today.",
+      target: 1,
+    };
+  }
+
+  function dayProgress(challenge, key = dateKey()) {
+    const day = profile.dailyLog[key];
+    if (!day) return 0;
+    if (challenge.type === "featured") {
+      return day.games[challenge.gameId]?.plays > 0 ? 1 : 0;
+    }
+    if (challenge.type === "explorer") {
+      return Math.min(challenge.target, Object.keys(day.games).length);
+    }
+    if (challenge.type === "earner") {
+      const chips = Object.values(day.games).reduce((sum, g) => sum + g.chips, 0);
+      return Math.min(challenge.target, chips);
+    }
+    return day.newBest ? 1 : 0;
+  }
+
+  function dailyStreak() {
+    let current = 0;
+    let cursor = dateKey();
+    if (!profile.dailyDone[cursor]) cursor = shiftDateKey(cursor, -1);
+    while (profile.dailyDone[cursor]) {
+      current += 1;
+      cursor = shiftDateKey(cursor, -1);
+    }
+    const best = Math.max(profile.streakBest || 0, current);
+    return { current, best };
+  }
+
+  function dailyHistory(n = 7) {
+    const days = [];
+    for (let i = n - 1; i >= 0; i -= 1) {
+      const key = shiftDateKey(dateKey(), -i);
+      days.push({ dateKey: key, done: Boolean(profile.dailyDone[key]) });
+    }
+    return days;
+  }
+
+  function checkDaily() {
+    const key = dateKey();
+    const challenge = dayChallenge(key);
+    if (profile.dailyDone[key]) return null;
+    if (dayProgress(challenge, key) < challenge.target) return null;
+    profile.dailyDone[key] = { id: challenge.id, at: new Date().toISOString() };
+    const { current } = dailyStreak();
+    profile.streakBest = Math.max(profile.streakBest || 0, current);
+    trimDailyLog();
+    save();
+    notify();
+    if (document.body) dailyToast(DAILY_BONUS, current);
+    return { bonus: DAILY_BONUS, streak: current };
+  }
+
+  function dailyToast(bonus, streakCount) {
+    ensureStyles();
+    const el = document.createElement("div");
+    el.className = "ghp-toast ghp-daily-toast";
+    const strong = document.createElement("b");
+    strong.textContent = `Daily complete! +${bonus} chips`;
+    const span = document.createElement("span");
+    span.textContent = streakCount > 1 ? `🔥 ${streakCount}-day streak` : "🔥 Streak started";
+    el.append(strong, span);
+    document.body.append(el);
+    setTimeout(() => el.remove(), 3200);
+  }
+
+
   function ensureStyles() {
     if (document.getElementById("gamehub-profile-styles")) return;
     const style = document.createElement("style");
@@ -84,6 +262,11 @@
         font-family: Inter, ui-sans-serif, system-ui, sans-serif;
         animation: ghp-float 2.8s ease forwards;
         pointer-events: none;
+      }
+      .ghp-toast.ghp-daily-toast {
+        bottom: 74px;
+        border-color: rgba(223, 180, 78, 0.65);
+        animation-duration: 3.2s;
       }
       .ghp-toast b {
         color: #236c5a;
@@ -145,13 +328,35 @@
       const beforeLevel = level();
       profile.xp += amount;
       profile.plays += 1;
+      let beatBest = false;
       if (gameId) {
         const bestValue = score === undefined ? amount : Math.round(Number(score) || 0);
         const previous = profile.bests[gameId];
         if (previous === undefined || bestValue > previous.value) {
           profile.bests[gameId] = { value: bestValue, at: new Date().toISOString() };
+          beatBest = previous !== undefined;
         }
+        // Feed the daily challenge log for today's date.
+        const key = dateKey();
+        const day = profile.dailyLog[key] || { games: {}, newBest: false };
+        const entry = day.games[gameId] || { chips: 0, plays: 0 };
+        entry.chips += amount;
+        entry.plays += 1;
+        day.games[gameId] = entry;
+        if (beatBest) day.newBest = true;
+        profile.dailyLog[key] = day;
+        trimDailyLog();
       }
+      save();
+      notify();
+      if (amount > 0 && document.body) toast(amount, note, level() > beforeLevel);
+      if (window.GameHubDaily) window.GameHubDaily.checkNow();
+      return this.get();
+    },
+    grantBonus(points, note) {
+      const amount = Math.max(0, Math.round(Number(points) || 0));
+      const beforeLevel = level();
+      profile.xp += amount;
       save();
       notify();
       if (amount > 0 && document.body) toast(amount, note, level() > beforeLevel);
@@ -163,6 +368,23 @@
     level,
     rank,
     levelProgress,
+  };
+
+  // Daily Challenge API for the hub and any game that wants to surface it.
+  window.GameHubDaily = {
+    today() {
+      const challenge = dayChallenge();
+      return {
+        ...challenge,
+        dateKey: dateKey(),
+        progress: dayProgress(challenge),
+        completed: Boolean(profile.dailyDone[dateKey()]),
+        bonus: DAILY_BONUS,
+      };
+    },
+    streak: dailyStreak,
+    history: dailyHistory,
+    checkNow: checkDaily,
   };
 
   // Register the root service worker so deep links into this game also get

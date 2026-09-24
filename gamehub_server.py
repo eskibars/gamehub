@@ -2203,6 +2203,76 @@ def create_app() -> Flask:
     def lights_out_static(filename: str):
         return send_from_directory(LIGHTS_OUT_STATIC_DIR, filename)
 
+    SUDOKU_STATIC_DIR = BASE_DIR / "sudoku" / "static"
+
+    @app.get("/sudoku")
+    def sudoku_redirect():
+        return redirect("/sudoku/")
+
+    @app.get("/sudoku/")
+    def sudoku_index():
+        return send_from_directory(SUDOKU_STATIC_DIR, "index.html")
+
+    @app.get("/sudoku/<path:filename>")
+    def sudoku_static(filename: str):
+        return send_from_directory(SUDOKU_STATIC_DIR, filename)
+
+    BLOCK_DROP_STATIC_DIR = BASE_DIR / "block-drop" / "static"
+
+    @app.get("/block-drop")
+    def block_drop_redirect():
+        return redirect("/block-drop/")
+
+    @app.get("/block-drop/")
+    def block_drop_index():
+        return send_from_directory(BLOCK_DROP_STATIC_DIR, "index.html")
+
+    @app.get("/block-drop/<path:filename>")
+    def block_drop_static(filename: str):
+        return send_from_directory(BLOCK_DROP_STATIC_DIR, filename)
+
+    SOLITAIRE_STATIC_DIR = BASE_DIR / "solitaire" / "static"
+
+    @app.get("/solitaire")
+    def solitaire_redirect():
+        return redirect("/solitaire/")
+
+    @app.get("/solitaire/")
+    def solitaire_index():
+        return send_from_directory(SOLITAIRE_STATIC_DIR, "index.html")
+
+    @app.get("/solitaire/<path:filename>")
+    def solitaire_static(filename: str):
+        return send_from_directory(SOLITAIRE_STATIC_DIR, filename)
+
+    REVERSI_STATIC_DIR = BASE_DIR / "reversi" / "static"
+
+    @app.get("/reversi")
+    def reversi_redirect():
+        return redirect("/reversi/")
+
+    @app.get("/reversi/")
+    def reversi_index():
+        return send_from_directory(REVERSI_STATIC_DIR, "index.html")
+
+    @app.get("/reversi/<path:filename>")
+    def reversi_static(filename: str):
+        return send_from_directory(REVERSI_STATIC_DIR, filename)
+
+    BLACKJACK_STATIC_DIR = BASE_DIR / "blackjack" / "static"
+
+    @app.get("/blackjack")
+    def blackjack_redirect():
+        return redirect("/blackjack/")
+
+    @app.get("/blackjack/")
+    def blackjack_index():
+        return send_from_directory(BLACKJACK_STATIC_DIR, "index.html")
+
+    @app.get("/blackjack/<path:filename>")
+    def blackjack_static(filename: str):
+        return send_from_directory(BLACKJACK_STATIC_DIR, filename)
+
 
     @app.get("/share/<share_id>")
     def shared_card(share_id: str):

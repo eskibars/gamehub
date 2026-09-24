@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reversi</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Flank a line. Flip the discs. Own the board.</p>
+          <h1>Reversi</h1>
+        </div>
+        <button class="small-button" id="newGame" type="button">New Game</button>
+      </header>
+
+      <section class="setup-view" id="setupView">
+        <form class="setup-panel" id="setupForm">
+          <div class="section-heading"><h2>Start Playing</h2></div>
+          <div class="field-row">
+            <span class="field-label">Mode</span>
+            <div class="mode-row" role="radiogroup" aria-label="Mode">
+              <label class="mode-card"><input type="radio" name="mode" value="robot" checked><span>Vs Robot</span></label>
+              <label class="mode-card"><input type="radio" name="mode" value="human"><span>Two Players</span></label>
+            </div>
+          </div>
+          <div class="field-row" id="strengthRow">
+            <span class="field-label">Robot Strength</span>
+            <div class="mode-row" role="radiogroup" aria-label="Robot strength">
+              <label class="mode-card"><input type="radio" name="strength" value="easy"><span>Easy</span></label>
+              <label class="mode-card"><input type="radio" name="strength" value="medium" checked><span>Medium</span></label>
+              <label class="mode-card"><input type="radio" name="strength" value="hard"><span>Hard</span></label>
+            </div>
+          </div>
+          <div class="field-row" id="colorRow">
+            <span class="field-label">You Play</span>
+            <div class="mode-row" role="radiogroup" aria-label="Your color">
+              <label class="mode-card"><input type="radio" name="color" value="1" checked><span>Black — moves first</span></label>
+              <label class="mode-card"><input type="radio" name="color" value="2"><span>White</span></label>
+            </div>
+          </div>
+          <div class="field-row">
+            <span class="field-label">Hints</span>
+            <div class="mode-row">
+              <label class="mode-card"><input type="checkbox" id="hintsInput" checked><span>Show legal moves</span></label>
+            </div>
+          </div>
+          <button class="primary-button" type="submit">Start</button>
+        </form>
+      </section>
+
+      <section class="game-view" id="gameView" hidden>
+        <div class="score-strip">
+          <div class="score-box" id="blackBox">
+            <span class="chip black" aria-hidden="true"></span>
+            <span class="score-label">Black</span>
+            <span class="score-value" id="blackScore">2</span>
+          </div>
+          <span class="status-pill" id="statusPill">Robot · Medium</span>
+          <div class="score-box" id="whiteBox">
+            <span class="chip white" aria-hidden="true"></span>
+            <span class="score-label">White</span>
+            <span class="score-value" id="whiteScore">2</span>
+          </div>
+        </div>
+        <p class="turn-line" id="turnLine">Black to move</p>
+        <div class="board-frame" id="boardFrame">
+          <div class="board" id="board" aria-label="Reversi board"></div>
+          <div class="stars" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <div class="overlay" id="overlay" hidden>
+            <p class="overlay-title" id="winnerTitle"></p>
+            <p class="overlay-sub" id="winnerSub"></p>
+            <p class="overlay-chips" id="chipsLine"></p>
+            <p class="overlay-record" id="recordLine"></p>
+            <div class="overlay-actions">
+              <button class="primary-button" id="rematchButton" type="button">Rematch</button>
+              <button class="small-button" id="setupButton" type="button">Change Setup</button>
+            </div>
+          </div>
+        </div>
+        <div class="controls-row">
+          <button class="small-button" id="undoButton" type="button">Undo</button>
+          <button class="small-button" id="hintsButton" type="button">Hints: On</button>
+          <button class="small-button" id="rematchSmall" type="button">Rematch</button>
+        </div>
+        <p class="hint">How to play: tap a glowing square to drop a disc — any line of enemy discs between yours flips to your color. When someone has no move they pass; most discs when nobody can move wins.</p>
+      </section>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

@@ -42,6 +42,11 @@ GAMES = {
     "sliding-puzzle": "sliding-puzzle",
     "dots-and-boxes": "dots-and-boxes",
     "lights-out": "lights-out",
+    "sudoku": "sudoku",
+    "block-drop": "block-drop",
+    "solitaire": "solitaire",
+    "reversi": "reversi",
+    "blackjack": "blackjack",
 }
 
 ROOT_FILES = [
