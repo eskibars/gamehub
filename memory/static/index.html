@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Memory Match</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Flip two. Find the pair.</p>
+          <h1>Memory Match</h1>
+        </div>
+        <button class="small-button" id="restartButton" type="button">Restart</button>
+      </header>
+
+      <section class="setup-view" id="setupView">
+        <form class="setup-panel" id="setupForm">
+          <div class="section-heading"><h2>Start Matching</h2></div>
+
+          <div class="field-row">
+            <span class="field-label">Players</span>
+            <div class="mode-row" id="playerRow" role="radiogroup" aria-label="Players">
+              <label class="mode-card"><input type="radio" name="players" value="1" checked><span>1</span></label>
+              <label class="mode-card"><input type="radio" name="players" value="2"><span>2</span></label>
+              <label class="mode-card"><input type="radio" name="players" value="3"><span>3</span></label>
+              <label class="mode-card"><input type="radio" name="players" value="4"><span>4</span></label>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Size</span>
+            <div class="mode-row" role="radiogroup" aria-label="Board size">
+              <label class="mode-card"><input type="radio" name="size" value="easy" checked><span>Easy · 12</span></label>
+              <label class="mode-card"><input type="radio" name="size" value="medium"><span>Full · 16</span></label>
+              <label class="mode-card"><input type="radio" name="size" value="hard"><span>Big · 24</span></label>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">Theme</span>
+            <div class="mode-row" role="radiogroup" aria-label="Theme">
+              <label class="mode-card"><input type="radio" name="theme" value="animals" checked><span>🐾 Animals</span></label>
+              <label class="mode-card"><input type="radio" name="theme" value="food"><span>🍎 Food</span></label>
+              <label class="mode-card"><input type="radio" name="theme" value="space"><span>🚀 Space</span></label>
+            </div>
+          </div>
+
+          <button class="primary-button" type="submit">Deal Cards</button>
+        </form>
+      </section>
+
+      <section class="game-view" id="gameView" hidden>
+        <div class="score-strip" id="scoreStrip"></div>
+        <div class="board" id="board" aria-label="Card board"></div>
+        <p class="status-line" id="statusLine"></p>
+      </section>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

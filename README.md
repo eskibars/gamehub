@@ -42,7 +42,21 @@ python-dotenv. See `.env.example` for the full list with comments.
 The ready tools are Bingo Card Builder, Color Guesser, Yahtzee Scorepad,
 Boggle Table, Word Find Creator, Backgammon, Find 'em, Table Tools,
 Who Am I? — a Guess Who-style character guessing game, Hangman,
-Battleship, Checkers, The Oracle, and Training.
+Battleship, Checkers, The Oracle, Training, plus a solo/arcade shelf:
+2048, Word Guess, Minesweeper, Connect Four, Memory Match, Snake,
+Simon Says, Sliding Puzzle, and Dots and Boxes.
+
+## Player profile
+
+A shared identity spans the solo/arcade games: pick an avatar and name on
+the hub (profile chip in the header), then earn **chips** every time you
+finish a round — 2048 scores, Snake apples, Simon levels, Minesweeper
+clears, robot victories, and so on. Chips buy levels and ranks (Newcomer
+up to Hall of Famer), the hub header shows a live level bar, and the
+player card keeps per-game personal bests. Everything lives in
+`localStorage` via `shared/profile.js`; games integrate with a single
+`GameHubProfile.award(...)` call, and the hub degrades gracefully when a
+game skips it.
 
 ## Local-first storage
 
@@ -128,6 +142,88 @@ final round starts, and unfinished tickets turn negative at scoring.
 City maps deal 3 starting tickets and a smaller train pool to match their
 size. A board-only preview for map tuning lives at `/training/board.html`
 (use the map dropdown or `?map=`).
+
+## Solo & arcade shelf
+
+Seven instantly-playable one-player (or one-device) games — no share
+codes, no sign-in, best scores and streaks live in browser storage:
+
+- **2048** (`/2048/`) — slide and merge tiles on a 4×4 grid. Arrow keys,
+  WASD, or swipe; undo history, persistent best score, and the board
+  survives a page refresh.
+- **Word Guess** (`/word-guess/`) — a Wordle-style deduction game with a
+  built-in ~2,500-word list. A deterministic daily word (same for
+  everyone that day, progress saved) or endless practice rounds, hard
+  mode, guess-distribution stats, and one-click emoji share grids.
+- **Minesweeper** (`/minesweeper/`) — 9×9, 16×16, and 30×16 boards with
+  a guaranteed-safe first click, flags (right-click, long-press, or flag
+  mode), chording, and best times per difficulty.
+- **Connect Four** (`/connect-four/`) — pass-and-play or three robot
+  strengths; the hard robot runs a depth-8 alpha-beta minimax search with
+  a positional evaluator. Round tallies persist between visits.
+- **Memory Match** (`/memory/`) — emoji pair-matching for one to four
+  players on one device; three board sizes, three themes, matches earn an
+  extra turn.
+- **Snake** (`/snake/`) — canvas arcade classic with three speeds, swipe
+  controls, pause, and a persistent high score.
+- **Simon Says** (`/simon/`) — the pattern-memory classic with WebAudio
+  tones; playback speeds up as levels grow, best level is remembered.
+- **Sliding Puzzle** (`/sliding-puzzle/`) — the 15-puzzle with 3×3 to 5×5
+  boards, shuffled by random legal moves so every deal is solvable. Arrow
+  keys or taps, move counter and timer, best line per size.
+- **Dots and Boxes** (`/dots-and-boxes/`) — the pen-and-paper classic for
+  two players on one device, or against a robot that grabs free boxes and
+  avoids handing you a third edge. Closing a box scores it and keeps your
+  turn.
+
+The hub launcher groups these under the "Solo & Robot" filter, supports
+text search across all games, and has a dice-button "Surprise me" that
+jumps to a random game.
+
+## Offline mode (tablet / airplane)
+
+The hub is a fully offline-capable web app. A root service worker (`sw.js`)
+pre-caches every game's page and static assets — 110 files — on first visit:
+
+- **Navigations** are fetched network-first (so updates land when you're
+  online) and fall back to the cached copy offline; unknown pages fall back
+  to the cached hub.
+- **Static assets** are served cache-first with a background refresh
+  (stale-while-revalidate), so a tablet that launches online once gets
+  fresh files without paying a latency cost.
+- **API, auth, and SSE traffic is never intercepted** — remote multiplayer
+  (share codes, live tables) simply reports it can't reach the server when
+  offline, while every client-side game keeps working.
+
+To run the hub from a tablet in airplane mode:
+
+1. Open the hub once while online and let it sit for a couple of seconds
+   while the worker pre-caches (the offline pill "✈️ Offline — every cached
+   game still plays" appears automatically whenever you're offline).
+2. **Add to Home Screen** (iOS Safari share sheet, or Chrome's install
+   prompt on Android/ChromeOS). The manifest gives it a standalone window,
+   its own icon, and a green theme.
+3. Flip on airplane mode and play. Solo games (2048, Word Guess,
+   Minesweeper, Sliding Puzzle, Snake, Simon, Memory, and all of Table
+   Tools) work fully; pass-and-play games on one device work fully; remote
+   share-code games need the server back.
+
+Browsers only allow service workers in **secure contexts** — `localhost` is
+fine, but a tablet reaching the hub over your LAN needs HTTPS. Set the two
+optional env vars and restart:
+
+```sh
+openssl req -x509 -newkey rsa:2048 -nodes -days 825 \
+  -keyout gamehub-key.pem -out gamehub-cert.pem -subj "/CN=gamehub.local"
+# in .env:
+# GAMEHUB_SSL_CERTFILE=gamehub-cert.pem
+# GAMEHUB_SSL_KEYFILE=gamehub-key.pem
+HOST=0.0.0.0 python3 app.py   # accept the self-signed cert on the tablet once
+```
+
+When you add or rename a game, regenerate the precache list with
+`python3 tools/gen_sw_precache.py` — the worker's version string changes so
+clients update on their next online launch.
 
 ## Legacy Bingo command
 

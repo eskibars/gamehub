@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>2048</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Slide, merge, chase the big tile</p>
+          <h1>2048</h1>
+        </div>
+        <button class="small-button" id="newGame" type="button">New Game</button>
+      </header>
+
+      <section class="score-row" aria-label="Scores">
+        <div class="score-box">
+          <span class="score-label">Score</span>
+          <span class="score-value" id="score">0</span>
+          <span class="score-add" id="scoreAdd" hidden>+0</span>
+        </div>
+        <div class="score-box">
+          <span class="score-label">Best</span>
+          <span class="score-value" id="best">0</span>
+        </div>
+        <div class="score-actions">
+          <button class="small-button" id="undo" type="button">Undo</button>
+        </div>
+      </section>
+
+      <section class="board-wrap">
+        <div class="board" id="board" aria-label="2048 board">
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="cell-bg" aria-hidden="true"></div>
+          <div class="tile-layer" id="tileLayer"></div>
+          <div class="overlay" id="overlay" hidden>
+            <p class="overlay-title" id="overlayTitle">Game over!</p>
+            <p class="overlay-sub" id="overlaySub"></p>
+            <div class="overlay-actions">
+              <button class="primary-button" id="overlayAction" type="button">Try Again</button>
+              <button class="small-button" id="overlayKeep" type="button" hidden>Keep Going</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <p class="hint">Use arrow keys, WASD, or swipe to move every tile. Matching tiles merge — reach <strong>2048</strong> to win.</p>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

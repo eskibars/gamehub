@@ -1867,6 +1867,18 @@ def create_app() -> Flask:
     def hub_styles():
         return send_from_directory(BASE_DIR, "styles.css")
 
+    @app.get("/sw.js")
+    def hub_service_worker():
+        return send_from_directory(BASE_DIR, "sw.js")
+
+    @app.get("/manifest.webmanifest")
+    def hub_manifest():
+        manifest = BASE_DIR / "manifest.webmanifest"
+        return Response(
+            manifest.read_text(encoding="utf-8"),
+            mimetype="application/manifest+json",
+        )
+
     @app.get("/shared/<path:filename>")
     def shared_static(filename: str):
         return send_from_directory(SHARED_STATIC_DIR, filename)
@@ -2046,6 +2058,133 @@ def create_app() -> Flask:
     @app.get("/training/<path:filename>")
     def training_static(filename: str):
         return send_from_directory(TRAINING_STATIC_DIR, filename)
+
+    G2048_STATIC_DIR = BASE_DIR / "2048" / "static"
+
+    @app.get("/2048")
+    def g2048_redirect():
+        return redirect("/2048/")
+
+    @app.get("/2048/")
+    def g2048_index():
+        return send_from_directory(G2048_STATIC_DIR, "index.html")
+
+    @app.get("/2048/<path:filename>")
+    def g2048_static(filename: str):
+        return send_from_directory(G2048_STATIC_DIR, filename)
+
+    WORD_GUESS_STATIC_DIR = BASE_DIR / "word-guess" / "static"
+
+    @app.get("/word-guess")
+    def word_guess_redirect():
+        return redirect("/word-guess/")
+
+    @app.get("/word-guess/")
+    def word_guess_index():
+        return send_from_directory(WORD_GUESS_STATIC_DIR, "index.html")
+
+    @app.get("/word-guess/<path:filename>")
+    def word_guess_static(filename: str):
+        return send_from_directory(WORD_GUESS_STATIC_DIR, filename)
+
+    MINESWEEPER_STATIC_DIR = BASE_DIR / "minesweeper" / "static"
+
+    @app.get("/minesweeper")
+    def minesweeper_redirect():
+        return redirect("/minesweeper/")
+
+    @app.get("/minesweeper/")
+    def minesweeper_index():
+        return send_from_directory(MINESWEEPER_STATIC_DIR, "index.html")
+
+    @app.get("/minesweeper/<path:filename>")
+    def minesweeper_static(filename: str):
+        return send_from_directory(MINESWEEPER_STATIC_DIR, filename)
+
+    CONNECT_FOUR_STATIC_DIR = BASE_DIR / "connect-four" / "static"
+
+    @app.get("/connect-four")
+    def connect_four_redirect():
+        return redirect("/connect-four/")
+
+    @app.get("/connect-four/")
+    def connect_four_index():
+        return send_from_directory(CONNECT_FOUR_STATIC_DIR, "index.html")
+
+    @app.get("/connect-four/<path:filename>")
+    def connect_four_static(filename: str):
+        return send_from_directory(CONNECT_FOUR_STATIC_DIR, filename)
+
+    MEMORY_STATIC_DIR = BASE_DIR / "memory" / "static"
+
+    @app.get("/memory")
+    def memory_redirect():
+        return redirect("/memory/")
+
+    @app.get("/memory/")
+    def memory_index():
+        return send_from_directory(MEMORY_STATIC_DIR, "index.html")
+
+    @app.get("/memory/<path:filename>")
+    def memory_static(filename: str):
+        return send_from_directory(MEMORY_STATIC_DIR, filename)
+
+    SNAKE_STATIC_DIR = BASE_DIR / "snake" / "static"
+
+    @app.get("/snake")
+    def snake_redirect():
+        return redirect("/snake/")
+
+    @app.get("/snake/")
+    def snake_index():
+        return send_from_directory(SNAKE_STATIC_DIR, "index.html")
+
+    @app.get("/snake/<path:filename>")
+    def snake_static(filename: str):
+        return send_from_directory(SNAKE_STATIC_DIR, filename)
+
+    SIMON_STATIC_DIR = BASE_DIR / "simon" / "static"
+
+    @app.get("/simon")
+    def simon_redirect():
+        return redirect("/simon/")
+
+    @app.get("/simon/")
+    def simon_index():
+        return send_from_directory(SIMON_STATIC_DIR, "index.html")
+
+    @app.get("/simon/<path:filename>")
+    def simon_static(filename: str):
+        return send_from_directory(SIMON_STATIC_DIR, filename)
+
+    SLIDING_PUZZLE_STATIC_DIR = BASE_DIR / "sliding-puzzle" / "static"
+
+    @app.get("/sliding-puzzle")
+    def sliding_puzzle_redirect():
+        return redirect("/sliding-puzzle/")
+
+    @app.get("/sliding-puzzle/")
+    def sliding_puzzle_index():
+        return send_from_directory(SLIDING_PUZZLE_STATIC_DIR, "index.html")
+
+    @app.get("/sliding-puzzle/<path:filename>")
+    def sliding_puzzle_static(filename: str):
+        return send_from_directory(SLIDING_PUZZLE_STATIC_DIR, filename)
+
+    DOTS_AND_BOXES_STATIC_DIR = BASE_DIR / "dots-and-boxes" / "static"
+
+    @app.get("/dots-and-boxes")
+    def dots_and_boxes_redirect():
+        return redirect("/dots-and-boxes/")
+
+    @app.get("/dots-and-boxes/")
+    def dots_and_boxes_index():
+        return send_from_directory(DOTS_AND_BOXES_STATIC_DIR, "index.html")
+
+    @app.get("/dots-and-boxes/<path:filename>")
+    def dots_and_boxes_static(filename: str):
+        return send_from_directory(DOTS_AND_BOXES_STATIC_DIR, filename)
+
 
     @app.get("/share/<share_id>")
     def shared_card(share_id: str):

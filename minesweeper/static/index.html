@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Minesweeper</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Clear the field. Trust the numbers.</p>
+          <h1>Minesweeper</h1>
+        </div>
+        <button class="small-button" id="helpButton" type="button">?</button>
+      </header>
+
+      <section class="controls" aria-label="Difficulty">
+        <div class="mode-row" id="difficultyRow" role="radiogroup" aria-label="Difficulty">
+          <label class="mode-card"><input type="radio" name="difficulty" value="easy" checked><span>Easy 9×9</span></label>
+          <label class="mode-card"><input type="radio" name="difficulty" value="medium"><span>Medium 16×16</span></label>
+          <label class="mode-card"><input type="radio" name="difficulty" value="expert"><span>Expert 30×16</span></label>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="flagMode">
+          <span>🚩 Flag mode</span>
+        </label>
+      </section>
+
+      <section class="hud" aria-label="Status">
+        <div class="counter" id="mineCounter">💣 10</div>
+        <button class="face-button" id="resetButton" type="button" aria-label="New game">🙂</button>
+        <div class="counter" id="timer">⏱ 0</div>
+      </section>
+
+      <section class="board-clip">
+        <div class="board" id="board" aria-label="Mine field"></div>
+      </section>
+
+      <p class="best-line" id="bestLine"></p>
+
+      <div class="overlay" id="helpOverlay" hidden>
+        <div class="dialog">
+          <h2>How to play</h2>
+          <ul class="rules">
+            <li>Numbers count the mines hidden in the eight surrounding cells.</li>
+            <li>Right-click (or long-press, or Flag mode) to mark mines.</li>
+            <li>Click a revealed number with all its mines flagged to open the rest of its neighbors (chording).</li>
+            <li>Your first click is always safe. Clear every safe cell to win.</li>
+          </ul>
+          <button class="primary-button" data-close type="button">Got it</button>
+        </div>
+      </div>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Simon Says</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Watch. Remember. Repeat.</p>
+          <h1>Simon Says</h1>
+        </div>
+        <div class="hud">
+          <span class="hud-item">Level <b id="level">0</b></span>
+          <span class="hud-item">Best <b id="best">0</b></span>
+        </div>
+      </header>
+
+      <section class="board-wrap">
+        <div class="ring">
+          <button class="pad pad-0" data-pad="0" type="button" aria-label="Green pad"></button>
+          <button class="pad pad-1" data-pad="1" type="button" aria-label="Red pad"></button>
+          <button class="pad pad-2" data-pad="2" type="button" aria-label="Yellow pad"></button>
+          <button class="pad pad-3" data-pad="3" type="button" aria-label="Blue pad"></button>
+          <div class="center">
+            <p class="center-label" id="centerLabel">Press Start</p>
+            <button class="small-button" id="startButton" type="button">Start</button>
+          </div>
+        </div>
+      </section>
+
+      <p class="hint" id="hintLine">The hub plays a pattern; tap it back. One extra step each level.</p>
+
+      <div class="overlay" id="overlay" hidden>
+        <p class="overlay-title">Oops!</p>
+        <p class="overlay-sub" id="overlaySub"></p>
+        <button class="primary-button" id="againButton" type="button">Play Again</button>
+      </div>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

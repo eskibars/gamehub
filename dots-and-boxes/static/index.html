@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dots and Boxes</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Draw lines. Close boxes. Chain the points.</p>
+          <h1>Dots and Boxes</h1>
+        </div>
+        <button class="small-button" id="newGame" type="button">New Game</button>
+      </header>
+
+      <section class="setup-view" id="setupView">
+        <form class="setup-panel" id="setupForm">
+          <div class="section-heading"><h2>Start Playing</h2></div>
+          <div class="field-row">
+            <span class="field-label">Opponent</span>
+            <div class="mode-row" role="radiogroup" aria-label="Opponent">
+              <label class="mode-card"><input type="radio" name="opponent" value="human" checked><span>Two Players</span></label>
+              <label class="mode-card"><input type="radio" name="opponent" value="robot"><span>Vs Robot</span></label>
+            </div>
+          </div>
+          <div class="field-row">
+            <span class="field-label">Board</span>
+            <div class="mode-row" role="radiogroup" aria-label="Board size">
+              <label class="mode-card"><input type="radio" name="size" value="4" checked><span>4×4 boxes</span></label>
+              <label class="mode-card"><input type="radio" name="size" value="6"><span>6×6 boxes</span></label>
+            </div>
+          </div>
+          <button class="primary-button" type="submit">Start</button>
+        </form>
+      </section>
+
+      <section class="game-view" id="gameView" hidden>
+        <div class="score-strip">
+          <span class="side p1" id="p1Label">Player 1</span>
+          <span class="tally" id="tally">0 — 0</span>
+          <span class="side p2" id="p2Label">Player 2</span>
+        </div>
+        <p class="turn-line" id="turnLine">Player 1 draws first</p>
+        <div class="board-frame">
+          <div class="board" id="board" aria-label="Dots and boxes board"></div>
+          <div class="overlay" id="overlay" hidden>
+            <p class="overlay-title" id="winnerTitle"></p>
+            <p class="overlay-sub" id="winnerSub"></p>
+            <button class="primary-button" id="againButton" type="button">Play Again</button>
+          </div>
+        </div>
+        <p class="hint" id="hintLine">Tap the gaps between dots to draw a line. Close a box to score it and go again.</p>
+      </section>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

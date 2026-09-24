@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Word Guess</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Six tries. One hidden word.</p>
+          <h1>Word Guess</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="small-button" id="statsButton" type="button">Stats</button>
+          <button class="small-button" id="helpButton" type="button">?</button>
+        </div>
+      </header>
+
+      <section class="mode-row" aria-label="Game mode">
+        <label class="mode-card">
+          <input type="radio" name="mode" value="daily" checked>
+          <span>Daily</span>
+        </label>
+        <label class="mode-card">
+          <input type="radio" name="mode" value="practice">
+          <span>Practice</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="hardMode">
+          <span>Hard mode</span>
+        </label>
+      </section>
+
+      <section class="board" id="board" aria-label="Guess grid">
+        <div class="row" data-row></div>
+        <div class="row" data-row></div>
+        <div class="row" data-row></div>
+        <div class="row" data-row></div>
+        <div class="row" data-row></div>
+        <div class="row" data-row></div>
+      </section>
+
+      <p class="message" id="message" role="status"></p>
+
+      <section class="keyboard" id="keyboard" aria-label="On-screen keyboard"></section>
+
+      <div class="overlay" id="helpOverlay" hidden>
+        <div class="dialog">
+          <h2>How to play</h2>
+          <ul class="rules">
+            <li>Guess the hidden five-letter word in six tries.</li>
+            <li><strong class="demo correct">GREEN</strong> means the letter is in the word and in the right spot.</li>
+            <li><strong class="demo present">GOLD</strong> means the letter is in the word but the wrong spot.</li>
+            <li><strong class="demo absent">GRAY</strong> means the letter is not in the word at all.</li>
+            <li>Hard mode: revealed hints must be reused in every later guess.</li>
+            <li>Daily mode gives everyone the same word each day; Practice deals a fresh random word.</li>
+          </ul>
+          <button class="primary-button" data-close type="button">Got it</button>
+        </div>
+      </div>
+
+      <div class="overlay" id="statsOverlay" hidden>
+        <div class="dialog">
+          <h2>Statistics</h2>
+          <div class="stat-row">
+            <div class="stat"><b id="statPlayed">0</b><span>Played</span></div>
+            <div class="stat"><b id="statWin">0%</b><span>Win rate</span></div>
+            <div class="stat"><b id="statStreak">0</b><span>Streak</span></div>
+            <div class="stat"><b id="statMax">0</b><span>Best streak</span></div>
+          </div>
+          <h3>Guess distribution</h3>
+          <div class="dist" id="dist"></div>
+          <div class="dialog-actions">
+            <button class="small-button" id="shareButton" type="button" hidden>Share result</button>
+            <button class="primary-button" data-close type="button">Close</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="words.js"></script>
+    <script src="/shared/profile.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

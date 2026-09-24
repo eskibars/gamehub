@@ -142,6 +142,83 @@ const icons = {
       <path d="M20 46l-6 10M44 46l6 10M14 56h36"></path>
       <path d="M24 8V4h16v4"></path>
     </svg>`,
+  g2048: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="8" width="48" height="48" rx="6"></rect>
+      <path d="M8 24h48M8 40h48M24 8v48M40 8v48"></path>
+      <text x="16" y="20" font-family="ui-monospace, monospace" font-weight="900" font-size="10">2</text>
+      <text x="49" y="36" font-family="ui-monospace, monospace" font-weight="900" font-size="10">4</text>
+      <text x="49" y="52" font-family="ui-monospace, monospace" font-weight="900" font-size="10">8</text>
+    </svg>`,
+  wordguess: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="14" width="20" height="20" rx="4"></rect>
+      <rect x="36" y="14" width="20" height="20" rx="4"></rect>
+      <rect x="8" y="36" width="20" height="20" rx="4"></rect>
+      <rect x="36" y="36" width="20" height="20" rx="4"></rect>
+      <text x="13" y="29" font-family="ui-monospace, monospace" font-weight="900" font-size="13" style="fill:currentColor;stroke:none">W</text>
+      <text x="41" y="29" font-family="ui-monospace, monospace" font-weight="900" font-size="13" style="fill:currentColor;stroke:none">O</text>
+      <text x="13" y="51" font-family="ui-monospace, monospace" font-weight="900" font-size="13" style="fill:currentColor;stroke:none">R</text>
+      <text x="41" y="51" font-family="ui-monospace, monospace" font-weight="900" font-size="13" style="fill:currentColor;stroke:none">D</text>
+    </svg>`,
+  mine: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="36" r="14"></circle>
+      <path d="M32 16v6M32 50v6M12 36h6M46 36h6M18 22l4.5 4.5M46 22l-4.5 4.5"></path>
+      <circle cx="27" cy="31" r="3"></circle>
+    </svg>`,
+  connect4: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="10" width="48" height="46" rx="6"></rect>
+      <circle cx="20" cy="22" r="6"></circle>
+      <circle cx="44" cy="22" r="6"></circle>
+      <circle cx="32" cy="36" r="6"></circle>
+      <circle cx="20" cy="50" r="6"></circle>
+      <circle cx="44" cy="50" r="6"></circle>
+    </svg>`,
+  memory: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="10" y="12" width="24" height="34" rx="4" transform="rotate(-8 22 29)"></rect>
+      <rect x="28" y="16" width="24" height="34" rx="4" transform="rotate(7 40 33)"></rect>
+      <circle cx="41" cy="34" r="6"></circle>
+      <path d="M19 27l3 8M30 55h4" transform="rotate(-8 22 29)"></path>
+    </svg>`,
+  snake: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M12 16h28a8 8 0 0 1 0 16H22a8 8 0 0 0 0 16h28"></path>
+      <circle cx="52" cy="48" r="5"></circle>
+      <circle cx="46" cy="16" r="2.5"></circle>
+    </svg>`,
+  simon: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M30 6a24 24 0 0 0-24 24h24V6z"></path>
+      <path d="M34 6a24 24 0 0 1 24 24H34V6z"></path>
+      <path d="M6 34a24 24 0 0 0 24 24V34H6z"></path>
+      <path d="M34 34v24a24 24 0 0 0 24-24H34z"></path>
+      <circle cx="32" cy="32" r="7" class="simon-core"></circle>
+    </svg>`,
+  sliding: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="8" width="48" height="48" rx="6"></rect>
+      <rect x="14" y="14" width="15" height="15" rx="3"></rect>
+      <rect x="35" y="14" width="15" height="15" rx="3"></rect>
+      <rect x="14" y="35" width="15" height="15" rx="3"></rect>
+      <path d="M40 42h8M44 38l4 4-4 4"></path>
+    </svg>`,
+  dots: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="12" cy="12" r="3"></circle>
+      <circle cx="32" cy="12" r="3"></circle>
+      <circle cx="52" cy="12" r="3"></circle>
+      <circle cx="12" cy="32" r="3"></circle>
+      <circle cx="32" cy="32" r="3"></circle>
+      <circle cx="52" cy="32" r="3"></circle>
+      <circle cx="12" cy="52" r="3"></circle>
+      <circle cx="32" cy="52" r="3"></circle>
+      <circle cx="52" cy="52" r="3"></circle>
+      <path d="M12 12h20M12 12v20M32 12v20M12 32h20"></path>
+      <rect x="17" y="17" width="10" height="10" rx="2" class="dots-fill"></rect>
+    </svg>`,
 };
 
 const games = [
@@ -383,11 +460,165 @@ const games = [
     },
     icon: "tools",
   },
+  {
+    id: "g2048",
+    title: "2048",
+    type: "Tile merge",
+    status: "ready",
+    category: "solo",
+    href: "/2048/",
+    accent: "#dfb44e",
+    tilt: "-1.4deg",
+    description: "Slide tiles, merge matching numbers, and chase the elusive 2048 tile. Swipe or arrow keys, undo, and your best score sticks around.",
+    features: {
+      Mode: "Solo puzzle",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "g2048",
+  },
+  {
+    id: "word-guess",
+    title: "Word Guess",
+    type: "Word duel",
+    status: "ready",
+    category: "solo",
+    href: "/word-guess/",
+    accent: "#236c5a",
+    tilt: "1.2deg",
+    description: "Crack the hidden five-letter word in six tries. A fresh daily word, endless practice rounds, hard mode, streak stats, and emoji share grids.",
+    features: {
+      Mode: "Solo word puzzle",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "wordguess",
+  },
+  {
+    id: "minesweeper",
+    title: "Minesweeper",
+    type: "Logic classic",
+    status: "ready",
+    category: "solo",
+    href: "/minesweeper/",
+    accent: "#6e5cb8",
+    tilt: "-0.9deg",
+    description: "Read the numbers, flag the bombs, clear the field. Three board sizes, guaranteed-safe first click, chording, and best times to beat.",
+    features: {
+      Mode: "Solo logic",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "mine",
+  },
+  {
+    id: "connect-four",
+    title: "Connect Four",
+    type: "Gravity duel",
+    status: "ready",
+    category: "board",
+    href: "/connect-four/",
+    accent: "#3565b8",
+    tilt: "0.8deg",
+    description: "Drop discs and line up four. Pass-and-play at the table, or take on the robot at three strengths — Hard plays a real minimax search.",
+    features: {
+      Mode: "Pass-and-play or vs robot",
+      Storage: "Local browser",
+      Players: "1-2",
+    },
+    icon: "connect4",
+  },
+  {
+    id: "memory",
+    title: "Memory Match",
+    type: "Pair hunt",
+    status: "ready",
+    category: "cards",
+    href: "/memory/",
+    accent: "#c8792f",
+    tilt: "-1.1deg",
+    description: "Flip cards two at a time and collect pairs — animals, food, or space themes, three board sizes, and up to four players around one device.",
+    features: {
+      Mode: "Pass-and-play or solo",
+      Storage: "Local browser",
+      Players: "1-4",
+    },
+    icon: "memory",
+  },
+  {
+    id: "snake",
+    title: "Snake",
+    type: "Arcade",
+    status: "ready",
+    category: "solo",
+    href: "/snake/",
+    accent: "#2f8c5a",
+    tilt: "1.3deg",
+    description: "Steer the snake, munch apples, and don't crash your own tail. Three speeds from Chill to Blitz, with your high score on permanent display.",
+    features: {
+      Mode: "Solo arcade",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "snake",
+  },
+  {
+    id: "simon",
+    title: "Simon Says",
+    type: "Pattern memory",
+    status: "ready",
+    category: "solo",
+    href: "/simon/",
+    accent: "#8a4a8c",
+    tilt: "-1deg",
+    description: "Watch the pattern light up, then play it back from memory. Each level adds a step — how far can your brain stretch before the buzz?",
+    features: {
+      Mode: "Solo memory",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "simon",
+  },
+  {
+    id: "sliding-puzzle",
+    title: "Sliding Puzzle",
+    type: "Classic shuffle",
+    status: "ready",
+    category: "solo",
+    href: "/sliding-puzzle/",
+    accent: "#6e5cb8",
+    tilt: "1.1deg",
+    description: "Unscramble the classic 15-puzzle — always-shuffled-solvable boards from 3×3 up to 5×5, a move counter, timer, and personal bests to chase.",
+    features: {
+      Mode: "Solo puzzle",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "sliding",
+  },
+  {
+    id: "dots-and-boxes",
+    title: "Dots and Boxes",
+    type: "Pen-and-paper duel",
+    status: "ready",
+    category: "board",
+    href: "/dots-and-boxes/",
+    accent: "#3565b8",
+    tilt: "-0.8deg",
+    description: "Draw lines between dots, close boxes to score them and keep your turn — just like the paper classic, against a friend or a box-hungry robot.",
+    features: {
+      Mode: "Pass-and-play or vs robot",
+      Storage: "In-browser, no storage needed",
+      Players: "1-2",
+    },
+    icon: "dots",
+  },
 ];
 
 const state = {
-  selectedId: "bingo",
+  selectedId: "g2048",
   filter: "all",
+  search: "",
   pinned: new Set(),
   lastPlayed: {},
 };
@@ -405,6 +636,23 @@ const els = {
   lastPlayed: document.querySelector("#lastPlayed"),
   resetHub: document.querySelector("#resetHub"),
   filters: document.querySelectorAll(".filter-pill"),
+  search: document.querySelector("#searchGames"),
+  surprise: document.querySelector("#surpriseGame"),
+  profileChip: document.querySelector("#profileChip"),
+  profileAvatar: document.querySelector("#profileAvatar"),
+  profileName: document.querySelector("#profileName"),
+  profileLevel: document.querySelector("#profileLevel"),
+  profileBarFill: document.querySelector("#profileBarFill"),
+  profileOverlay: document.querySelector("#profileOverlay"),
+  editAvatar: document.querySelector("#editAvatar"),
+  editName: document.querySelector("#editName"),
+  avatarRow: document.querySelector("#avatarRow"),
+  statChips: document.querySelector("#statChips"),
+  statRank: document.querySelector("#statRank"),
+  statPlays: document.querySelector("#statPlays"),
+  statNext: document.querySelector("#statNext"),
+  bestsList: document.querySelector("#bestsList"),
+  saveProfile: document.querySelector("#saveProfile"),
 };
 
 function loadState() {
@@ -413,6 +661,7 @@ function loadState() {
     if (!saved) return;
     state.selectedId = saved.selectedId || state.selectedId;
     state.filter = saved.filter || state.filter;
+    state.search = saved.search || "";
     state.pinned = new Set(saved.pinned || []);
     state.lastPlayed = saved.lastPlayed || {};
   } catch {
@@ -426,6 +675,7 @@ function saveState() {
     JSON.stringify({
       selectedId: state.selectedId,
       filter: state.filter,
+      search: state.search,
       pinned: [...state.pinned],
       lastPlayed: state.lastPlayed,
     })
@@ -441,9 +691,23 @@ function statusLabel(status) {
 }
 
 function matchesFilter(game) {
-  if (state.filter === "all") return true;
-  if (state.filter === "ready") return game.status === "ready";
-  return game.category === state.filter;
+  if (state.filter !== "all" && state.filter !== "ready") {
+    const categoryMatch = state.filter === "solo"
+      ? isSoloFriendly(game)
+      : game.category === state.filter;
+    if (!categoryMatch) return false;
+  }
+  if (!state.search) return true;
+  const haystack = `${game.title} ${game.type} ${game.description}`.toLowerCase();
+  return state.search
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((term) => haystack.includes(term));
+}
+
+function isSoloFriendly(game) {
+  return game.category === "solo" || /Solo|robot/i.test(`${game.features.Mode} ${game.type}`);
 }
 
 function renderCards() {
@@ -453,6 +717,17 @@ function renderCards() {
     const secondPinned = state.pinned.has(second.id) ? -1 : 0;
     return firstPinned - secondPinned;
   });
+
+  const visible = sorted.filter(matchesFilter);
+  if (!visible.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-note";
+    empty.textContent = state.search
+      ? `No games match “${state.search}”.`
+      : "No games in this shelf yet.";
+    els.gameStack.append(empty);
+    return;
+  }
 
   sorted.forEach((game) => {
     const card = document.createElement("button");
@@ -533,6 +808,77 @@ function render() {
   renderFilters();
 }
 
+const GAME_TITLES = Object.fromEntries(games.map((game) => [game.id, game.title]));
+
+function renderProfile() {
+  if (!window.GameHubProfile) return;
+  const profile = GameHubProfile.get();
+  const progress = GameHubProfile.levelProgress();
+  const levelValue = GameHubProfile.level();
+  els.profileAvatar.textContent = profile.avatar;
+  els.profileName.textContent = profile.name || "Player";
+  els.profileLevel.textContent = `Level ${levelValue} · ${profile.xp} chip${profile.xp === 1 ? "" : "s"}`;
+  els.profileBarFill.style.width = `${(progress.into / progress.step) * 100}%`;
+}
+
+function openProfileEditor() {
+  const profile = GameHubProfile.get();
+  els.editAvatar.textContent = profile.avatar;
+  els.editName.value = profile.name;
+  els.statChips.textContent = profile.xp;
+  els.statRank.textContent = GameHubProfile.rank();
+  els.statPlays.textContent = profile.plays;
+  els.statNext.textContent = GameHubProfile.levelProgress().next;
+  els.avatarRow.innerHTML = "";
+  GameHubProfile.AVATARS.forEach((emoji) => {
+    const choice = document.createElement("button");
+    choice.type = "button";
+    choice.className = "profile-avatar-choice";
+    choice.textContent = emoji;
+    if (emoji === profile.avatar) choice.classList.add("is-active");
+    choice.addEventListener("click", () => {
+      els.editAvatar.textContent = emoji;
+      els.avatarRow.querySelectorAll(".is-active").forEach((el) => el.classList.remove("is-active"));
+      choice.classList.add("is-active");
+    });
+    els.avatarRow.append(choice);
+  });
+  els.bestsList.innerHTML = "";
+  const bestEntries = Object.entries(profile.bests);
+  if (!bestEntries.length) {
+    const empty = document.createElement("li");
+    empty.textContent = "Play something to set your first best!";
+    els.bestsList.append(empty);
+  }
+  bestEntries
+    .sort((a, b) => b[1].value - a[1].value)
+    .forEach(([gameId, best]) => {
+      const item = document.createElement("li");
+      const title = document.createElement("span");
+      title.textContent = GAME_TITLES[gameId] || gameId;
+      const value = document.createElement("b");
+      value.textContent = String(best.value);
+      item.append(title, value);
+      els.bestsList.append(item);
+    });
+  els.profileOverlay.hidden = false;
+}
+
+function bindProfile() {
+  if (!window.GameHubProfile) return;
+  els.profileChip.addEventListener("click", openProfileEditor);
+  window.addEventListener("gamehub-profile", renderProfile);
+  els.saveProfile.addEventListener("click", () => {
+    GameHubProfile.setIdentity({ name: els.editName.value.trim(), avatar: els.editAvatar.textContent });
+    renderProfile();
+    els.profileOverlay.hidden = true;
+  });
+  els.profileOverlay.addEventListener("click", (event) => {
+    if (event.target === els.profileOverlay) els.profileOverlay.hidden = true;
+  });
+  renderProfile();
+}
+
 function bindEvents() {
   els.filters.forEach((filter) => {
     filter.addEventListener("click", () => {
@@ -570,10 +916,38 @@ function bindEvents() {
     saveState();
   });
 
+  els.search.addEventListener("input", () => {
+    state.search = els.search.value.trim();
+    const visibleSelected = matchesFilter(selectedGame());
+    if (!visibleSelected) {
+      const next = games.find(matchesFilter);
+      if (next) state.selectedId = next.id;
+    }
+    saveState();
+    renderCards();
+  });
+
+  els.surprise.addEventListener("click", () => {
+    const visible = games.filter(matchesFilter);
+    const pool = visible.length ? visible : games;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    state.selectedId = pick.id;
+    if (!matchesFilter(pick)) {
+      state.filter = "all";
+      state.search = "";
+      els.search.value = "";
+    }
+    saveState();
+    render();
+    pick.id && els.gameStack.querySelector(`[data-game-id="${pick.id}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  });
+
   els.resetHub.addEventListener("click", () => {
     localStorage.removeItem(STORAGE_KEY);
-    state.selectedId = "bingo";
+    state.selectedId = "g2048";
     state.filter = "all";
+    state.search = "";
+    els.search.value = "";
     state.pinned = new Set();
     state.lastPlayed = {};
     render();
@@ -581,5 +955,27 @@ function bindEvents() {
 }
 
 loadState();
+els.search.value = state.search;
 bindEvents();
+bindProfile();
+bindOffline();
 render();
+
+function bindOffline() {
+  const pill = document.querySelector("#offlinePill");
+  if (!pill) return;
+  const update = () => {
+    pill.hidden = navigator.onLine;
+  };
+  window.addEventListener("online", update);
+  window.addEventListener("offline", update);
+  update();
+}
+
+// Cache the whole hub for offline play (airplane mode on a tablet).
+// Needs a secure context: localhost, or HTTPS via the optional SSL env vars.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}

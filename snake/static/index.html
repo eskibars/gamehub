@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Snake</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Eat. Grow. Don't bite yourself.</p>
+          <h1>Snake</h1>
+        </div>
+        <button class="small-button" id="pauseButton" type="button">Pause</button>
+      </header>
+
+      <section class="controls">
+        <div class="mode-row" id="speedRow" role="radiogroup" aria-label="Speed">
+          <label class="mode-card"><input type="radio" name="speed" value="140" checked><span>Chill</span></label>
+          <label class="mode-card"><input type="radio" name="speed" value="100"><span>Classic</span></label>
+          <label class="mode-card"><input type="radio" name="speed" value="65"><span>Blitz</span></label>
+        </div>
+        <div class="hud">
+          <span class="hud-item">🍎 <b id="score">0</b></span>
+          <span class="hud-item">🏆 <b id="high">0</b></span>
+        </div>
+      </section>
+
+      <div class="canvas-frame">
+        <canvas id="board" width="440" height="440" aria-label="Snake board"></canvas>
+        <div class="overlay" id="overlay" hidden>
+          <p class="overlay-title" id="overlayTitle">Game over</p>
+          <p class="overlay-sub" id="overlaySub"></p>
+          <button class="primary-button" id="playAgain" type="button">Play Again</button>
+        </div>
+      </div>
+
+      <p class="hint">Arrow keys, WASD, or swipe to steer. Space pauses.</p>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>
