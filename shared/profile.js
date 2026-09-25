@@ -134,6 +134,9 @@
     { id: "melon-drop", title: "Melon Drop", href: "/melon-drop/" },
     { id: "breakout", title: "Breakout", href: "/breakout/" },
     { id: "mahjong", title: "Mahjong", href: "/mahjong/" },
+    { id: "nonogram", title: "Nonogram", href: "/nonogram/" },
+    { id: "sokoban", title: "Sokoban", href: "/sokoban/" },
+    { id: "crazy-eights", title: "Eights", href: "/crazy-eights/" },
   ];
   const DAILY_TYPES = ["featured", "explorer", "earner", "record"];
 
@@ -274,18 +277,24 @@
     { id: "streak-3", icon: "🔥", title: "Heating Up", description: "Hold a 3-day daily streak.", test: (p) => (p.streakBest || 0) >= 3 },
     { id: "streak-7", icon: "🌋", title: "Week of Fire", description: "Hold a 7-day daily streak.", test: (p) => (p.streakBest || 0) >= 7 },
     { id: "big-win", icon: "🎉", title: "Jackpot Feel", description: "Earn 30+ chips from a single round.", test: (p) => p.biggestAward >= 30 },
-    { id: "g2048-1000", icon: "🔢", title: "Tile Whisperer", description: "Score 1,000 in 2048.", test: (p) => (p.bests.g2048?.value || 0) >= 1000 },
-    { id: "snake-15", icon: "🐍", title: "Apple Fest", description: "Eat 15 apples in one Snake run.", test: (p) => (p.bests.snake?.value || 0) >= 15 },
-    { id: "simon-10", icon: "🎵", title: "Perfect Pitch", description: "Reach level 10 in Simon Says.", test: (p) => (p.bests.simon?.value || 0) >= 10 },
-    { id: "blockdrop-2000", icon: "🧱", title: "Well Packer", description: "Score 2,000 in Block Drop.", test: (p) => (p.bests["block-drop"]?.value || 0) >= 2000 },
+    { id: "g2048-1000", icon: "🔢", title: "Tile Whisperer", description: "Score 1,000 in 2048.", game: "g2048", test: (p) => (p.bests.g2048?.value || 0) >= 1000 },
+    { id: "snake-15", icon: "🐍", title: "Apple Fest", description: "Eat 15 apples in one Snake run.", game: "snake", test: (p) => (p.bests.snake?.value || 0) >= 15 },
+    { id: "simon-10", icon: "🎵", title: "Perfect Pitch", description: "Reach level 10 in Simon Says.", game: "simon", test: (p) => (p.bests.simon?.value || 0) >= 10 },
+    { id: "blockdrop-2000", icon: "🧱", title: "Well Packer", description: "Score 2,000 in Block Drop.", game: "block-drop", test: (p) => (p.bests["block-drop"]?.value || 0) >= 2000 },
     // Feat-based — unlocked by games via achieve().
-    { id: "chess-robot", icon: "♟️", title: "Robot Slayer", description: "Beat any chess robot.", test: null },
-    { id: "chess-master", icon: "🏰", title: "Grandmaster", description: "Beat the Master chess robot.", test: null },
-    { id: "gem-5", icon: "💎", title: "Gem Cutter", description: "Reach level 5 in Gem Crush.", test: null },
-    { id: "gem-10", icon: "💍", title: "Jeweler", description: "Reach level 10 in Gem Crush.", test: null },
-    { id: "watermelon", icon: "🍉", title: "Almighty Melon", description: "Create the watermelon in Melon Drop.", test: null },
-    { id: "breakout-5", icon: "🕹️", title: "Wall Wrecker", description: "Clear 5 Breakout walls in a row.", test: null },
-    { id: "mahjong-clear", icon: "🀄", title: "Bone Sweeper", description: "Clear a full Mahjong board.", test: null },
+    { id: "chess-robot", icon: "♟️", title: "Robot Slayer", description: "Beat any chess robot.", game: "chess", test: null },
+    { id: "chess-master", icon: "🏰", title: "Grandmaster", description: "Beat the Master chess robot.", game: "chess", test: null },
+    { id: "gem-5", icon: "💎", title: "Gem Cutter", description: "Reach level 5 in Gem Crush.", game: "gem-crush", test: null },
+    { id: "gem-10", icon: "💍", title: "Jeweler", description: "Reach level 10 in Gem Crush.", game: "gem-crush", test: null },
+    { id: "watermelon", icon: "🍉", title: "Almighty Melon", description: "Create the watermelon in Melon Drop.", game: "melon-drop", test: null },
+    { id: "breakout-5", icon: "🕹️", title: "Wall Wrecker", description: "Clear 5 Breakout walls in a row.", game: "breakout", test: null },
+    { id: "mahjong-clear", icon: "🀄", title: "Bone Sweeper", description: "Clear a full Mahjong board.", game: "mahjong", test: null },
+    { id: "nonogram-10", icon: "🖼️", title: "Pixel Painter", description: "Solve 10 Nonogram pictures.", game: "nonogram", test: null },
+    { id: "nonogram-50", icon: "🎨", title: "Gallery Owner", description: "Solve 50 Nonogram pictures.", game: "nonogram", test: null },
+    { id: "sokoban-5", icon: "📦", title: "Forklift Certified", description: "Clear 5 Sokoban levels.", game: "sokoban", test: null },
+    { id: "sokoban-all", icon: "🏭", title: "Warehouse Master", description: "Clear every Sokoban level.", game: "sokoban", test: null },
+    { id: "eights-win", icon: "🃏", title: "Eight Escape", description: "Win a hand of Eights.", game: "crazy-eights", test: null },
+    { id: "eights-5", icon: "🂡", title: "Card Shark", description: "Win 5 hands of Eights.", game: "crazy-eights", test: null },
   ];
 
   function achievementToast(achievement) {

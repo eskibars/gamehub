@@ -312,6 +312,31 @@ const icons = {
       <path d="M44 20c-2.4 3.4-6 3.4-8 0 2-3.4 5.6-3.4 8 0z" transform="rotate(6 44 26)"></path>
       <path d="M34 46h20M36 52h16"></path>
     </svg>`,
+  nonogram: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="8" width="48" height="48" rx="5"></rect>
+      <path d="M8 20h48M8 32h48M8 44h48M20 8v48M32 8v48M44 8v48"></path>
+      <rect x="21" y="21" width="10" height="10" style="fill:currentColor;stroke:none"></rect>
+      <rect x="45" y="9" width="10" height="10" style="fill:currentColor;stroke:none"></rect>
+      <rect x="9" y="45" width="10" height="10" style="fill:currentColor;stroke:none"></rect>
+      <rect x="33" y="33" width="10" height="10" style="fill:currentColor;stroke:none"></rect>
+    </svg>`,
+  sokoban: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="8" width="48" height="48" rx="5"></rect>
+      <rect x="14" y="26" width="16" height="16" rx="2"></rect>
+      <rect x="34" y="14" width="16" height="16" rx="2"></rect>
+      <circle cx="24" cy="22" r="5" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="42" cy="42" r="3.5"></circle>
+      <circle cx="50" cy="50" r="3.5"></circle>
+    </svg>`,
+  eights: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="12" y="10" width="26" height="38" rx="4" transform="rotate(-9 25 29)"></rect>
+      <rect x="27" y="14" width="26" height="38" rx="4" transform="rotate(8 40 33)"></rect>
+      <text x="33" y="34" font-family="ui-monospace, monospace" font-weight="900" font-size="16" transform="rotate(8 40 33)" style="fill:currentColor;stroke:none">8</text>
+      <path d="M46 42c-2.4 3.4-6 3.4-8 0 2-3.4 5.6-3.4 8 0z" transform="rotate(8 40 33)"></path>
+    </svg>`,
 };
 
 const games = [
@@ -819,6 +844,60 @@ const games = [
     badge: "New",
   },
   {
+    id: "nonogram",
+    title: "Nonogram",
+    type: "Picture logic",
+    status: "ready",
+    category: "solo",
+    href: "/nonogram/",
+    accent: "#3565b8",
+    tilt: "0.9deg",
+    description: "Paint cells using the row and column number clues to reveal a hidden picture. Every deal is machine-verified to have exactly one logical solution, from 5×5 up to 15×15.",
+    features: {
+      Mode: "Solo puzzle",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "nonogram",
+    badge: "New",
+  },
+  {
+    id: "sokoban",
+    title: "Sokoban",
+    type: "Warehouse keeper",
+    status: "ready",
+    category: "solo",
+    href: "/sokoban/",
+    accent: "#8a5735",
+    tilt: "-1.2deg",
+    description: "Push every crate onto a target — crates never pull, so corners are forever. Ten handcrafted levels (all machine-verified solvable), full undo, and best-push records.",
+    features: {
+      Mode: "Solo puzzle",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "sokoban",
+    badge: "New",
+  },
+  {
+    id: "crazy-eights",
+    title: "Eights",
+    type: "Shedding cards",
+    status: "ready",
+    category: "cards",
+    href: "/crazy-eights/",
+    accent: "#1e5c46",
+    tilt: "1.1deg",
+    description: "The classic shedding game against up to three robots: match the suit or rank, eights are wild and name the next suit, and emptying your hand first wins the table.",
+    features: {
+      Mode: "Solo vs robots",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "eights",
+    badge: "New",
+  },
+  {
     id: "snake",
     title: "Snake",
     type: "Arcade",
@@ -911,6 +990,7 @@ const state = {
   search: "",
   pinned: new Set(),
   lastPlayed: {},
+  lastPlayedAt: {},
 };
 
 const els = {
@@ -956,6 +1036,7 @@ function loadState() {
     state.search = saved.search || "";
     state.pinned = new Set(saved.pinned || []);
     state.lastPlayed = saved.lastPlayed || {};
+    state.lastPlayedAt = saved.lastPlayedAt || {};
   } catch {
     localStorage.removeItem(STORAGE_KEY);
   }
@@ -970,6 +1051,7 @@ function saveState() {
       search: state.search,
       pinned: [...state.pinned],
       lastPlayed: state.lastPlayed,
+      lastPlayedAt: state.lastPlayedAt,
     })
   );
 }
@@ -1080,6 +1162,8 @@ function renderSelected() {
     els.featureList.append(term, detail);
   });
 
+  renderGameAchievements(game);
+
   if (game.href) {
     els.launchGame.href = game.href;
     els.launchGame.removeAttribute("aria-disabled");
@@ -1089,6 +1173,80 @@ function renderSelected() {
     els.launchGame.setAttribute("aria-disabled", "true");
     els.launchGame.querySelector("span").textContent = "Planned";
   }
+}
+
+function renderGameAchievements(game) {
+  const wrap = document.querySelector("#gameAchievements");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  if (!window.GameHubProfile || !GameHubProfile.achievements) return;
+  const related = GameHubProfile.achievements().filter((a) => a.game === game.id);
+  if (!related.length) {
+    wrap.hidden = true;
+    return;
+  }
+  wrap.hidden = false;
+  related.forEach((achievement) => {
+    const chip = document.createElement("span");
+    chip.className = achievement.unlockedAt ? "game-achieve is-unlocked" : "game-achieve";
+    chip.title = achievement.description;
+    chip.textContent = `${achievement.unlockedAt ? achievement.icon : "🔒"} ${achievement.title}`;
+    wrap.append(chip);
+  });
+}
+
+function renderJumpBack() {
+  const section = document.querySelector("#jumpBack");
+  const row = document.querySelector("#jumpRow");
+  if (!section || !row) return;
+  const recent = Object.entries(state.lastPlayedAt)
+    .filter(([id]) => games.some((game) => game.id === id))
+    .sort((a, b) => (b[1] > a[1] ? 1 : -1))
+    .slice(0, 4);
+  if (!recent.length) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  row.innerHTML = "";
+  recent.forEach(([id]) => {
+    const game = games.find((entry) => entry.id === id);
+    const link = document.createElement("a");
+    link.className = "jump-card";
+    link.href = game.href;
+    link.style.setProperty("--accent", game.accent);
+    link.innerHTML = `
+      <span class="jump-art">${icons[game.icon]}</span>
+      <span class="jump-name">${game.title}</span>
+      <span class="jump-when">${state.lastPlayed[id] || ""}</span>
+    `;
+    link.addEventListener("click", () => {
+      state.lastPlayed[id] = state.lastPlayed[id];
+      state.selectedId = id;
+      saveState();
+    });
+    row.append(link);
+  });
+}
+
+function bindSoundToggle() {
+  const button = document.querySelector("#soundToggle");
+  if (!button || !window.GameHubJuice) return;
+  const update = () => {
+    const waves = button.querySelector(".sound-waves");
+    const off = button.querySelector(".sound-off");
+    if (waves && off) {
+      waves.style.display = GameHubJuice.muted ? "none" : "";
+      off.style.display = GameHubJuice.muted ? "" : "none";
+    }
+  };
+  button.addEventListener("click", () => {
+    GameHubJuice.muted = !GameHubJuice.muted;
+    update();
+    GameHubJuice.tick();
+  });
+  window.addEventListener("gamehub-juice", update);
+  update();
 }
 
 function renderFilters() {
@@ -1282,6 +1440,7 @@ function bindEvents() {
       hour: "numeric",
       minute: "2-digit",
     }).format(new Date());
+    state.lastPlayedAt[game.id] = new Date().toISOString();
     saveState();
   });
 
@@ -1328,9 +1487,12 @@ els.search.value = state.search;
 bindEvents();
 bindProfile();
 bindOffline();
+bindSoundToggle();
 render();
 renderDaily();
+renderJumpBack();
 window.addEventListener("gamehub-profile", renderDaily);
+window.addEventListener("gamehub-profile", renderJumpBack);
 
 function bindOffline() {
   const pill = document.querySelector("#offlinePill");

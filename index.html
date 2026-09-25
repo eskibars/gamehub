@@ -33,6 +33,13 @@
                 <span class="profile-bar"><span id="profileBarFill"></span></span>
               </span>
             </button>
+            <button class="icon-button" id="soundToggle" type="button" aria-label="Toggle sound" title="Sound on/off">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 9v6h4l5 4V5L8 9H4z"></path>
+                <path class="sound-waves" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"></path>
+                <path class="sound-off" d="M17 9l5 6M22 9l-5 6" style="display:none"></path>
+              </svg>
+            </button>
             <button class="icon-button" id="surpriseGame" type="button" aria-label="Surprise me" title="Surprise me with a random game">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="3" y="3" width="18" height="18" rx="4"></rect>
@@ -76,6 +83,11 @@
           </div>
         </section>
 
+        <section class="jump-back" id="jumpBack" aria-label="Jump back in" hidden>
+          <p class="kicker">Jump back in</p>
+          <div class="jump-row" id="jumpRow"></div>
+        </section>
+
         <div class="table-grid">
           <section class="game-board" aria-label="Game table">
             <div class="felt-ring" aria-hidden="true"></div>
@@ -94,6 +106,8 @@
             <p id="selectedDescription"></p>
 
             <dl class="feature-list" id="featureList"></dl>
+
+            <div class="game-achievements" id="gameAchievements"></div>
 
             <div class="panel-actions">
               <a class="launch-button" id="launchGame" href="/bingo/">

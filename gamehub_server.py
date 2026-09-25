@@ -2281,6 +2281,9 @@ def create_app() -> Flask:
         ("melon-drop", "melon_drop"),
         ("breakout", "breakout"),
         ("mahjong", "mahjong"),
+        ("nonogram", "nonogram"),
+        ("sokoban", "sokoban"),
+        ("crazy-eights", "crazy_eights"),
     ]:
         static_dir = BASE_DIR / directory / "static"
 

@@ -52,6 +52,9 @@ GAMES = {
     "melon-drop": "melon_drop",
     "breakout": "breakout",
     "mahjong": "mahjong",
+    "nonogram": "nonogram",
+    "sokoban": "sokoban",
+    "crazy-eights": "crazy_eights",
 }
 
 ROOT_FILES = [
