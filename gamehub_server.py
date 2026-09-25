@@ -2273,6 +2273,32 @@ def create_app() -> Flask:
     def blackjack_static(filename: str):
         return send_from_directory(BLACKJACK_STATIC_DIR, filename)
 
+    # Self-contained static games registered with a shared slug -> directory
+    # map so adding one is a one-line change.
+    for slug, directory in [
+        ("chess", "chess"),
+        ("gem-crush", "gem_crush"),
+        ("melon-drop", "melon_drop"),
+        ("breakout", "breakout"),
+        ("mahjong", "mahjong"),
+    ]:
+        static_dir = BASE_DIR / directory / "static"
+
+        def _make_index(static_dir=static_dir):
+            def index():
+                return send_from_directory(static_dir, "index.html")
+            return index
+
+        def _make_static(static_dir=static_dir):
+            def static_file(filename: str):
+                return send_from_directory(static_dir, filename)
+            return static_file
+
+        app.add_url_rule(f"/{slug}", f"{slug.replace('-', '_')}_redirect",
+                         lambda s=slug: redirect(f"/{s}/"))
+        app.add_url_rule(f"/{slug}/", f"{slug.replace('-', '_')}_index", _make_index())
+        app.add_url_rule(f"/{slug}/<path:filename>", f"{slug.replace('-', '_')}_static", _make_static())
+
 
     @app.get("/share/<share_id>")
     def shared_card(share_id: str):

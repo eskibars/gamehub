@@ -47,6 +47,11 @@ GAMES = {
     "solitaire": "solitaire",
     "reversi": "reversi",
     "blackjack": "blackjack",
+    "chess": "chess",
+    "gem-crush": "gem_crush",
+    "melon-drop": "melon_drop",
+    "breakout": "breakout",
+    "mahjong": "mahjong",
 }
 
 ROOT_FILES = [
