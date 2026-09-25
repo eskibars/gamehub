@@ -56,6 +56,7 @@ GAMES = {
     "nonogram": "nonogram",
     "sokoban": "sokoban",
     "crazy-eights": "crazy_eights",
+    "dominoes": "dominoes",
 }
 
 ROOT_FILES = [

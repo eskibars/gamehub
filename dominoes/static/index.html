@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Dominoes</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Match the ends, shed your tiles, block the table.</p>
+          <h1>Dominoes</h1>
+        </div>
+        <button class="small-button" id="soundButton" type="button">🔊</button>
+      </header>
+
+      <section class="controls">
+        <div class="mode-row" id="oppRow" role="radiogroup" aria-label="Opponents">
+          <label class="mode-card"><input type="radio" name="opps" value="1" checked><span>🤖×1</span></label>
+          <label class="mode-card"><input type="radio" name="opps" value="2"><span>🤖×2</span></label>
+          <label class="mode-card"><input type="radio" name="opps" value="3"><span>🤖×3</span></label>
+        </div>
+        <div class="hud">
+          <span class="hud-item">🏆 <b id="roundsWon">0</b></span>
+        </div>
+      </section>
+
+      <section class="table-zone">
+        <div class="opponents" id="opponents"></div>
+        <div class="chain-frame">
+          <div class="chain" id="chain"></div>
+          <div class="boneyard-pill" id="boneyard">🁫 14 in boneyard</div>
+        </div>
+        <div class="status-line" id="statusLine">Your move</div>
+      </section>
+
+      <div class="hand-zone">
+        <p class="hand-label">Your hand <span id="endHints"></span></p>
+        <div class="hand" id="hand"></div>
+      </div>
+
+      <div class="overlay" id="overlay" hidden>
+        <p class="overlay-title" id="overlayTitle">Dominoes</p>
+        <p class="overlay-sub" id="overlaySub">Play a tile whose pips match an open end of the line. Can't play? Draw from the boneyard. Empty your hand first — or win the block with the lowest pips.</p>
+        <button class="primary-button" id="playButton" type="button">Deal</button>
+      </div>
+
+      <p class="hint">Tap a highlighted tile, then tap which end to build on. Doubles sit crosswise. The boneyard feeds you until you can play.</p>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="/shared/juice.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

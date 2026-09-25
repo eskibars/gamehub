@@ -137,6 +137,7 @@
     { id: "nonogram", title: "Nonogram", href: "/nonogram/" },
     { id: "sokoban", title: "Sokoban", href: "/sokoban/" },
     { id: "crazy-eights", title: "Eights", href: "/crazy-eights/" },
+    { id: "dominoes", title: "Dominoes", href: "/dominoes/" },
   ];
   const DAILY_TYPES = ["featured", "explorer", "earner", "record"];
 
@@ -295,6 +296,8 @@
     { id: "sokoban-all", icon: "🏭", title: "Warehouse Master", description: "Clear every Sokoban level.", game: "sokoban", test: null },
     { id: "eights-win", icon: "🃏", title: "Eight Escape", description: "Win a hand of Eights.", game: "crazy-eights", test: null },
     { id: "eights-5", icon: "🂡", title: "Card Shark", description: "Win 5 hands of Eights.", game: "crazy-eights", test: null },
+    { id: "dominoes-win", icon: "🁣", title: "Domino Effect", description: "Win a round of Dominoes.", game: "dominoes", test: null },
+    { id: "dominoes-5", icon: "🁤", title: "Bone Roller", description: "Win 5 rounds of Dominoes.", game: "dominoes", test: null },
   ];
 
   function achievementToast(achievement) {

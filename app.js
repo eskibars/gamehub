@@ -330,6 +330,16 @@ const icons = {
       <circle cx="42" cy="42" r="3.5"></circle>
       <circle cx="50" cy="50" r="3.5"></circle>
     </svg>`,
+  dominoes: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="14" y="10" width="20" height="38" rx="4" transform="rotate(-12 24 29)"></rect>
+      <rect x="30" y="14" width="20" height="38" rx="4" transform="rotate(9 40 33)"></rect>
+      <circle cx="24" cy="22" r="2.4" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="24" cy="34" r="2.4" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="40" cy="26" r="2.4" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="40" cy="38" r="2.4" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="46" cy="44" r="2.4" style="fill:currentColor;stroke:none"></circle>
+    </svg>`,
   eights: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="12" y="10" width="26" height="38" rx="4" transform="rotate(-9 25 29)"></rect>
@@ -877,6 +887,24 @@ const games = [
       Players: "1",
     },
     icon: "sokoban",
+    badge: "New",
+  },
+  {
+    id: "dominoes",
+    title: "Dominoes",
+    type: "Tile blocking",
+    status: "ready",
+    category: "board",
+    href: "/dominoes/",
+    accent: "#245c48",
+    tilt: "-1.1deg",
+    description: "The classic blocking game on a double-six set against up to three robots. Match the open ends, draw when stuck, go out first — or win the block with the lightest hand.",
+    features: {
+      Mode: "Solo vs robots",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "dominoes",
     badge: "New",
   },
   {
