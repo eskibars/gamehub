@@ -45,7 +45,8 @@ Who Am I? — a Guess Who-style character guessing game, Hangman,
 Battleship, Checkers, The Oracle, Training, plus a solo/arcade shelf:
 2048, Word Guess, Minesweeper, Connect Four, Memory Match, Snake,
 Simon Says, Sliding Puzzle, Dots and Boxes, Lights Out, Sudoku,
-Block Drop, Solitaire, Reversi, and Blackjack.
+Block Drop, Solitaire, Reversi, Blackjack, Chess, Gem Crush,
+Melon Drop, Breakout, and Mahjong.
 
 ## Player profile
 
@@ -211,6 +212,47 @@ codes, no sign-in, best scores and streaks live in browser storage:
   hit, stand, double, split, insurance, dealer stands on all 17s,
   blackjack pays 3:2. A persistent chip bank survives between visits,
   with lifetime stats and a cash-out that converts profit into hub chips.
+- **Chess** (`/chess/`) — full-rules chess: castling, en passant,
+  promotion, threefold repetition, and the fifty-move rule, verified by a
+  perft test suite. Pass-and-play with auto-flipping board, or three
+  robots — Rookie blunders on purpose, Club thinks two plies, and Master
+  runs an alpha-beta search with quiescence. SAN move list, captured
+  trays with material count, undo, and a live clock.
+- **Gem Crush** (`/gem-crush/`) — a match-3 with real cascade depth:
+  striped blasts from four-matches, bombs from L-shapes, rainbow clears
+  from fives, and chain reactions between specials. Level goals with move
+  budgets, auto hints after a few idle seconds, and auto-shuffle when the
+  board dries up. Best level is remembered.
+- **Melon Drop** (`/melon-drop/`) — a Suika-style physics merger on a
+  small impulse solver: drop fruit, roll them together, and merge pairs
+  into the next size up until the watermelon appears. Overflowing the
+  jar ends the run; an evolution strip tracks which fruit you've discovered.
+- **Breakout** (`/breakout/`) — brick smasher with power-up drops (wide
+  paddle, multiball, slow-mo, extra life), multi-hit bricks that show
+  their remaining HP, combo scoring, and walls that thicken every level.
+  Mouse, touch, or keyboard; space launches and pauses.
+- **Mahjong** (`/mahjong/`) — the 144-tile solitaire classic on a
+  three-layer ziggurat. Only free tiles match (nothing on top, one long
+  side open), flowers and seasons match within their families, and hint,
+  undo, and reshuffle (with a small score cost) keep every deal winnable.
+  Clearing the board pays a time bonus.
+
+## Achievements
+
+Twenty-five achievements span the whole hub — chips banked, rounds
+played, games tried, daily streaks, and per-game feats like beating the
+Master chess robot, creating the watermelon, or clearing a Mahjong
+board. Stat-based ones unlock automatically whenever chips are awarded;
+games call `GameHubProfile.achieve(id)` at the moment of glory for feat
+badges. Unlocks toast wherever you are, and the full trophy shelf lives
+in the player card on the hub.
+
+## Shared juice
+
+`shared/juice.js` is a zero-asset effects library used by the newer
+games: synthesized WebAudio blips (pops, sweeps, coins, fanfares) plus a
+canvas confetti cannon, with a persisted mute flag. It also polyfills
+`roundRect` for older tablets.
 
 The hub launcher groups these under the "Solo & Robot" filter, supports
 text search across all games, and has a dice-button "Surprise me" that
