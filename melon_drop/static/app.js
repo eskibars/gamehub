@@ -85,6 +85,7 @@
     const g = 1500;
 
     for (const m of game.melons) {
+      if (m.dead) continue;
       m.vy += g * dt;
       m.x += m.vx * dt;
       m.y += m.vy * dt;
@@ -94,8 +95,11 @@
     // Pair collisions: positional separation + impulse.
     const list = game.melons;
     for (let i = 0; i < list.length; i += 1) {
+      const a = list[i];
+      if (a.dead) continue;
       for (let j = i + 1; j < list.length; j += 1) {
-        const a = list[i], b = list[j];
+        const b = list[j];
+        if (b.dead) continue;
         const dx = b.x - a.x, dy = b.y - a.y;
         const min = a.r + b.r;
         const dist2 = dx * dx + dy * dy;
@@ -383,8 +387,12 @@
   });
 
   renderEvolution();
-  requestAnimationFrame((ts) => {
-    game.lastTs = ts;
+  // setInterval drives the loop rather than requestAnimationFrame: identical
+  // at 60fps but keeps simulating (throttled) when the tab is backgrounded,
+  // and some embedded webviews starve rAF entirely.
+  game.lastTs = performance.now();
+  setInterval(() => {
+    const ts = performance.now();
     tick(ts);
-  });
+  }, 16);
 })();

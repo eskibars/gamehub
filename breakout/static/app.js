@@ -65,8 +65,6 @@
     const rows = Math.min(4 + Math.ceil(level / 2), 8);
     for (let r = 0; r < rows; r += 1) {
       for (let c = 0; c < BRICK_COLS; c += 1) {
-        // Sparse lower levels get denser; higher levels add tougher bricks.
-        if (level < 3 && (r + c) % 7 === 0) continue;
         let hp = 1;
         if (level >= 2 && r === 0) hp = 2;
         if (level >= 4 && r <= 1) hp = 2;
@@ -107,7 +105,10 @@
       ball.vy = Math.sin(angle) * ball.speed;
       launched = true;
     }
-    if (launched) GameHubJuice.tick();
+    if (launched) {
+      game.state = "playing";
+      GameHubJuice.tick();
+    }
   }
 
   /* ------------------------------------------------------------------ *
@@ -461,8 +462,17 @@
   updateHud();
   buildLevel(1);
   spawnBall(true);
-  requestAnimationFrame((ts) => {
-    game.lastTs = ts;
+  // Show the intro overlay (the HTML ships it hidden so the table reads
+  // cleanly if JS fails to load).
+  els.overlay.hidden = false;
+  // Test/debug handle.
+  window.__breakout = game;
+  // setInterval drives the loop rather than requestAnimationFrame: identical
+  // at 60fps but keeps simulating (throttled) when the tab is backgrounded,
+  // and some embedded webviews starve rAF entirely.
+  game.lastTs = performance.now();
+  setInterval(() => {
+    const ts = performance.now();
     tick(ts);
-  });
+  }, 16);
 })();
