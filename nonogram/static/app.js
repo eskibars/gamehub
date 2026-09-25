@@ -26,7 +26,7 @@
 
   const STATE_KEY = "gamehub-nonogram-v1";
   const SIZES = [5, 10, 15];
-  const CHIPS = { 5: 2, 10: 5, 15: 9 };
+  const CHIPS = { 5: 2, 8: 4, 10: 7 };
 
   const game = {
     n: 5,
@@ -133,16 +133,16 @@
     return out;
   }
 
-  // Run the line solver to a fixpoint. Returns true if the puzzle resolves
-  // fully (unique solution), false if it contradicts or stalls.
-  function lineSolveFully(n, rowClues, colClues) {
+  // Run the line solver to a fixpoint and count pinned cells.
+  // Returns { score: determinedCount (-1 on contradiction), grid }.
+  function solveScore(n, rowClues, colClues) {
     const grid = Array.from({ length: n }, () => new Array(n).fill(-1));
     let changed = true;
     while (changed) {
       changed = false;
       for (let r = 0; r < n; r += 1) {
         const out = solveLine(n, rowClues[r], grid[r]);
-        if (!out) return false;
+        if (!out) return { score: -1, grid };
         for (let c = 0; c < n; c += 1) {
           if (grid[r][c] === -1 && out[c] !== -1) { grid[r][c] = out[c]; changed = true; }
         }
@@ -151,57 +151,55 @@
         const col = [];
         for (let r = 0; r < n; r += 1) col.push(grid[r][c]);
         const out = solveLine(n, colClues[c], col);
-        if (!out) return false;
+        if (!out) return { score: -1, grid };
         for (let r = 0; r < n; r += 1) {
           if (col[r] === -1 && out[r] !== -1) { grid[r][c] = out[r]; changed = true; }
         }
       }
     }
-    return grid.every((row) => row.every((v) => v !== -1));
-  }
-
-  function smooth(grid, n, iters) {
-    for (let it = 0; it < iters; it += 1) {
-      const out = grid.map((row) => [...row]);
-      for (let r = 0; r < n; r += 1) {
-        for (let c = 0; c < n; c += 1) {
-          let sum = 0;
-          for (let dr = -1; dr <= 1; dr += 1) {
-            for (let dc = -1; dc <= 1; dc += 1) {
-              const rr = r + dr, cc = c + dc;
-              if (rr >= 0 && rr < n && cc >= 0 && cc < n) sum += grid[rr][cc];
-            }
-          }
-          out[r][c] = sum >= 5 ? 1 : 0;
-        }
-      }
-      grid = out;
-    }
-    return grid;
+    let det = 0;
+    for (const row of grid) for (const v of row) if (v !== -1) det += 1;
+    return { score: det, grid };
   }
 
   function generate(n) {
-    // Random noise is almost never line-solvable; one or two rounds of
-    // cellular-automata smoothing clump cells into blobby "pictures" that
-    // very often are. Retry until the line solver proves a unique solution.
-    const configs = { 5: [[0.55, 1], [0.45, 1], [0.35, 1]], 10: [[0.45, 1], [0.4, 1], [0.3, 1]], 15: [[0.4, 2], [0.35, 2], [0.3, 2]] };
-    const attempts = configs[n] || configs[10];
-    for (const [density, smoothIters] of attempts) {
-      for (let attempt = 0; attempt < 250; attempt += 1) {
-        let grid = Array.from({ length: n }, () =>
-          Array.from({ length: n }, () => (Math.random() < density ? 1 : 0)));
-        grid = smooth(grid, n, smoothIters);
-        const filled = grid.flat().reduce((a, b) => a + b, 0);
-        if (filled < n * n * 0.2 || filled > n * n * 0.7) continue;
-        const rowClues = grid.map(cluesOf);
-        const colClues = Array.from({ length: n }, (_, c) => cluesOf(grid.map((row) => row[c])));
-        if (lineSolveFully(n, rowClues, colClues)) {
-          return { solution: grid, rowClues, colClues };
+    // Hill climbing: start from noise and flip single cells until the clue
+    // set becomes fully line-solvable. Score = cells the solver pins, so a
+    // perfect run reaches n*n (a provably unique solution). Equal-score
+    // moves are kept to let the walk cross plateaus.
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      let picture = Array.from({ length: n }, () =>
+        Array.from({ length: n }, () => (Math.random() < 0.5 ? 1 : 0)));
+      const cluesOfPicture = () => ({
+        row: picture.map(cluesOf),
+        col: Array.from({ length: n }, (_, c) => cluesOf(picture.map((row) => row[c]))),
+      });
+      let score = solveScore(n, cluesOfPicture().row, cluesOfPicture().col).score;
+      let stagnant = 0;
+      const maxIter = n * 800;
+      const maxStagnant = n * 270;
+      for (let iter = 0; iter < maxIter && score < n * n; iter += 1) {
+        const r = Math.floor(Math.random() * n);
+        const c = Math.floor(Math.random() * n);
+        picture[r][c] = 1 - picture[r][c];
+        const next = cluesOfPicture();
+        const result = solveScore(n, next.row, next.col);
+        if (result.score >= score) {
+          score = result.score;
+          stagnant = 0;
+        } else {
+          picture[r][c] = 1 - picture[r][c];
+          stagnant += 1;
         }
+        if (stagnant > maxStagnant) break;
+      }
+      if (score === n * n) {
+        const final = cluesOfPicture();
+        return { solution: picture, rowClues: final.row, colClues: final.col };
       }
     }
-    // Practically unreachable; last resort keeps the game running with a
-    // dense simple pattern that always solves.
+    // Practically unreachable for the shipped sizes; keeps the game running
+    // with a pattern that always solves.
     const grid = Array.from({ length: n }, (_, r) =>
       Array.from({ length: n }, (_, c) => (r % 2 === 0 ? 1 : 0)));
     return {

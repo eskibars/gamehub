@@ -11,6 +11,7 @@ offline launch.
 """
 from __future__ import annotations
 
+import hashlib
 import os
 from pathlib import Path
 
@@ -180,9 +181,24 @@ def collect_assets() -> list[str]:
     return assets
 
 
+def content_hash(assets: list[str]) -> str:
+    """Version fingerprint over every precached file's contents, so any edit
+    produces a new worker version and clients pick up fresh files."""
+    digest = hashlib.sha256()
+    for url in assets:
+        path = BASE_DIR / url.lstrip("/")
+        if url.endswith("/"):
+            path = path / "index.html"
+        try:
+            digest.update(path.read_bytes())
+        except OSError:
+            pass
+    return digest.hexdigest()[:10]
+
+
 def main() -> None:
     assets = collect_assets()
-    version = f"v{len(assets)}-{int(os.environ.get('GAMEHUB_SW_EPOCH', 1))}"
+    version = f"v{len(assets)}-{content_hash(assets)}"
     body = TEMPLATE.format(version=version, assets=str(assets))
     (BASE_DIR / "sw.js").write_text(body, encoding="utf-8")
     print(f"wrote sw.js with {len(assets)} precached assets ({version})")

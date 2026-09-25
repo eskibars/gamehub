@@ -151,6 +151,7 @@ h1 { margin: 0; font-size: clamp(1.6rem, 4vw, 2rem); }
   display: grid;
   grid-template-columns: auto auto;
   grid-template-rows: auto auto;
+  justify-content: center;
   user-select: none;
   touch-action: none;
 }
@@ -205,6 +206,8 @@ h1 { margin: 0; font-size: clamp(1.6rem, 4vw, 2rem); }
   border: 2px solid var(--ink);
   background: var(--ink);
   gap: 1px;
+  width: max-content;
+  justify-self: start;
 }
 
 .cell {
