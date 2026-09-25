@@ -159,6 +159,7 @@
   }
 
   function checkWin() {
+    if (!game.targets.size) return;
     for (const spot of game.targets) {
       if (!game.boxes.has(spot)) return;
     }

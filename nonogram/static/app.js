@@ -34,6 +34,9 @@
     rowClues: [],
     colClues: [],
     marks: null,      // 2D of "empty" | "filled" | "marked"
+    dragValue: null,  // value being painted during a drag
+    hintCell: null,
+    wrongCell: null,
     hints: 3,
     solvedCount: 0,
     startedAt: 0,
@@ -312,7 +315,7 @@
     if (game.done) return;
     const current = game.marks[r][c];
     const target = paintMode();
-    if (game.dragValue === null) {
+    if (game.dragValue == null) {
       game.dragValue = current === target ? "empty" : target;
     }
     if (game.marks[r][c] !== game.dragValue) {
