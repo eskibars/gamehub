@@ -266,6 +266,52 @@ const icons = {
       <text x="16" y="30" font-family="ui-monospace, monospace" font-weight="900" font-size="13" transform="rotate(-8 23 33)" style="fill:currentColor;stroke:none">A</text>
       <path d="M42 24c-2.6 4-6.6 4-8.6 0 2-4 6-4 8.6 0z" transform="rotate(9 41 31)"></path>
     </svg>`,
+  chess: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="8" width="48" height="48" rx="5"></rect>
+      <path d="M8 24h48M8 40h48M24 8v48M40 8v48"></path>
+      <path d="M17 47v-5l3-2v-5h5v5l3 2v5z"></path>
+      <circle cx="41" cy="20" r="5"></circle>
+      <path d="M38 44c0-6 1.5-10 3-12 1.5 2 3 6 3 12z"></path>
+      <path d="M35 47h12"></path>
+    </svg>`,
+  gemcrush: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="8" width="48" height="48" rx="6"></rect>
+      <path d="M20 16l6 6-6 6-6-6z"></path>
+      <circle cx="42" cy="22" r="6"></circle>
+      <rect x="14" y="38" width="12" height="12" rx="2"></rect>
+      <path d="M38 44l5-8 5 8z"></path>
+    </svg>`,
+  melon: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M10 30a22 22 0 0 0 44 0z"></path>
+      <path d="M14 30a18 18 0 0 0 36 0" stroke-dasharray="3 4"></path>
+      <path d="M32 30V16"></path>
+      <path d="M32 16c4-4 9-4 12-2-3 4-8 5-12 2z"></path>
+      <circle cx="24" cy="40" r="1.8" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="33" cy="44" r="1.8" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="41" cy="39" r="1.8" style="fill:currentColor;stroke:none"></circle>
+    </svg>`,
+  breakout: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="10" width="12" height="7" rx="2"></rect>
+      <rect x="26" y="10" width="12" height="7" rx="2"></rect>
+      <rect x="44" y="10" width="12" height="7" rx="2"></rect>
+      <rect x="17" y="23" width="12" height="7" rx="2"></rect>
+      <rect x="35" y="23" width="12" height="7" rx="2"></rect>
+      <circle cx="36" cy="42" r="4"></circle>
+      <rect x="24" y="52" width="18" height="5" rx="2.5"></rect>
+    </svg>`,
+  mahjong: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="10" y="16" width="20" height="28" rx="3"></rect>
+      <rect x="34" y="12" width="20" height="28" rx="3" transform="rotate(6 44 26)"></rect>
+      <circle cx="20" cy="26" r="4"></circle>
+      <circle cx="20" cy="35" r="4"></circle>
+      <path d="M44 20c-2.4 3.4-6 3.4-8 0 2-3.4 5.6-3.4 8 0z" transform="rotate(6 44 26)"></path>
+      <path d="M34 46h20M36 52h16"></path>
+    </svg>`,
 };
 
 const games = [
@@ -683,6 +729,96 @@ const games = [
     badge: "New",
   },
   {
+    id: "chess",
+    title: "Chess",
+    type: "The classic duel",
+    status: "ready",
+    category: "board",
+    href: "/chess/",
+    accent: "#5d4632",
+    tilt: "-1.1deg",
+    description: "Full-rules chess with castling, en passant, and promotion. Pass-and-play on one device or take on three robots — Master searches real move trees. SAN move list, undo, captured trays.",
+    features: {
+      Mode: "Pass-and-play or vs robot",
+      Storage: "Local browser",
+      Players: "1-2",
+    },
+    icon: "chess",
+    badge: "New",
+  },
+  {
+    id: "gem-crush",
+    title: "Gem Crush",
+    type: "Match-3",
+    status: "ready",
+    category: "solo",
+    href: "/gem-crush/",
+    accent: "#8a4a8c",
+    tilt: "1deg",
+    description: "Swap gems, trigger cascades, and crush level goals. Match four for striped blasts, L-shapes for bombs, fives for rainbows — chains multiply your score.",
+    features: {
+      Mode: "Solo puzzle",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "gemcrush",
+    badge: "New",
+  },
+  {
+    id: "melon-drop",
+    title: "Melon Drop",
+    type: "Physics merger",
+    status: "ready",
+    category: "solo",
+    href: "/melon-drop/",
+    accent: "#df7e4e",
+    tilt: "-0.9deg",
+    description: "Drop fruit into the jar — two alike merge into the next size up. Build the mighty watermelon without overflowing the jar. Suika-style physics, real rolling.",
+    features: {
+      Mode: "Solo arcade",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "melon",
+    badge: "New",
+  },
+  {
+    id: "breakout",
+    title: "Breakout",
+    type: "Brick smasher",
+    status: "ready",
+    category: "solo",
+    href: "/breakout/",
+    accent: "#354065",
+    tilt: "1.1deg",
+    description: "Bounce the ball, demolish the wall, and catch falling power-ups — wide paddle, multiball, slow-mo, extra lives. Walls get tougher every level.",
+    features: {
+      Mode: "Solo arcade",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "breakout",
+    badge: "New",
+  },
+  {
+    id: "mahjong",
+    title: "Mahjong",
+    type: "Tile matching",
+    status: "ready",
+    category: "solo",
+    href: "/mahjong/",
+    accent: "#2f5c47",
+    tilt: "-1deg",
+    description: "Dismantle a three-layer tower of 144 tiles by matching free pairs. Flowers match any flower, seasons any season. Hints, undo, and reshuffles keep every deal winnable.",
+    features: {
+      Mode: "Solo puzzle",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "mahjong",
+    badge: "New",
+  },
+  {
     id: "snake",
     title: "Snake",
     type: "Arcade",
@@ -806,6 +942,8 @@ const els = {
   statPlays: document.querySelector("#statPlays"),
   statNext: document.querySelector("#statNext"),
   bestsList: document.querySelector("#bestsList"),
+  achievementCount: document.querySelector("#achievementCount"),
+  achievementGrid: document.querySelector("#achievementGrid"),
   saveProfile: document.querySelector("#saveProfile"),
 };
 
@@ -1023,6 +1161,28 @@ function openProfileEditor() {
       item.append(title, value);
       els.bestsList.append(item);
     });
+
+  if (window.GameHubProfile && GameHubProfile.achievements) {
+    const achievements = GameHubProfile.achievements();
+    const unlocked = achievements.filter((a) => a.unlockedAt).length;
+    els.achievementCount.textContent = `${unlocked} / ${achievements.length}`;
+    els.achievementGrid.innerHTML = "";
+    achievements.forEach((achievement) => {
+      const cell = document.createElement("div");
+      cell.className = achievement.unlockedAt ? "achievement-cell is-unlocked" : "achievement-cell";
+      cell.title = achievement.unlockedAt
+        ? `${achievement.title} — ${achievement.description}`
+        : `${achievement.description}`;
+      const icon = document.createElement("span");
+      icon.className = "achievement-icon";
+      icon.textContent = achievement.unlockedAt ? achievement.icon : "🔒";
+      const name = document.createElement("span");
+      name.className = "achievement-name";
+      name.textContent = achievement.title;
+      cell.append(icon, name);
+      els.achievementGrid.append(cell);
+    });
+  }
   els.profileOverlay.hidden = false;
 }
 

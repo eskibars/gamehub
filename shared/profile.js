@@ -26,6 +26,10 @@
       xp: 0,
       plays: 0,
       bests: {},
+      // Lifetime per-game play counts (gamesPlayed.gameId = rounds played).
+      gamesPlayed: {},
+      // Unlocked achievements: achievements[id] = ISO timestamp.
+      achievements: {},
       // Rolling per-day activity log that powers the Daily Challenge:
       // { "2026-09-25": { games: { snake: { chips, plays } }, newBest: bool } }
       dailyLog: {},
@@ -44,6 +48,8 @@
         ...defaults(),
         ...saved,
         bests: saved.bests || {},
+        gamesPlayed: saved.gamesPlayed || {},
+        achievements: saved.achievements || {},
         dailyLog: saved.dailyLog || {},
         dailyDone: saved.dailyDone || {},
       };
@@ -123,6 +129,11 @@
     { id: "solitaire", title: "Solitaire", href: "/solitaire/" },
     { id: "reversi", title: "Reversi", href: "/reversi/" },
     { id: "blackjack", title: "Blackjack", href: "/blackjack/" },
+    { id: "chess", title: "Chess", href: "/chess/" },
+    { id: "gem-crush", title: "Gem Crush", href: "/gem-crush/" },
+    { id: "melon-drop", title: "Melon Drop", href: "/melon-drop/" },
+    { id: "breakout", title: "Breakout", href: "/breakout/" },
+    { id: "mahjong", title: "Mahjong", href: "/mahjong/" },
   ];
   const DAILY_TYPES = ["featured", "explorer", "earner", "record"];
 
@@ -225,6 +236,7 @@
     save();
     notify();
     if (document.body) dailyToast(DAILY_BONUS, current);
+    setTimeout(checkAchievements, 1000);
     return { bonus: DAILY_BONUS, streak: current };
   }
 
@@ -239,6 +251,79 @@
     el.append(strong, span);
     document.body.append(el);
     setTimeout(() => el.remove(), 3200);
+  }
+
+  /*
+   * Achievements — a trophy shelf that spans every game. Stat-based ones
+   * (chips earned, rounds played, games tried, streaks) unlock automatically
+   * whenever award() or the daily challenge runs; feat-based ones unlock
+   * when a game calls GameHubProfile.achieve(id) at the moment of glory.
+   */
+  const ACHIEVEMENTS = [
+    { id: "first-round", icon: "🎲", title: "Table Seated", description: "Finish your first round.", test: (p) => p.plays >= 1 },
+    { id: "rounds-25", icon: "🔄", title: "Regular", description: "Play 25 rounds.", test: (p) => p.plays >= 25 },
+    { id: "rounds-100", icon: "🏅", title: "Fixture", description: "Play 100 rounds.", test: (p) => p.plays >= 100 },
+    { id: "chips-100", icon: "🪙", title: "Pocket Change", description: "Bank 100 chips.", test: (p) => p.xp >= 100 },
+    { id: "chips-500", icon: "💰", title: "Chip Stack", description: "Bank 500 chips.", test: (p) => p.xp >= 500 },
+    { id: "chips-2000", icon: "👑", title: "High Roller", description: "Bank 2,000 chips.", test: (p) => p.xp >= 2000 },
+    { id: "tried-5", icon: "🧭", title: "Explorer", description: "Try 5 different games.", test: (p) => Object.keys(p.gamesPlayed).length >= 5 },
+    { id: "tried-10", icon: "🗺️", title: "Tourist", description: "Try 10 different games.", test: (p) => Object.keys(p.gamesPlayed).length >= 10 },
+    { id: "tried-all", icon: "🌍", title: "Full Circuit", description: `Try ${DAILY_GAMES.length} different games.`, test: (p) => Object.keys(p.gamesPlayed).length >= DAILY_GAMES.length },
+    { id: "daily-first", icon: "📅", title: "On the Books", description: "Complete your first daily challenge.", test: (p) => Object.keys(p.dailyDone).length >= 1 },
+    { id: "daily-10", icon: "🗓️", title: "Habit Forming", description: "Complete 10 daily challenges.", test: (p) => Object.keys(p.dailyDone).length >= 10 },
+    { id: "streak-3", icon: "🔥", title: "Heating Up", description: "Hold a 3-day daily streak.", test: (p) => (p.streakBest || 0) >= 3 },
+    { id: "streak-7", icon: "🌋", title: "Week of Fire", description: "Hold a 7-day daily streak.", test: (p) => (p.streakBest || 0) >= 7 },
+    { id: "big-win", icon: "🎉", title: "Jackpot Feel", description: "Earn 30+ chips from a single round.", test: (p) => p.biggestAward >= 30 },
+    { id: "g2048-1000", icon: "🔢", title: "Tile Whisperer", description: "Score 1,000 in 2048.", test: (p) => (p.bests.g2048?.value || 0) >= 1000 },
+    { id: "snake-15", icon: "🐍", title: "Apple Fest", description: "Eat 15 apples in one Snake run.", test: (p) => (p.bests.snake?.value || 0) >= 15 },
+    { id: "simon-10", icon: "🎵", title: "Perfect Pitch", description: "Reach level 10 in Simon Says.", test: (p) => (p.bests.simon?.value || 0) >= 10 },
+    { id: "blockdrop-2000", icon: "🧱", title: "Well Packer", description: "Score 2,000 in Block Drop.", test: (p) => (p.bests["block-drop"]?.value || 0) >= 2000 },
+    // Feat-based — unlocked by games via achieve().
+    { id: "chess-robot", icon: "♟️", title: "Robot Slayer", description: "Beat any chess robot.", test: null },
+    { id: "chess-master", icon: "🏰", title: "Grandmaster", description: "Beat the Master chess robot.", test: null },
+    { id: "gem-5", icon: "💎", title: "Gem Cutter", description: "Reach level 5 in Gem Crush.", test: null },
+    { id: "gem-10", icon: "💍", title: "Jeweler", description: "Reach level 10 in Gem Crush.", test: null },
+    { id: "watermelon", icon: "🍉", title: "Almighty Melon", description: "Create the watermelon in Melon Drop.", test: null },
+    { id: "breakout-5", icon: "🕹️", title: "Wall Wrecker", description: "Clear 5 Breakout walls in a row.", test: null },
+    { id: "mahjong-clear", icon: "🀄", title: "Bone Sweeper", description: "Clear a full Mahjong board.", test: null },
+  ];
+
+  function achievementToast(achievement) {
+    ensureStyles();
+    const el = document.createElement("div");
+    el.className = "ghp-toast ghp-achievement-toast";
+    const strong = document.createElement("b");
+    strong.textContent = `${achievement.icon} ${achievement.title}`;
+    const span = document.createElement("span");
+    span.textContent = `Achievement unlocked · ${Object.keys(profile.achievements).length}/${ACHIEVEMENTS.length}`;
+    el.append(strong, span);
+    document.body.append(el);
+    setTimeout(() => el.remove(), 3600);
+  }
+
+  function unlockAchievement(id) {
+    const achievement = ACHIEVEMENTS.find((a) => a.id === id);
+    if (!achievement || profile.achievements[id]) return false;
+    profile.achievements[id] = new Date().toISOString();
+    save();
+    notify();
+    if (document.body) achievementToast(achievement);
+    return true;
+  }
+
+  function checkAchievements() {
+    for (const achievement of ACHIEVEMENTS) {
+      if (achievement.test && !profile.achievements[achievement.id] && achievement.test(profile)) {
+        unlockAchievement(achievement.id);
+      }
+    }
+  }
+
+  function achievementsView() {
+    return ACHIEVEMENTS.map((achievement) => ({
+      ...achievement,
+      unlockedAt: profile.achievements[achievement.id] || null,
+    }));
   }
 
 
@@ -328,8 +413,10 @@
       const beforeLevel = level();
       profile.xp += amount;
       profile.plays += 1;
+      if (amount > (profile.biggestAward || 0)) profile.biggestAward = amount;
       let beatBest = false;
       if (gameId) {
+        profile.gamesPlayed[gameId] = (profile.gamesPlayed[gameId] || 0) + 1;
         const bestValue = score === undefined ? amount : Math.round(Number(score) || 0);
         const previous = profile.bests[gameId];
         if (previous === undefined || bestValue > previous.value) {
@@ -351,6 +438,7 @@
       notify();
       if (amount > 0 && document.body) toast(amount, note, level() > beforeLevel);
       if (window.GameHubDaily) window.GameHubDaily.checkNow();
+      setTimeout(checkAchievements, amount > 0 ? 900 : 0);
       return this.get();
     },
     grantBonus(points, note) {
@@ -364,6 +452,16 @@
     },
     best(gameId) {
       return profile.bests[gameId]?.value;
+    },
+    achieve(gameId) {
+      return unlockAchievement(gameId);
+    },
+    achievements: achievementsView,
+    achievementCount() {
+      return {
+        unlocked: Object.keys(profile.achievements).length,
+        total: ACHIEVEMENTS.length,
+      };
     },
     level,
     rank,
@@ -394,4 +492,8 @@
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     });
   }
+
+  // Retroactive unlocks for long-time players the first time the new
+  // achievement system sees their profile.
+  if (document.body) setTimeout(checkAchievements, 1500);
 })();

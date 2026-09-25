@@ -162,6 +162,7 @@
     discover(tier);
     GameHubJuice.pop(300 + tier * 55);
     if (tier === TIERS.length - 1) {
+      GameHubProfile?.achieve("watermelon");
       GameHubJuice.confetti(160);
       GameHubJuice.win();
     }

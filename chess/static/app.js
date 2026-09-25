@@ -684,6 +684,8 @@
     const humanWins = end.winnerWhite === true;
     const reward = { rookie: 4, club: 8, master: 15 }[game.mode] || 4;
     if (humanWins) {
+      GameHubProfile?.achieve("chess-robot");
+      if (game.mode === "master") GameHubProfile?.achieve("chess-master");
       GameHubProfile?.award("chess", reward, `Beat the ${levelTitle(game.mode)} robot`, reward);
       GameHubJuice.win();
     } else if (end.winnerWhite === false) {

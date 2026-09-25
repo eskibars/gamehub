@@ -323,6 +323,7 @@
       game.best = game.score;
       localStorage.setItem(BEST_KEY, String(game.best));
     }
+    GameHubProfile?.achieve("mahjong-clear");
     GameHubProfile?.award("mahjong", 8, "Cleared the board!", game.score);
     GameHubJuice.confetti(180);
     GameHubJuice.win();

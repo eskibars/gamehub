@@ -265,6 +265,7 @@
     if (game.state !== "playing") return;
     if (game.bricks.some((b) => b.hp > 0)) return;
     game.state = "levelClear";
+    if (game.level >= 5) GameHubProfile?.achieve("breakout-5");
     const bonus = 100 * game.level + game.lives * 50;
     game.score += bonus;
     els.score.textContent = game.score;

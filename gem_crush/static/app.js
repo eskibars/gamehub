@@ -484,6 +484,8 @@
     run.pendingLevel = run.level + 1;
     const earned = 2 + run.level;
     run.bestLevel = Math.max(run.bestLevel, run.level + 1);
+    if (run.bestLevel >= 5) GameHubProfile?.achieve("gem-5");
+    if (run.bestLevel >= 10) GameHubProfile?.achieve("gem-10");
     saveState();
     GameHubProfile?.award("gem-crush", earned, `Level ${run.level} clear!`, run.bestLevel);
     GameHubJuice.win();
