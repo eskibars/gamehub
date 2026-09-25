@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Mahjong Solitaire</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Match the free tiles, dismantle the ziggurat.</p>
+          <h1>Mahjong</h1>
+        </div>
+        <button class="small-button" id="soundButton" type="button">🔊</button>
+      </header>
+
+      <section class="hud">
+        <div class="hud-card"><span class="hud-label">Tiles left</span><b id="remaining">144</b></div>
+        <div class="hud-card"><span class="hud-label">Score</span><b id="score">0</b></div>
+        <div class="hud-card"><span class="hud-label">Time</span><b id="clock">0:00</b></div>
+      </section>
+
+      <section class="actions">
+        <button class="small-button" id="undoButton" type="button">↩ Undo</button>
+        <button class="small-button" id="hintButton" type="button">💡 Hint</button>
+        <button class="small-button" id="shuffleButton" type="button">🔀 Shuffle</button>
+        <button class="small-button" id="newButton" type="button">New deal</button>
+      </section>
+
+      <div class="board-frame">
+        <div class="board" id="board" aria-label="Mahjong layout"></div>
+        <div class="overlay" id="overlay" hidden>
+          <p class="overlay-title" id="overlayTitle">Mahjong</p>
+          <p class="overlay-sub" id="overlaySub">Tap two matching free tiles to clear them. A tile is free when nothing sits on it and a long side is open.</p>
+          <button class="primary-button" id="playButton" type="button">Start</button>
+        </div>
+      </div>
+
+      <p class="hint">Flowers match any flower 🌸 and seasons any season 🍂. Stuck? Hint finds a pair, Shuffle remixes the rest.</p>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="/shared/juice.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>
