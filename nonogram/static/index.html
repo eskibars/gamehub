@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Nonogram</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Read the clues, reveal the picture.</p>
+          <h1>Nonogram</h1>
+        </div>
+        <button class="small-button" id="soundButton" type="button">🔊</button>
+      </header>
+
+      <section class="controls">
+        <div class="mode-row" id="sizeRow" role="radiogroup" aria-label="Board size">
+          <label class="mode-card"><input type="radio" name="size" value="5" checked><span>5×5</span></label>
+          <label class="mode-card"><input type="radio" name="size" value="10"><span>10×10</span></label>
+          <label class="mode-card"><input type="radio" name="size" value="15"><span>15×15</span></label>
+        </div>
+        <div class="hud">
+          <span class="hud-item">⏱ <b id="clock">0:00</b></span>
+          <span class="hud-item">🏆 <b id="best">—</b></span>
+        </div>
+      </section>
+
+      <section class="tool-row">
+        <div class="mode-row" id="paintRow" role="radiogroup" aria-label="Paint mode">
+          <label class="mode-card"><input type="radio" name="paint" value="fill" checked><span>🖌 Fill</span></label>
+          <label class="mode-card"><input type="radio" name="paint" value="mark"><span>✕ Mark</span></label>
+        </div>
+        <div class="tool-actions">
+          <button class="small-button" id="hintButton" type="button">💡 <b id="hintsLeft">3</b></button>
+          <button class="small-button" id="clearButton" type="button">Clear</button>
+          <button class="small-button" id="newButton" type="button">New puzzle</button>
+        </div>
+      </section>
+
+      <div class="board-frame">
+        <div class="puzzle" id="puzzle" aria-label="Nonogram grid"></div>
+        <div class="overlay" id="overlay" hidden>
+          <p class="overlay-title" id="overlayTitle">Solved! 🖼</p>
+          <p class="overlay-sub" id="overlaySub"></p>
+          <button class="primary-button" id="nextButton" type="button">Next puzzle</button>
+        </div>
+      </div>
+
+      <p class="hint">Numbers count runs of filled cells in that row or column, in order. Fill every correct cell to win — marks (✕) are your notes. Right-click also marks.</p>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="/shared/juice.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

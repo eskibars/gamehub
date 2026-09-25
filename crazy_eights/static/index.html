@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Eights</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Shed your hand first. Eights are wild.</p>
+          <h1>Eights</h1>
+        </div>
+        <button class="small-button" id="soundButton" type="button">🔊</button>
+      </header>
+
+      <section class="controls">
+        <div class="mode-row" id="oppRow" role="radiogroup" aria-label="Opponents">
+          <label class="mode-card"><input type="radio" name="opps" value="1" checked><span>🤖×1</span></label>
+          <label class="mode-card"><input type="radio" name="opps" value="2"><span>🤖×2</span></label>
+          <label class="mode-card"><input type="radio" name="opps" value="3"><span>🤖×3</span></label>
+        </div>
+        <div class="hud">
+          <span class="hud-item">🏆 <b id="handsWon">0</b></span>
+        </div>
+      </section>
+
+      <section class="table">
+        <div class="opponents" id="opponents"></div>
+        <div class="center-row">
+          <div class="draw-pile" id="drawPile">
+            <span class="card back"></span>
+            <span class="pile-count" id="pileCount">44</span>
+          </div>
+          <div class="discard" id="discard">
+            <div class="suit-call" id="suitCall" hidden></div>
+          </div>
+        </div>
+        <div class="status-line" id="statusLine">Your move</div>
+      </section>
+
+      <div class="hand-zone">
+        <div class="hand" id="hand"></div>
+      </div>
+
+      <div class="overlay" id="overlay" hidden>
+        <p class="overlay-title" id="overlayTitle">Eights</p>
+        <p class="overlay-sub" id="overlaySub">Play a card matching the suit or rank of the top discard. Eights are wild — play one and name the suit. Run out first to win.</p>
+        <button class="primary-button" id="playButton" type="button">Deal me in</button>
+      </div>
+
+      <div class="suit-overlay" id="suitOverlay" hidden>
+        <div class="suit-dialog">
+          <h3>Choose a suit</h3>
+          <div class="suit-row" id="suitRow"></div>
+        </div>
+      </div>
+
+      <p class="hint">Tap a highlighted card to play it, or the draw pile to draw. Can't play? Draw one — if it fits, you may throw it right down.</p>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="/shared/juice.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>
