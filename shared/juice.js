@@ -185,4 +185,19 @@
   };
 
   window.GameHubJuice = juice;
+
+  // Older tablets lack CanvasRenderingContext2D.roundRect; polyfill it so
+  // canvas games can rely on it.
+  if (window.CanvasRenderingContext2D && !CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+      const radius = Math.min(r, w / 2, h / 2);
+      this.moveTo(x + radius, y);
+      this.arcTo(x + w, y, x + w, y + h, radius);
+      this.arcTo(x + w, y + h, x, y + h, radius);
+      this.arcTo(x, y + h, x, y, radius);
+      this.arcTo(x, y, x + w, y, radius);
+      this.closePath();
+      return this;
+    };
+  }
 })();
