@@ -293,15 +293,14 @@
   }
 
   function showRoundTable(moon, gameDone) {
-    const rowNames = seats.map((s) => SEAT_NAME_SHORT[s]);
     els.roundTitle.textContent = moon >= 0
       ? `${moon === 0 ? "You" : SEAT_NAME_SHORT[moon]} shot the moon! 🌕`
       : `Round ${game.roundNo} over`;
     els.scoreTable.innerHTML = "<tr><th>Player</th><th>Round</th><th>Total</th></tr>" +
-      seats.map((seat) => {
+      game.scores.map((_, seat) => {
         const roundPts = moon >= 0 ? (seat === moon ? 0 : 26) : game.handPoints[seat];
         const me = seat === 0 ? " (you)" : "";
-        return `<tr><td>${rowNames[seat]}${me}</td><td>+${roundPts}</td><td class="total">${game.scores[seat]}</td></tr>`;
+        return `<tr><td>${SEAT_NAME_SHORT[seats[seat]]}${me}</td><td>+${roundPts}</td><td class="total">${game.scores[seat]}</td></tr>`;
       }).join("");
     els.nextRoundButton.textContent = gameDone ? "See results" : "Next round";
     els.roundOverlay.hidden = false;
@@ -356,14 +355,14 @@
       if (qs && winningCard.suit === "♠" && rankValue(winningCard) > 12) return qs;
 
       if (isLast) {
-        if (pointsInTrick === 0) {
+        if (pointsInTrick === 0 && winners.length) {
           // Free win: dump the highest, including a bare queen if safe-ish.
           if (qs && !qsOut) return qs;
           const nonQS = winners.filter((c) => !isQS(c));
           const dump = nonQS.length ? nonQS : winners;
           return dump.reduce((hi, c) => (rankValue(c) > rankValue(hi) ? c : hi));
         }
-        // Points on the table: duck if possible, else win as cheap as we must.
+        // Points on the table or can't win: duck if possible, else minimal.
         if (under.length) {
           return under.reduce((hi, c) => (rankValue(c) > rankValue(hi) ? c : hi));
         }
@@ -428,9 +427,9 @@
     seatInfo(3);
 
     // Score strip
-    els.scoreStrip.innerHTML = seats.map((seat) => {
+    els.scoreStrip.innerHTML = game.scores.map((score, seat) => {
       const roundPts = game.handPoints[seat];
-      return `<span class="score-pill">${SEAT_NAME_SHORT[seat]} ${game.scores[seat]}${roundPts ? ` (+${roundPts} this round)` : ""}</span>`;
+      return `<span class="score-pill">${SEAT_NAME_SHORT[seats[seat]]} ${score}${roundPts ? ` (+${roundPts} this round)` : ""}</span>`;
     }).join("");
 
     // Trick
