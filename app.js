@@ -340,6 +340,16 @@ const icons = {
       <circle cx="40" cy="38" r="2.4" style="fill:currentColor;stroke:none"></circle>
       <circle cx="46" cy="44" r="2.4" style="fill:currentColor;stroke:none"></circle>
     </svg>`,
+  mancala: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="16" width="48" height="32" rx="14"></rect>
+      <ellipse cx="20" cy="32" rx="5.5" ry="8"></ellipse>
+      <ellipse cx="44" cy="32" rx="5.5" ry="8"></ellipse>
+      <circle cx="32" cy="24" r="4.5"></circle>
+      <circle cx="32" cy="40" r="4.5"></circle>
+      <circle cx="23" cy="24" r="3" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="41" cy="40" r="3" style="fill:currentColor;stroke:none"></circle>
+    </svg>`,
   eights: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="12" y="10" width="26" height="38" rx="4" transform="rotate(-9 25 29)"></rect>
@@ -905,6 +915,24 @@ const games = [
       Players: "1",
     },
     icon: "dominoes",
+    badge: "New",
+  },
+  {
+    id: "mancala",
+    title: "Mancala",
+    type: "Seed sowing",
+    status: "ready",
+    category: "board",
+    href: "/mancala/",
+    accent: "#7a5c3a",
+    tilt: "0.8deg",
+    description: "The ancient counting game on a wooden board: sow seeds pit to pit, land in your store for an extra turn, capture whole pits with a careful last drop. Two robot strengths.",
+    features: {
+      Mode: "Solo vs robot",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "mancala",
     badge: "New",
   },
   {

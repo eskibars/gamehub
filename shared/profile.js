@@ -138,6 +138,7 @@
     { id: "sokoban", title: "Sokoban", href: "/sokoban/" },
     { id: "crazy-eights", title: "Eights", href: "/crazy-eights/" },
     { id: "dominoes", title: "Dominoes", href: "/dominoes/" },
+    { id: "mancala", title: "Mancala", href: "/mancala/" },
   ];
   const DAILY_TYPES = ["featured", "explorer", "earner", "record"];
 
@@ -298,6 +299,8 @@
     { id: "eights-5", icon: "🂡", title: "Card Shark", description: "Win 5 hands of Eights.", game: "crazy-eights", test: null },
     { id: "dominoes-win", icon: "🁣", title: "Domino Effect", description: "Win a round of Dominoes.", game: "dominoes", test: null },
     { id: "dominoes-5", icon: "🁤", title: "Bone Roller", description: "Win 5 rounds of Dominoes.", game: "dominoes", test: null },
+    { id: "mancala-win", icon: "🌾", title: "Seed Sower", description: "Win a game of Mancala.", game: "mancala", test: null },
+    { id: "mancala-5", icon: "🌍", title: "Grand Harvest", description: "Win 5 games of Mancala.", game: "mancala", test: null },
   ];
 
   function achievementToast(achievement) {

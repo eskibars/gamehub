@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Mancala</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Sow the seeds, capture the harvest.</p>
+          <h1>Mancala</h1>
+        </div>
+        <button class="small-button" id="soundButton" type="button">🔊</button>
+      </header>
+
+      <section class="controls">
+        <div class="mode-row" id="diffRow" role="radiogroup" aria-label="Robot strength">
+          <label class="mode-card"><input type="radio" name="diff" value="easy" checked><span>🤖 Easy</span></label>
+          <label class="mode-card"><input type="radio" name="diff" value="hard"><span>🤖 Sharp</span></label>
+        </div>
+        <div class="hud">
+          <span class="hud-item">🏆 <b id="gamesWon">0</b></span>
+        </div>
+      </section>
+
+      <section class="table">
+        <div class="row-label top" id="topLabel">Robot · <span id="topPips">0</span> in store</div>
+        <div class="board" id="board" aria-label="Mancala board">
+          <div class="store store-left" id="storeLeft">
+            <span class="store-count" id="storeTopCount">0</span>
+            <span class="store-name">Robot</span>
+          </div>
+          <div class="pits top" id="pitsTop"></div>
+          <div class="pits bottom" id="pitsBottom"></div>
+          <div class="store store-right" id="storeRight">
+            <span class="store-count" id="storeBottomCount">0</span>
+            <span class="store-name">You</span>
+          </div>
+        </div>
+        <div class="row-label bottom">You · <span id="bottomPips">0</span> in store</div>
+        <div class="status-line" id="statusLine">Your move</div>
+        <div class="board-actions">
+          <button class="small-button" id="newGameButton" type="button">New game</button>
+        </div>
+      </section>
+
+      <div class="overlay" id="overlay" hidden>
+        <p class="overlay-title" id="overlayTitle">Mancala</p>
+        <p class="overlay-sub" id="overlaySub">Sow seeds counter-clockwise from any pit on your side. Landing your last seed in your store grants another turn; landing it in an empty pit on your side captures the opposite pit. Most seeds in the store wins.</p>
+        <button class="primary-button" id="playButton" type="button">Sow!</button>
+      </div>
+
+      <p class="hint">Tap a glowing pit. Seeds drop one per pit going counter-clockwise (up the far side, down yours), skipping the robot's store.</p>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="/shared/juice.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>
