@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Battleship Solo</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Hunt the robot fleet before it finds yours.</p>
+          <h1>Battleship Solo</h1>
+        </div>
+        <button class="small-button" id="soundButton" type="button">🔊</button>
+      </header>
+
+      <section class="controls">
+        <div class="fleet-note" id="fleetNote">Place your fleet</div>
+        <div class="hud">
+          <span class="hud-item">🎯 <b id="shotsFired">0</b></span>
+          <span class="hud-item">🏆 <b id="battlesWon">0</b></span>
+        </div>
+      </section>
+
+      <section class="placement-actions" id="placementActions">
+        <button class="small-button" id="rotateButton" type="button">↻ Rotate (H)</button>
+        <button class="small-button" id="autoPlace" type="button">⚓ Auto-place</button>
+      </section>
+
+      <section class="grids">
+        <div class="grid-block">
+          <p class="grid-label">Enemy waters <span class="grid-hint" id="enemyHint"></span></p>
+          <div class="grid" id="enemyGrid" aria-label="Enemy waters"></div>
+        </div>
+        <div class="grid-block">
+          <p class="grid-label">Your fleet</p>
+          <div class="grid" id="playerGrid" aria-label="Your fleet"></div>
+        </div>
+      </section>
+
+      <div class="status-line" id="statusLine">Tap a ship, then the water, to place it. Or auto-place the whole fleet.</div>
+
+      <div class="overlay" id="overlay" hidden>
+        <p class="overlay-title" id="overlayTitle">Battleship Solo</p>
+        <p class="overlay-sub" id="overlaySub">Place five ships on your sea, then trade salvos with a robot admiral that hunts in patterns and pursues every hit. Sink all five of its ships first.</p>
+        <button class="primary-button" id="playButton" type="button">Battle stations</button>
+      </div>
+
+      <p class="hint">After a salvo the robot fires back. Sinking shows the ship's outline — clear the enemy sea to win.</p>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="/shared/juice.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

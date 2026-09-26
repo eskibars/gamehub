@@ -340,6 +340,29 @@ const icons = {
       <circle cx="40" cy="38" r="2.4" style="fill:currentColor;stroke:none"></circle>
       <circle cx="46" cy="44" r="2.4" style="fill:currentColor;stroke:none"></circle>
     </svg>`,
+  battleshipsolo: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="8" width="48" height="48" rx="5"></rect>
+      <path d="M8 24h48M8 40h48M24 8v48M40 8v48"></path>
+      <circle cx="16" cy="16" r="3" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="32" cy="32" r="3"></circle>
+      <path d="M46 46l3 3M49 46l-3 3" style="stroke-width:3"></path>
+    </svg>`,
+  videopoker: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="10" y="12" width="26" height="36" rx="4" transform="rotate(-9 23 30)"></rect>
+      <rect x="29" y="14" width="26" height="36" rx="4" transform="rotate(8 42 32)"></rect>
+      <text x="33" y="32" font-family="ui-monospace, monospace" font-weight="900" font-size="14" transform="rotate(8 42 32)" style="fill:currentColor;stroke:none">A</text>
+      <text x="15" y="30" font-family="ui-monospace, monospace" font-weight="900" font-size="11" transform="rotate(-9 23 30)" style="fill:currentColor;stroke:none">K</text>
+    </svg>`,
+  gomoku: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="8" width="48" height="48" rx="5"></rect>
+      <path d="M8 32h48M32 8v48M18 18l28 28M46 18L18 46" style="opacity:0.4"></path>
+      <circle cx="24" cy="24" r="6" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="40" cy="40" r="6"></circle>
+      <circle cx="40" cy="24" r="6"></circle>
+    </svg>`,
   setgame: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="8" y="14" width="22" height="14" rx="4"></rect>
@@ -930,6 +953,60 @@ const games = [
       Players: "1",
     },
     icon: "dominoes",
+    badge: "New",
+  },
+  {
+    id: "battleship-solo",
+    title: "Battleship Solo",
+    type: "Fleet hunt",
+    status: "ready",
+    category: "board",
+    href: "/battleship-solo/",
+    accent: "#2e6e8e",
+    tilt: "-1deg",
+    description: "The classic salvo duel without needing a second device: place your five ships, then out-hunt a robot admiral that fires in checkerboard patterns and pursues every hit until your hull cracks.",
+    features: {
+      Mode: "Solo vs robot",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "battleshipsolo",
+    badge: "New",
+  },
+  {
+    id: "video-poker",
+    title: "Video Poker",
+    type: "Casino draw",
+    status: "ready",
+    category: "cards",
+    href: "/video-poker/",
+    accent: "#8a2f2f",
+    tilt: "1deg",
+    description: "Jacks-or-better five-card draw on a persistent bank: bet, hold, draw, and chase the 250x royal flush. Cash out anytime — profit converts straight into hub chips.",
+    features: {
+      Mode: "Solo vs house",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "videopoker",
+    badge: "New",
+  },
+  {
+    id: "gomoku",
+    title: "Gomoku",
+    type: "Five in a row",
+    status: "ready",
+    category: "board",
+    href: "/gomoku/",
+    accent: "#5d4a26",
+    tilt: "-0.9deg",
+    description: "Line up five stones on a 15x15 board before the robot lines up its own. Easy plays loose; Sharp takes immediate wins, blocks yours, and scores every open three on the board.",
+    features: {
+      Mode: "Solo vs robot",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "gomoku",
     badge: "New",
   },
   {

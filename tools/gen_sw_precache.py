@@ -60,6 +60,9 @@ GAMES = {
     "mancala": "mancala",
     "hearts": "hearts",
     "set": "set",
+    "battleship-solo": "battleship_solo",
+    "video-poker": "video_poker",
+    "gomoku": "gomoku",
 }
 
 ROOT_FILES = [

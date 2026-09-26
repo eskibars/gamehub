@@ -141,6 +141,9 @@
     { id: "mancala", title: "Mancala", href: "/mancala/" },
     { id: "hearts", title: "Hearts", href: "/hearts/" },
     { id: "set", title: "Set", href: "/set/" },
+    { id: "battleship-solo", title: "Battleship Solo", href: "/battleship-solo/" },
+    { id: "video-poker", title: "Video Poker", href: "/video-poker/" },
+    { id: "gomoku", title: "Gomoku", href: "/gomoku/" },
   ];
   const DAILY_TYPES = ["featured", "explorer", "earner", "record"];
 
@@ -308,6 +311,13 @@
     { id: "hearts-moon", icon: "🌕", title: "Moon Shot", description: "Shoot the moon in Hearts.", game: "hearts", test: null },
     { id: "set-10", icon: "🧠", title: "Pattern Seeker", description: "Find 10 sets in one Set game.", game: "set", test: null },
     { id: "set-all", icon: "🔮", title: "Deck Master", description: "Find 27 sets in one Set game.", game: "set", test: null },
+    { id: "battleship-solo-win", icon: "🚢", title: "Fleet Commander", description: "Sink the whole robot fleet.", game: "battleship-solo", test: null },
+    { id: "battleship-solo-5", icon: "⚓", title: "Admiral of the Seas", description: "Win 5 Battleship Solo battles.", game: "battleship-solo", test: null },
+    { id: "poker-royal", icon: "👑", title: "Royal Treatment", description: "Hit a royal flush in Video Poker.", game: "video-poker", test: null },
+    { id: "poker-cashout", icon: "💵", title: "Walk Away Winner", description: "Cash out Video Poker profit.", game: "video-poker", test: null },
+    { id: "poker-high", icon: "🃏", title: "High Stakes", description: "Cash out 200+ chips of profit.", game: "video-poker", test: null },
+    { id: "gomoku-win", icon: "⚫", title: "Line Maker", description: "Beat the Gomoku robot.", game: "gomoku", test: null },
+    { id: "gomoku-5", icon: "⚪", title: "Five Times Five", description: "Beat the Gomoku robot 5 times.", game: "gomoku", test: null },
   ];
 
   function achievementToast(achievement) {

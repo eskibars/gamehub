@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Video Poker</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Jacks or better. Hold smart, draw lucky.</p>
+          <h1>Video Poker</h1>
+        </div>
+        <button class="small-button" id="soundButton" type="button">🔊</button>
+      </header>
+
+      <section class="hud">
+        <div class="hud-card"><span class="hud-label">Bank</span><b id="bank">200</b></div>
+        <div class="hud-card"><span class="hud-label">Bet</span><b id="bet">5</b></div>
+        <div class="hud-card"><span class="hud-label">Hands won</span><b id="handsWon">0</b></div>
+      </section>
+
+      <section class="bet-row" id="betRow">
+        <button class="small-button" data-bet="5">Bet 5</button>
+        <button class="small-button" data-bet="10">Bet 10</button>
+        <button class="small-button" data-bet="25">Bet 25</button>
+        <button class="small-button" data-bet="50">Bet 50</button>
+      </section>
+
+      <div class="board-frame">
+        <div class="hand" id="hand"></div>
+        <div class="result-line" id="resultLine"></div>
+        <div class="overlay" id="overlay" hidden>
+          <p class="overlay-title" id="overlayTitle">Video Poker</p>
+          <p class="overlay-sub" id="overlaySub">Jacks or Better five-card draw: bet, hold the cards you want, and draw. A pair of jacks or better pays — a royal pays 250× the bet. Your bank survives between visits, and cashing out converts profit into hub chips.</p>
+          <button class="primary-button" id="playButton" type="button">Sit down</button>
+        </div>
+      </div>
+
+      <section class="action-row" id="actionRow">
+        <button class="primary-button" id="dealButton" type="button">Deal</button>
+        <button class="secondary-button" id="cashOut" type="button">Cash out</button>
+      </section>
+
+      <section class="paytable" id="paytable"></section>
+
+      <p class="hint">Tap cards to hold (marked HOLD). Wins pay the multiplier × your bet.</p>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="/shared/juice.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>
