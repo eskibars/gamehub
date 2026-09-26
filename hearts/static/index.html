@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Hearts</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Dodge the hearts. Fear the queen. Duck everything.</p>
+          <h1>Hearts</h1>
+        </div>
+        <button class="small-button" id="soundButton" type="button">🔊</button>
+      </header>
+
+      <section class="controls">
+        <div class="hud">
+          <span class="hud-item">🎯 Game to <b>100</b></span>
+          <span class="hud-item">🏆 <b id="gamesWon">0</b></span>
+        </div>
+      </section>
+
+      <section class="table">
+        <div class="players-row">
+          <div class="seat west" id="seatWest"></div>
+          <div class="seat north" id="seatNorth"></div>
+          <div class="seat east" id="seatEast"></div>
+        </div>
+        <div class="trick-area">
+          <div class="trick west" id="trickWest"></div>
+          <div class="trick north" id="trickNorth"></div>
+          <div class="trick east" id="trickEast"></div>
+          <div class="trick south" id="trickSouth"></div>
+        </div>
+        <div class="score-strip" id="scoreStrip"></div>
+        <div class="status-line" id="statusLine">Dealing…</div>
+      </section>
+
+      <div class="hand-zone">
+        <div class="hand" id="hand"></div>
+      </div>
+
+      <div class="overlay" id="overlay" hidden>
+        <p class="overlay-title" id="overlayTitle">Hearts</p>
+        <p class="overlay-sub" id="overlaySub">Four players, trick-taking. Follow suit if you can; the highest card of the led suit wins the trick and any hearts in it (1 point each) — the queen of spades costs 13. Lowest total wins when someone hits 100. Take them all and you've shot the moon.</p>
+        <button class="primary-button" id="playButton" type="button">Deal</button>
+      </div>
+
+      <div class="round-overlay" id="roundOverlay" hidden>
+        <div class="round-dialog">
+          <h3 id="roundTitle">Round over</h3>
+          <table class="score-table" id="scoreTable"></table>
+          <button class="primary-button" id="nextRoundButton" type="button">Next round</button>
+        </div>
+      </div>
+
+      <p class="hint">Tap a glowing card. Hearts can't lead until broken. The 2♣ opens every round.</p>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="/shared/juice.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

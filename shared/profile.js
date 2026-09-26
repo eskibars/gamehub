@@ -139,6 +139,7 @@
     { id: "crazy-eights", title: "Eights", href: "/crazy-eights/" },
     { id: "dominoes", title: "Dominoes", href: "/dominoes/" },
     { id: "mancala", title: "Mancala", href: "/mancala/" },
+    { id: "hearts", title: "Hearts", href: "/hearts/" },
   ];
   const DAILY_TYPES = ["featured", "explorer", "earner", "record"];
 
@@ -301,6 +302,9 @@
     { id: "dominoes-5", icon: "🁤", title: "Bone Roller", description: "Win 5 rounds of Dominoes.", game: "dominoes", test: null },
     { id: "mancala-win", icon: "🌾", title: "Seed Sower", description: "Win a game of Mancala.", game: "mancala", test: null },
     { id: "mancala-5", icon: "🌍", title: "Grand Harvest", description: "Win 5 games of Mancala.", game: "mancala", test: null },
+    { id: "hearts-win", icon: "🏆", title: "Heartbreaker", description: "Win a game of Hearts.", game: "hearts", test: null },
+    { id: "hearts-3", icon: "💔", title: "Cold Blooded", description: "Win 3 games of Hearts.", game: "hearts", test: null },
+    { id: "hearts-moon", icon: "🌕", title: "Moon Shot", description: "Shoot the moon in Hearts.", game: "hearts", test: null },
   ];
 
   function achievementToast(achievement) {

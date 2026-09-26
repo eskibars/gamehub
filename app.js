@@ -340,6 +340,12 @@ const icons = {
       <circle cx="40" cy="38" r="2.4" style="fill:currentColor;stroke:none"></circle>
       <circle cx="46" cy="44" r="2.4" style="fill:currentColor;stroke:none"></circle>
     </svg>`,
+  hearts: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="12" y="12" width="26" height="36" rx="4" transform="rotate(-10 25 30)"></rect>
+      <rect x="27" y="16" width="26" height="36" rx="4" transform="rotate(9 40 34)"></rect>
+      <path d="M40 44c-7-5-10-9-10-13a5 5 0 0 1 10-1.5A5 5 0 0 1 50 31c0 4-3 8-10 13z" transform="rotate(9 40 34)" style="fill:currentColor;stroke:none"></path>
+    </svg>`,
   mancala: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="8" y="16" width="48" height="32" rx="14"></rect>
@@ -915,6 +921,24 @@ const games = [
       Players: "1",
     },
     icon: "dominoes",
+    badge: "New",
+  },
+  {
+    id: "hearts",
+    title: "Hearts",
+    type: "Trick evasion",
+    status: "ready",
+    category: "cards",
+    href: "/hearts/",
+    accent: "#8a2f3f",
+    tilt: "-1deg",
+    description: "The classic trick-taker against three robots: follow suit, duck every winner, and stay far away from hearts and the queen of spades. Win by having the lowest score when someone crosses 100 — or take all 26 points and shoot the moon.",
+    features: {
+      Mode: "Solo vs robots",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "hearts",
     badge: "New",
   },
   {

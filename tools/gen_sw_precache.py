@@ -58,6 +58,7 @@ GAMES = {
     "crazy-eights": "crazy_eights",
     "dominoes": "dominoes",
     "mancala": "mancala",
+    "hearts": "hearts",
 }
 
 ROOT_FILES = [
