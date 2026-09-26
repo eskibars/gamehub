@@ -59,6 +59,7 @@ GAMES = {
     "dominoes": "dominoes",
     "mancala": "mancala",
     "hearts": "hearts",
+    "set": "set",
 }
 
 ROOT_FILES = [

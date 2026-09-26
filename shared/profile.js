@@ -140,6 +140,7 @@
     { id: "dominoes", title: "Dominoes", href: "/dominoes/" },
     { id: "mancala", title: "Mancala", href: "/mancala/" },
     { id: "hearts", title: "Hearts", href: "/hearts/" },
+    { id: "set", title: "Set", href: "/set/" },
   ];
   const DAILY_TYPES = ["featured", "explorer", "earner", "record"];
 
@@ -305,6 +306,8 @@
     { id: "hearts-win", icon: "🏆", title: "Heartbreaker", description: "Win a game of Hearts.", game: "hearts", test: null },
     { id: "hearts-3", icon: "💔", title: "Cold Blooded", description: "Win 3 games of Hearts.", game: "hearts", test: null },
     { id: "hearts-moon", icon: "🌕", title: "Moon Shot", description: "Shoot the moon in Hearts.", game: "hearts", test: null },
+    { id: "set-10", icon: "🧠", title: "Pattern Seeker", description: "Find 10 sets in one Set game.", game: "set", test: null },
+    { id: "set-all", icon: "🔮", title: "Deck Master", description: "Find 27 sets in one Set game.", game: "set", test: null },
   ];
 
   function achievementToast(achievement) {

@@ -340,6 +340,15 @@ const icons = {
       <circle cx="40" cy="38" r="2.4" style="fill:currentColor;stroke:none"></circle>
       <circle cx="46" cy="44" r="2.4" style="fill:currentColor;stroke:none"></circle>
     </svg>`,
+  setgame: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="8" y="14" width="22" height="14" rx="4"></rect>
+      <rect x="34" y="14" width="22" height="14" rx="4"></rect>
+      <rect x="21" y="34" width="22" height="14" rx="4"></rect>
+      <circle cx="19" cy="21" r="3" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="45" cy="21" r="3"></circle>
+      <circle cx="32" cy="41" r="3" style="fill:currentColor;stroke:none"></circle>
+    </svg>`,
   hearts: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="12" y="12" width="26" height="36" rx="4" transform="rotate(-10 25 30)"></rect>
@@ -921,6 +930,24 @@ const games = [
       Players: "1",
     },
     icon: "dominoes",
+    badge: "New",
+  },
+  {
+    id: "set",
+    title: "Set",
+    type: "Pattern speed",
+    status: "ready",
+    category: "solo",
+    href: "/set/",
+    accent: "#7b4fa6",
+    tilt: "1deg",
+    description: "Eighty-one cards, four attributes each. Spot the threes where every attribute is all-same or all-different before the deck runs dry — with auto-refills when the table dries up and hints when your eyes cross.",
+    features: {
+      Mode: "Solo puzzle",
+      Storage: "Local browser",
+      Players: "1",
+    },
+    icon: "setgame",
     badge: "New",
   },
   {
