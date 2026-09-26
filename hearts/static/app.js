@@ -294,7 +294,7 @@
 
   function showRoundTable(moon, gameDone) {
     els.roundTitle.textContent = moon >= 0
-      ? `${moon === 0 ? "You" : SEAT_NAME_SHORT[moon]} shot the moon! 🌕`
+      ? `${moon === 0 ? "You" : SEAT_NAME_SHORT[seats[moon]]} shot the moon! 🌕`
       : `Round ${game.roundNo} over`;
     els.scoreTable.innerHTML = "<tr><th>Player</th><th>Round</th><th>Total</th></tr>" +
       game.scores.map((_, seat) => {
@@ -417,7 +417,7 @@
     if (!el) return;
     el.className = "seat";
     el.classList.toggle("active", game.running && game.turn === seat);
-    el.innerHTML = `<span>${SEAT_NAME_SHORT[seat]}</span>
+    el.innerHTML = `<span>${SEAT_NAME_SHORT[seats[seat]]}</span>
       <span class="cards-left">${game.hands[seat]?.length ?? 0} cards · ${game.scores[seat]} pts</span>`;
   }
 

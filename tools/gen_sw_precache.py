@@ -163,45 +163,37 @@ self.addEventListener("fetch", (event) => {{
 '''
 
 
-def collect_assets() -> list[str]:
+def collect_assets() -> tuple[list[str], "hashlib._Hash"]:
+    """Returns the precache URL list plus a running hash over every file's
+    bytes, so the worker version changes whenever any asset changes."""
+    digest = hashlib.sha256()
     assets = list(ROOT_FILES)
-    assets.extend(
-        f"/shared/{path.relative_to(BASE_DIR / 'shared').as_posix()}"
-        for path in sorted((BASE_DIR / "shared").rglob("*"))
-        if path.is_file()
-    )
+    for url in ROOT_FILES:
+        path = BASE_DIR / url.lstrip("/")
+        if path.is_dir():
+            path = path / "index.html"
+        digest.update(path.read_bytes())
+    for path in sorted((BASE_DIR / "shared").rglob("*")):
+        if path.is_file():
+            assets.append(f"/shared/{path.relative_to(BASE_DIR / 'shared').as_posix()}")
+            digest.update(path.read_bytes())
     for slug, directory in GAMES.items():
         static_dir = BASE_DIR / directory / "static"
         if not static_dir.is_dir():
             raise SystemExit(f"missing static dir for {slug}: {static_dir}")
         # The navigable page itself — Flask serves it at /{slug}/.
         assets.append(f"/{slug}/")
-        assets.extend(
-            f"/{slug}/{path.relative_to(static_dir).as_posix()}"
-            for path in sorted(static_dir.rglob("*"))
-            if path.is_file()
-        )
-    return assets
-
-
-def content_hash(assets: list[str]) -> str:
-    """Version fingerprint over every precached file's contents, so any edit
-    produces a new worker version and clients pick up fresh files."""
-    digest = hashlib.sha256()
-    for url in assets:
-        path = BASE_DIR / url.lstrip("/")
-        if url.endswith("/"):
-            path = path / "index.html"
-        try:
-            digest.update(path.read_bytes())
-        except OSError:
-            pass
-    return digest.hexdigest()[:10]
+        digest.update((static_dir / "index.html").read_bytes())
+        for path in sorted(static_dir.rglob("*")):
+            if path.is_file():
+                assets.append(f"/{slug}/{path.relative_to(static_dir).as_posix()}")
+                digest.update(path.read_bytes())
+    return assets, digest
 
 
 def main() -> None:
-    assets = collect_assets()
-    version = f"v{len(assets)}-{content_hash(assets)}"
+    assets, digest = collect_assets()
+    version = f"v{len(assets)}-{digest.hexdigest()[:10]}"
     body = TEMPLATE.format(version=version, assets=str(assets))
     (BASE_DIR / "sw.js").write_text(body, encoding="utf-8")
     print(f"wrote sw.js with {len(assets)} precached assets ({version})")
