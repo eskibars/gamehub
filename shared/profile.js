@@ -144,6 +144,7 @@
     { id: "battleship-solo", title: "Battleship Solo", href: "/battleship-solo/" },
     { id: "video-poker", title: "Video Poker", href: "/video-poker/" },
     { id: "gomoku", title: "Gomoku", href: "/gomoku/" },
+    { id: "roll-bug", title: "Roll-a-Bug", href: "/roll-bug/" },
   ];
   const DAILY_TYPES = ["featured", "explorer", "earner", "record"];
 
@@ -318,6 +319,9 @@
     { id: "poker-high", icon: "🃏", title: "High Stakes", description: "Cash out 200+ chips of profit.", game: "video-poker", test: null },
     { id: "gomoku-win", icon: "⚫", title: "Line Maker", description: "Beat the Gomoku robot.", game: "gomoku", test: null },
     { id: "gomoku-5", icon: "⚪", title: "Five Times Five", description: "Beat the Gomoku robot 5 times.", game: "gomoku", test: null },
+    { id: "rollbug-win", icon: "🐞", title: "Bug Builder", description: "Finish your first Roll-a-Bug ladybug.", game: "roll-bug", test: null },
+    { id: "rollbug-3", icon: "🎨", title: "Bug Gallery", description: "Finish 3 Roll-a-Bug ladybugs.", game: "roll-bug", test: null },
+    { id: "rollbug-master", icon: "📐", title: "Proper Bug", description: "Win a Roll-a-Bug game in Proper Bug mode.", game: "roll-bug", test: null },
   ];
 
   function achievementToast(achievement) {

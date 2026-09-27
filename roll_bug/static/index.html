@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Roll-a-Bug</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="back-link" href="/">Game Hub</a>
+        <div>
+          <p class="eyebrow">Roll the die, draw the part, laugh at the bug.</p>
+          <h1>Roll-a-Bug</h1>
+        </div>
+        <button class="small-button" id="soundButton" type="button">🔊</button>
+      </header>
+
+      <!-- ============ SETUP ============ -->
+      <section class="setup" id="setupScreen">
+        <div class="setup-card">
+          <h2>The players</h2>
+          <div class="player-rows" id="playerRows"></div>
+          <button class="small-button" id="addPlayer" type="button">+ Add player</button>
+        </div>
+
+        <div class="setup-card">
+          <h2>House rules</h2>
+          <div class="rule-row">
+            <span class="rule-label">Draw order</span>
+            <div class="toggle-row" id="modeRow">
+              <label class="toggle-card"><input type="radio" name="mode" value="jumble" checked><span>🐝 School classic — draw whatever you roll, jank is the point</span></label>
+              <label class="toggle-card"><input type="radio" name="mode" value="ordered"><span>📐 Proper bug — parts unlock in order</span></label>
+            </div>
+          </div>
+          <div class="rule-row">
+            <span class="rule-label">Extra challenge<br><small>Rolls needed per part</small></span>
+            <div class="toggle-row" id="streakRow">
+              <label class="toggle-card"><input type="radio" name="streak" value="1" checked><span>1 — plain</span></label>
+              <label class="toggle-card"><input type="radio" name="streak" value="2"><span>2 — spicy</span></label>
+              <label class="toggle-card"><input type="radio" name="streak" value="3"><span>3 — chaos</span></label>
+            </div>
+          </div>
+          <div class="resume-row" id="resumeRow" hidden>
+            <button class="primary-button" id="resumeButton" type="button">Resume game</button>
+            <button class="small-button" id="discardButton" type="button">Discard it</button>
+          </div>
+          <button class="primary-button big" id="startButton" type="button">Start drawing!</button>
+        </div>
+
+        <div class="setup-card howto">
+          <h2>How it works</h2>
+          <div class="howto-grid">
+            <div class="legend">
+              <p>Every roll picks a part:</p>
+              <ul class="legend-list">
+                <li><span class="mini-die" data-n="1">1</span> Body</li>
+                <li><span class="mini-die" data-n="2">2</span> Head</li>
+                <li><span class="mini-die" data-n="3">3</span> Spots</li>
+                <li><span class="mini-die" data-n="4">4</span> Wings</li>
+                <li><span class="mini-die" data-n="5">5</span> Antennae</li>
+                <li><span class="mini-die" data-n="6">6</span> Feet</li>
+              </ul>
+              <p class="legend-note">First bug with all six parts wins. Then everyone compares drawings — the weirder the better. In proper-bug mode: body first, head needs the body, antennae need the head.</p>
+            </div>
+            <div class="reference-box">
+              <p>The target:</p>
+              <div class="reference-bug" id="referenceBugSetup"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ GAME ============ -->
+      <section class="game" id="gameScreen" hidden>
+        <div class="turn-banner">
+          <span class="turn-avatar" id="turnAvatar">🐞</span>
+          <div>
+            <p class="turn-name" id="turnName">Maya's turn</p>
+            <p class="turn-sub" id="turnSub">Roll for a part</p>
+          </div>
+        </div>
+
+        <div class="dice-zone">
+          <div class="die" id="die" aria-label="Die"><span class="die-face" id="dieFace">?</span></div>
+          <button class="primary-button" id="rollButton" type="button">Roll!</button>
+        </div>
+
+        <div class="status-line" id="statusLine"></div>
+
+        <div class="parts-grid" id="partsGrid"></div>
+
+        <div class="roll-log" id="rollLog"></div>
+
+        <button class="small-button quit-button" id="quitButton" type="button">End game</button>
+      </section>
+
+      <!-- ============ PASS DEVICE ============ -->
+      <div class="pass-overlay" id="passOverlay" hidden>
+        <p class="pass-kicker">Pass the device to</p>
+        <p class="pass-name" id="passName">Maya</p>
+        <button class="primary-button" id="imReady" type="button">That's me — roll!</button>
+      </div>
+
+      <!-- ============ DRAW ============ -->
+      <div class="draw-overlay" id="drawOverlay" hidden>
+        <div class="draw-panel">
+          <div class="draw-head">
+            <p class="draw-part" id="drawPart">Draw the wings!</p>
+            <div class="reference-thumb" id="referenceThumb" title="The target"></div>
+          </div>
+          <canvas class="draw-canvas" id="drawCanvas" width="512" height="512"></canvas>
+          <div class="brush-row">
+            <div class="swatches" id="swatches"></div>
+            <div class="sizes" id="sizes"></div>
+          </div>
+          <div class="draw-actions">
+            <button class="small-button" id="undoButton" type="button">↩ Undo</button>
+            <button class="small-button" id="clearButton" type="button">Clear</button>
+            <button class="primary-button" id="doneButton" type="button">Done!</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ GALLERY / WIN ============ -->
+      <div class="gallery-overlay" id="galleryOverlay" hidden>
+        <p class="gallery-title" id="galleryTitle">Ladybug gallery</p>
+        <p class="gallery-sub" id="gallerySub"></p>
+        <div class="gallery-grid" id="galleryGrid"></div>
+        <div class="gallery-actions">
+          <button class="primary-button" id="againButton" type="button">New game</button>
+          <button class="small-button gallery-close" id="galleryClose" type="button">Keep looking</button>
+        </div>
+      </div>
+      <button class="small-button peek-button" id="peekButton" type="button" hidden>🖼 Gallery</button>
+    </main>
+
+    <script src="/shared/profile.js"></script>
+    <script src="/shared/juice.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>

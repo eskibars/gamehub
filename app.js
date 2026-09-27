@@ -355,6 +355,17 @@ const icons = {
       <text x="33" y="32" font-family="ui-monospace, monospace" font-weight="900" font-size="14" transform="rotate(8 42 32)" style="fill:currentColor;stroke:none">A</text>
       <text x="15" y="30" font-family="ui-monospace, monospace" font-weight="900" font-size="11" transform="rotate(-9 23 30)" style="fill:currentColor;stroke:none">K</text>
     </svg>`,
+  rollbug: `
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="10" y="10" width="24" height="24" rx="6"></rect>
+      <circle cx="18" cy="18" r="2.4" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="26" cy="26" r="2.4" style="fill:currentColor;stroke:none"></circle>
+      <ellipse cx="42" cy="40" rx="14" ry="12"></ellipse>
+      <path d="M42 28v24"></path>
+      <circle cx="37" cy="38" r="2.2" style="fill:currentColor;stroke:none"></circle>
+      <circle cx="48" cy="44" r="2.2" style="fill:currentColor;stroke:none"></circle>
+      <path d="M36 30q-3-6-8-8M48 30q3-6 8-8"></path>
+    </svg>`,
   gomoku: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="8" y="8" width="48" height="48" rx="5"></rect>
@@ -989,6 +1000,24 @@ const games = [
       Players: "1",
     },
     icon: "videopoker",
+    badge: "New",
+  },
+  {
+    id: "roll-bug",
+    title: "Roll-a-Bug",
+    type: "Roll & draw party",
+    status: "ready",
+    category: "solo",
+    href: "/roll-bug/",
+    accent: "#c0392b",
+    tilt: "0.8deg",
+    description: "The schoolyard classic: roll the die for body, head, spots, wings, antennae, or feet, then hand-draw that part on your own canvas. Whoever finishes their bug first wins — then the gallery compares everyone's art. Optional proper-bug order and roll-streak challenges.",
+    features: {
+      Mode: "Pass-and-play, 1-8",
+      Storage: "Local browser",
+      Players: "1-8",
+    },
+    icon: "rollbug",
     badge: "New",
   },
   {

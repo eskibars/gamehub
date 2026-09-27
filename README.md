@@ -46,7 +46,7 @@ Battleship, Checkers, The Oracle, Training, plus a solo/arcade shelf:
 2048, Word Guess, Minesweeper, Connect Four, Memory Match, Snake,
 Simon Says, Sliding Puzzle, Dots and Boxes, Lights Out, Sudoku,
 Block Drop, Solitaire, Reversi, Blackjack, Chess, Gem Crush,
-Melon Drop, Breakout, Mahjong, Nonogram, Sokoban, Eights, Dominoes, Mancala, Hearts, Set, Battleship Solo, Video Poker, and Gomoku.
+Melon Drop, Breakout, Mahjong, Nonogram, Sokoban, Eights, Dominoes, Mancala, Hearts, Set, Battleship Solo, Video Poker, Gomoku, and Roll-a-Bug.
 
 ## Player profile
 
