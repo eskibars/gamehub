@@ -374,3 +374,24 @@ button {
   gap: 10px;
   align-items: center;
 }
+
+.category-hint {
+  margin: 2px auto 0;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted, #5d6b74);
+}
+
+.mode-card select {
+  min-height: 34px;
+  border: 1px solid var(--line, rgba(32, 35, 31, 0.2));
+  border-radius: 999px;
+  background: var(--panel, #fffaf0);
+  padding: 0 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink, #20231f);
+}

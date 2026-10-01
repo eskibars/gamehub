@@ -29,11 +29,18 @@
           <input type="radio" name="mode" value="practice">
           <span>Practice</span>
         </label>
+        <label class="mode-card">
+          <select id="categorySelect" aria-label="Practice category">
+            <option value="">Any</option>
+          </select>
+        </label>
         <label class="toggle">
           <input type="checkbox" id="hardMode">
           <span>Hard mode</span>
         </label>
       </section>
+
+      <p class="category-hint" id="categoryHint" hidden></p>
 
       <section class="board" id="board" aria-label="Guess grid">
         <div class="row" data-row></div>
@@ -82,6 +89,7 @@
       </div>
     </main>
 
+    <script src="/shared/dictionaries.js"></script>
     <script src="words.js"></script>
     <script src="/shared/profile.js"></script>
     <script src="app.js" defer></script>

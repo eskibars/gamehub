@@ -331,6 +331,7 @@
     { id: "hangman-stump", icon: "🪢", title: "Word Keeper", description: "Stump the Hangman robot with your word.", game: "hangman", test: null },
     { id: "boggle-robot-win", icon: "📖", title: "Word Smith", description: "Out-word the Boggle robot.", game: "boggle", test: null },
     { id: "boggle-robot-5", icon: "📚", title: "Lexicon Hero", description: "Beat the Boggle robot 5 times.", game: "boggle", test: null },
+    { id: "word-find-played", icon: "🔎", title: "Grid Hunter", description: "Solve a Word Find on screen.", game: "word-find", test: null },
   ];
 
   function achievementToast(achievement) {

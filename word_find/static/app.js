@@ -19,10 +19,26 @@ const state = {
   showAnswers: false,
   wordsText: DEFAULT_WORDS.join("\n"),
   puzzle: null,
+  play: null, // { cells-for-word map, found, selection, seconds, won }
 };
+
+// Rotating highlight colors for found words in play mode.
+const FOUND_COLORS = ["#236c5a", "#b8434e", "#356eb8", "#8a4a8c", "#b8702a", "#1f6e8e", "#7a8a2a", "#8a3568"];
 
 const els = {
   saveStatus: document.querySelector("#saveStatus"),
+  categorySelect: document.querySelector("#categorySelect"),
+  playPuzzle: document.querySelector("#playPuzzle"),
+  playOverlay: document.querySelector("#playOverlay"),
+  exitPlay: document.querySelector("#exitPlay"),
+  playTitle: document.querySelector("#playTitle"),
+  playClock: document.querySelector("#playClock"),
+  playMessage: document.querySelector("#playMessage"),
+  playGrid: document.querySelector("#playGrid"),
+  playBank: document.querySelector("#playBank"),
+  playWon: document.querySelector("#playWon"),
+  playWonStats: document.querySelector("#playWonStats"),
+  playAgain: document.querySelector("#playAgain"),
   puzzleTitle: document.querySelector("#puzzleTitle"),
   gridSize: document.querySelector("#gridSize"),
   fillStyle: document.querySelector("#fillStyle"),
@@ -318,8 +334,258 @@ function bindEvents() {
   els.buildPuzzle.addEventListener("click", () => buildPuzzle({ alertOnMissed: true }));
   els.shufflePuzzle.addEventListener("click", buildPuzzle);
   els.printPuzzle.addEventListener("click", () => window.print());
+  els.categorySelect?.addEventListener("change", () => applyCategory(els.categorySelect.value));
+  els.playPuzzle?.addEventListener("click", startPlay);
+  els.exitPlay?.addEventListener("click", exitPlay);
+  els.playAgain?.addEventListener("click", () => {
+    startPlay();
+  });
+}
+
+function populateCategories() {
+  if (!els.categorySelect || !window.GameHubDictionaries) return;
+  window.GameHubDictionaries.NAMES.forEach((name) => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = `${name} (${window.GameHubDictionaries.words(name).length} words)`;
+    els.categorySelect.append(option);
+  });
+}
+
+function applyCategory(name) {
+  if (!name || !window.GameHubDictionaries?.has(name)) return;
+  const words = window.GameHubDictionaries.words(name);
+  state.title = `${name} Word Find`;
+  state.wordsText = words.join("\n");
+  saveLocal();
+  buildPuzzle({ alertOnMissed: false });
+}
+
+// ----- On-screen play mode -----
+//
+// A fresh shuffle of the current puzzle, played by dragging (or tap-tap)
+// across the grid. Found words lock in with their own color; the bank
+// strikes them off; the clock stops when the last word lands.
+
+let playTimer = null;
+
+function startPlay() {
+  if (!normalizeWords().length) {
+    els.buildMessage.textContent = "Add some words first — or pick a theme.";
+    return;
+  }
+  // Fresh shuffle so the preview grid (which may show answers) is not the
+  // one being played.
+  const keepAnswers = state.showAnswers;
+  state.showAnswers = false;
+  buildPuzzle({ alertOnMissed: false });
+  state.showAnswers = keepAnswers;
+  if (!state.puzzle?.placements?.length) {
+    els.buildMessage.textContent = "Could not build a playable puzzle from these words.";
+    return;
+  }
+  state.play = {
+    colors: new Map(), // word.compact -> color index
+    found: new Set(), // word.compact
+    selection: new Map(), // "r-c" -> cell element
+    anchor: null, // sticky tap anchor "r-c"
+    dragging: false,
+    seconds: 0,
+    won: false,
+  };
+  els.playTitle.textContent = state.title.trim() ? state.title : "Word Find";
+  els.playWon.hidden = true;
+  els.playMessage.textContent = "Drag from the first letter to the last — any direction.";
+  els.playOverlay.hidden = false;
+  renderPlayBank();
+  renderPlayGrid();
+  if (playTimer) clearInterval(playTimer);
+  playTimer = setInterval(() => {
+    if (!state.play || state.play.won) return;
+    state.play.seconds += 1;
+    els.playClock.textContent = formatPlayClock(state.play.seconds);
+  }, 1000);
+  els.playClock.textContent = "0:00";
+}
+
+function exitPlay() {
+  els.playOverlay.hidden = true;
+  if (playTimer) clearInterval(playTimer);
+  playTimer = null;
+  state.play = null;
+}
+
+function formatPlayClock(seconds) {
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+function playWords() {
+  return state.puzzle?.placements || [];
+}
+
+function renderPlayBank() {
+  els.playBank.innerHTML = "";
+  playWords().forEach((placement) => {
+    const item = document.createElement("li");
+    item.textContent = placement.word.label;
+    item.dataset.word = placement.word.compact;
+    if (state.play.found.has(placement.word.compact)) item.classList.add("is-found");
+    els.playBank.append(item);
+  });
+}
+
+function renderPlayGrid() {
+  const play = state.play;
+  els.playGrid.innerHTML = "";
+  els.playGrid.style.setProperty("--grid-size", state.size);
+  // Cell -> the words covering it, so found coloring handles overlaps.
+  const cellWords = new Map();
+  playWords().forEach((placement) => {
+    placement.cells.forEach((key) => {
+      if (!cellWords.has(key)) cellWords.set(key, []);
+      cellWords.get(key).push(placement.word.compact);
+    });
+  });
+  const foundCells = new Set();
+  for (const [key, words] of cellWords) {
+    if (words.every((word) => play.found.has(word))) foundCells.add(key);
+  }
+  const colorOf = new Map();
+  let colorIndex = 0;
+  for (const placement of playWords()) {
+    if (play.found.has(placement.word.compact) && !colorOf.has(placement.word.compact)) {
+      colorOf.set(placement.word.compact, FOUND_COLORS[colorIndex++ % FOUND_COLORS.length]);
+    }
+  }
+  state.puzzle.grid.forEach((row, r) => {
+    row.forEach((letter, c) => {
+      const key = `${r}-${c}`;
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "play-cell";
+      cell.textContent = letter;
+      cell.dataset.key = key;
+      cell.dataset.row = String(r);
+      cell.dataset.col = String(c);
+      if (play.selection.has(key) || play.anchor === key) cell.classList.add("is-sel");
+      if (play.found.has(key)) {
+        cell.classList.add("is-found");
+        const words = cellWords.get(key) || [];
+        const color = words.map((w) => colorOf.get(w)).find(Boolean) || FOUND_COLORS[0];
+        cell.style.background = color;
+      }
+      cell.addEventListener("pointerdown", onPlayPointerDown);
+      cell.addEventListener("pointerenter", onPlayPointerEnter);
+      els.playGrid.append(cell);
+    });
+  });
+}
+
+// Selection model: press a cell and drag (touch or mouse) to extend a
+// straight line; releasing on a single cell leaves it "sticky" so a second
+// tap can complete the word tap-tap style.
+function onPlayPointerDown(event) {
+  const play = state.play;
+  if (!play || play.won) return;
+  event.preventDefault();
+  const key = event.currentTarget.dataset.key;
+  if (play.anchor && play.anchor !== key) {
+    const [r0, c0] = play.anchor.split("-").map(Number);
+    const [r1, c1] = key.split("-").map(Number);
+    const line = lineCells(r0, c0, r1, c1);
+    if (line) {
+      play.anchor = null;
+      play.selection = new Map(line.map((k) => [k, null]));
+      renderPlayGrid();
+      checkPlaySelection();
+      return;
+    }
+  }
+  play.anchor = null;
+  play.dragging = true;
+  play.dragStart = key;
+  play.selection = new Map([[key, null]]);
+  renderPlayGrid();
+}
+
+function onPlayPointerEnter(event) {
+  const play = state.play;
+  if (!play || play.won || !play.dragging) return;
+  const [r0, c0] = play.dragStart.split("-").map(Number);
+  const [r1, c1] = event.currentTarget.dataset.key.split("-").map(Number);
+  const line = lineCells(r0, c0, r1, c1) || [play.dragStart];
+  play.selection = new Map(line.map((key) => [key, null]));
+  renderPlayGrid();
+}
+
+document.addEventListener("pointerup", () => {
+  const play = state.play;
+  if (!play || !play.dragging) return;
+  play.dragging = false;
+  const keys = [...play.selection.keys()];
+  if (keys.length <= 1) {
+    play.anchor = keys[0] || null;
+    return;
+  }
+  checkPlaySelection();
+});
+
+function checkPlaySelection() {
+  const play = state.play;
+  if (!play || play.won) return;
+  const letters = [...play.selection.keys()]
+    .map((key) => {
+      const [r, c] = key.split("-").map(Number);
+      return state.puzzle.grid[r][c];
+    })
+    .join("");
+  const reversed = [...letters].reverse().join("");
+  const match = playWords().find(
+    (placement) =>
+      !play.found.has(placement.word.compact) &&
+      (placement.word.compact === letters || placement.word.compact === reversed)
+  );
+  if (match) {
+    play.found.add(match.word.compact);
+    GameHubJuice?.pop(360);
+    renderPlayBank();
+    renderPlayGrid();
+    els.playMessage.textContent = `Found ${match.word.label}!`;
+    if (play.found.size === playWords().length) winPlay();
+  } else {
+    GameHubJuice?.drop();
+    els.playMessage.textContent = "Not on the list — keep looking.";
+    play.selection = new Map();
+    renderPlayGrid();
+  }
+}
+
+function lineCells(r0, c0, r1, c1) {
+  const dr = Math.sign(r1 - r0);
+  const dc = Math.sign(c1 - c0);
+  const steps = Math.max(Math.abs(r1 - r0), Math.abs(c1 - c0));
+  const straight = r1 === r0 || c1 === c0 || Math.abs(r1 - r0) === Math.abs(c1 - c0);
+  if (!straight) return null;
+  const cells = [];
+  for (let i = 0; i <= steps; i += 1) cells.push(`${r0 + dr * i}-${c0 + dc * i}`);
+  return cells;
+}
+
+function winPlay() {
+  const play = state.play;
+  play.won = true;
+  if (playTimer) clearInterval(playTimer);
+  GameHubJuice?.win();
+  const sizeBonus = state.size >= 15 ? 6 : state.size >= 10 ? 4 : 2;
+  GameHubProfile?.achieve("word-find-played");
+  GameHubProfile?.award("word-find", sizeBonus,
+    `Solved a ${state.size}×${state.size} word find in ${formatPlayClock(play.seconds)}`, 0);
+  els.playWonStats.textContent =
+    `${playWords().length} words in ${formatPlayClock(play.seconds)} on a ${state.size}×${state.size} grid.`;
+  els.playWon.hidden = false;
 }
 
 loadLocal();
+populateCategories();
 bindEvents();
 buildPuzzle();

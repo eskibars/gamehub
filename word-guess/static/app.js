@@ -8,6 +8,8 @@ const SETTINGS_KEY = "gamehub-wordguess-settings";
 const VALID = new Set([...WORD_GUESS_ANSWERS, ...WORD_GUESS_EXTRA]);
 const ROWS = [...document.querySelectorAll("[data-row]")];
 const els = {
+  categoryHint: document.querySelector("#categoryHint"),
+  categorySelect: document.querySelector("#categorySelect"),
   board: document.querySelector("#board"),
   message: document.querySelector("#message"),
   keyboard: document.querySelector("#keyboard"),
@@ -95,16 +97,22 @@ function startRound(fresh) {
     if (state.status !== "playing") finishUi(true);
     return;
   }
+  updateCategoryHint();
   if (state.mode === "daily") {
     state.dayKey = new Date().toISOString().slice(0, 10);
     state.answer = dailyAnswer();
+    state.category = "";
   } else {
     state.dayKey = "";
+    // Category practice draws from a curated theme, restricted to words the
+    // guess dictionary accepts so the answer is always typeable.
+    const pool = categoryPool();
     let next;
     do {
-      next = WORD_GUESS_ANSWERS[Math.floor(Math.random() * WORD_GUESS_ANSWERS.length)];
-    } while (next === state.answer && WORD_GUESS_ANSWERS.length > 1);
+      next = pool[Math.floor(Math.random() * pool.length)];
+    } while (next === state.answer && pool.length > 1);
     state.answer = next;
+    state.category = pool._category || "";
   }
   state.guesses = [];
   state.status = "playing";
@@ -398,9 +406,54 @@ function bindEvents() {
       startRound(false);
     });
   });
+
+  els.categorySelect?.addEventListener("change", () => {
+    saveJson(SETTINGS_KEY, { hard: els.hardMode.checked, category: els.categorySelect.value });
+    if (state.mode === "practice") startRound(false);
+  });
+}
+
+function updateCategoryHint() {
+  const hint = els.categoryHint;
+  if (!hint) return;
+  const active = state.mode === "practice" && state.categoryName;
+  hint.hidden = !active;
+  hint.textContent = active ? `Category: ${state.categoryName}` : "";
+}
+
+function categoryPool() {
+  const name = state.categoryName || "";
+  if (name && window.GameHubDictionaries?.has(name)) {
+    const valid = WORD_GUESS_ANSWERS.concat(
+      typeof WORD_GUESS_EXTRA !== "undefined" ? WORD_GUESS_EXTRA : []
+    ).map((w) => w.toUpperCase());
+    const validSet = new Set(valid);
+    const words = window.GameHubDictionaries
+      .words(name, WORD_LENGTH)
+      .map((w) => w.toUpperCase())
+      .filter((w) => validSet.has(w));
+    if (words.length >= 4) {
+      const pool = words;
+      pool._category = name;
+      return pool;
+    }
+  }
+  const pool = WORD_GUESS_ANSWERS.slice();
+  pool._category = "";
+  return pool;
 }
 
 const settings = loadJson(SETTINGS_KEY, { hard: false });
 els.hardMode.checked = Boolean(settings.hard);
+state.categoryName = settings.category || "";
+if (els.categorySelect && window.GameHubDictionaries) {
+  window.GameHubDictionaries.NAMES.forEach((name) => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    if (name === state.categoryName) option.selected = true;
+    els.categorySelect.append(option);
+  });
+}
 startRound(false);
 bindEvents();

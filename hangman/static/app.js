@@ -375,10 +375,10 @@ function exitToSetup() {
 // The robot picks words from a frequency-tiered dictionary and guesses by
 // pattern-matching candidates; tiers trade dictionary breadth for patience.
 
-function startRobotGame(difficulty) {
+function startRobotGame(difficulty, category) {
   state.mode = "robot";
-  state.robot = { difficulty, timer: null, record: loadRobotRecord() };
-  state.local = newLocalGame(["You", "Robot"], null);
+  state.robot = { difficulty, category: category || "", timer: null, record: loadRobotRecord() };
+  state.local = newLocalGame(["You", "Robot"], category || null);
   state.local.pickerIndex = 1; // the robot picks first, so you solve first
   state.handoff = null;
   clearLocal();
@@ -391,16 +391,30 @@ function startRobotGame(difficulty) {
 }
 
 function robotWordPool() {
+  const difficulty = state.robot?.difficulty || "rookie";
+  const bounds = {
+    rookie: { min: 3, max: 6 },
+    sleuth: { min: 5, max: 9 },
+    master: { min: 6, max: 12 },
+  }[difficulty];
+  // A chosen category overrides the frequency slice — words come straight
+  // from the curated dictionary (with a length band per difficulty).
+  const category = state.robot?.category;
+  if (category && window.GameHubDictionaries?.has(category)) {
+    const band = window.GameHubDictionaries.words(category).filter(
+      (w) => w.length >= bounds.min - 1 && w.length <= bounds.max + 2
+    );
+    if (band.length >= 8) return band;
+  }
   const words = window.HangmanWords?.WORDS || [];
   const total = words.length;
-  const difficulty = state.robot?.difficulty || "rookie";
   if (difficulty === "rookie") {
-    return words.slice(0, Math.floor(total * 0.4)).filter((w) => w.length >= 3 && w.length <= 6);
+    return words.slice(0, Math.floor(total * 0.4)).filter((w) => w.length >= bounds.min && w.length <= bounds.max);
   }
   if (difficulty === "sleuth") {
-    return words.slice(Math.floor(total * 0.15), Math.floor(total * 0.7)).filter((w) => w.length >= 5 && w.length <= 9);
+    return words.slice(Math.floor(total * 0.15), Math.floor(total * 0.7)).filter((w) => w.length >= bounds.min && w.length <= bounds.max);
   }
-  return words.slice(Math.floor(total * 0.4)).filter((w) => w.length >= 6 && w.length <= 12);
+  return words.slice(Math.floor(total * 0.4)).filter((w) => w.length >= bounds.min && w.length <= bounds.max);
 }
 
 function robotSetWord() {
@@ -1254,7 +1268,8 @@ function bindEvents() {
   els.soloForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const checked = els.soloDiffRow.querySelector("input[name=soloDiff]:checked");
-    startRobotGame(checked ? checked.value : "rookie");
+    const category = document.querySelector("#soloCategory")?.value || "";
+    startRobotGame(checked ? checked.value : "rookie", category);
   });
   els.createForm.addEventListener("submit", createRemoteGame);
   els.joinForm.addEventListener("submit", joinByCode);
@@ -1295,6 +1310,16 @@ function bindEvents() {
   });
   els.resultBanner.addEventListener("click", () => {
     hideResultBanner();
+  });
+}
+
+const soloCategorySelect = document.querySelector("#soloCategory");
+if (soloCategorySelect && window.GameHubDictionaries) {
+  window.GameHubDictionaries.NAMES.forEach((name) => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    soloCategorySelect.append(option);
   });
 }
 

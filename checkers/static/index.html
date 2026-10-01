@@ -22,10 +22,41 @@
         <section class="entry-choice" id="choicePanel">
           <h2>Choose a Mode</h2>
           <div class="entry-actions">
+            <button class="entry-choice-button" id="showSolo" type="button">Play vs Robot</button>
             <button class="entry-choice-button" id="showJoin" type="button">Join Game</button>
             <button class="entry-choice-button" id="showCreate" type="button">Create Game</button>
           </div>
         </section>
+
+        <form class="entry-panel" id="soloForm" hidden>
+          <div class="section-heading">
+            <h2>Duel the Robot</h2>
+          </div>
+          <p class="hint">Fully offline. You play red from the bottom; the robot answers with black and opens the game. Captures are mandatory, chains keep going.</p>
+          <div class="size-picker" role="radiogroup" aria-label="Board size">
+            <button class="size-option solo-size is-active" type="button" data-size="8" aria-pressed="true">
+              <strong>8 × 8</strong>
+              <span>Classic</span>
+            </button>
+            <button class="size-option solo-size" type="button" data-size="10" aria-pressed="false">
+              <strong>10 × 10</strong>
+              <span>Wide</span>
+            </button>
+            <button class="size-option solo-size" type="button" data-size="12" aria-pressed="false">
+              <strong>12 × 12</strong>
+              <span>Huge</span>
+            </button>
+          </div>
+          <label class="field">
+            <span>Robot strength</span>
+            <div class="mode-row" id="soloDiffRow" role="radiogroup" aria-label="Robot strength">
+              <label class="mode-card"><input type="radio" name="soloDiff" value="casual" checked><span>🤖 Casual</span></label>
+              <label class="mode-card"><input type="radio" name="soloDiff" value="sharp"><span>🤖 Sharp</span></label>
+              <label class="mode-card"><input type="radio" name="soloDiff" value="master"><span>🤖 Master</span></label>
+            </div>
+          </label>
+          <button class="primary-button" type="submit">Start Game</button>
+        </form>
 
         <form class="entry-panel" id="createForm" hidden>
           <div class="section-heading">
@@ -72,7 +103,7 @@
         </div>
         <dl class="facts">
           <dt>Mode</dt>
-          <dd>Remote</dd>
+          <dd id="factMode">Remote</dd>
           <dt>Status</dt>
           <dd id="factStatus">Lobby</dd>
           <dt>Board</dt>
@@ -141,6 +172,8 @@
     </main>
 
     <script src="/shared/game-entry.js" defer></script>
+    <script src="/shared/profile.js"></script>
+    <script src="/shared/juice.js"></script>
     <script src="/shared/offline-note.js"></script>
     <script src="app.js" defer></script>
   </body>

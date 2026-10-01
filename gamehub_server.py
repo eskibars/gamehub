@@ -82,6 +82,15 @@ CHECKERS_GAME_SUBSCRIBERS: dict[str, list[dict[str, Any]]] = {}
 CHECKERS_GAMES_LOCK = threading.Lock()
 CHECKERS_SIZES = (8, 10, 12)
 CHECKERS_MAX_LOG = 12
+SET_GAMES: dict[str, dict[str, Any]] = {}
+SET_GAME_SUBSCRIBERS: dict[str, list[dict[str, Any]]] = {}
+SET_GAMES_LOCK = threading.Lock()
+SET_GAME_TIMERS: dict[str, threading.Timer] = {}
+SET_MAX_PLAYERS = 6
+SET_TABLE_SIZE = 12
+SET_CLAIM_SECONDS = 5.0
+SET_PENALTY_SECONDS = 5.0
+SET_MAX_LOG = 30
 # Moves without a capture before a game is declared a draw.
 CHECKERS_DRAW_QUIET = 60
 ORACLE_GAMES: dict[str, dict[str, Any]] = {}
@@ -1369,6 +1378,7 @@ def sweep_stale_games(now: float | None = None) -> list[str]:
         (HANGMAN_GAMES_LOCK, HANGMAN_GAMES, HANGMAN_GAME_SUBSCRIBERS, None),
         (BATTLESHIP_GAMES_LOCK, BATTLESHIP_GAMES, BATTLESHIP_GAME_SUBSCRIBERS, None),
         (CHECKERS_GAMES_LOCK, CHECKERS_GAMES, CHECKERS_GAME_SUBSCRIBERS, None),
+        (SET_GAMES_LOCK, SET_GAMES, SET_GAME_SUBSCRIBERS, SET_GAME_TIMERS),
         (ORACLE_GAMES_LOCK, ORACLE_GAMES, ORACLE_GAME_SUBSCRIBERS, None),
         (TRAINING_GAMES_LOCK, TRAINING_GAMES, TRAINING_GAME_SUBSCRIBERS, None),
     )
@@ -2344,6 +2354,8 @@ def create_app() -> Flask:
             battleship_count = len(BATTLESHIP_GAMES)
         with CHECKERS_GAMES_LOCK:
             checkers_count = len(CHECKERS_GAMES)
+        with SET_GAMES_LOCK:
+            set_count = len(SET_GAMES)
         with ORACLE_GAMES_LOCK:
             oracle_count = len(ORACLE_GAMES)
         with TRAINING_GAMES_LOCK:
@@ -2359,6 +2371,7 @@ def create_app() -> Flask:
                     "hangman": hangman_count,
                     "battleship": battleship_count,
                     "checkers": checkers_count,
+                    "set": set_count,
                     "oracle": oracle_count,
                     "training": training_count,
                 },
@@ -5767,5 +5780,399 @@ def create_app() -> Flask:
         return Response(stream_with_context(stream()), mimetype="text/event-stream")
 
     start_game_sweeper()
+
+    # ============================================================
+    # SET — remote multiplayer tables with the "SET!" call. The first
+    # player to shout gets a five-second window to point out their set;
+    # miss it (or pick wrong) and they sit out a five-second penalty while
+    # everyone else keeps hunting. Cards travel as indices into the same
+    # 81-card ordering the solo board uses, so the client renders them
+    # without shipping card art.
+    # ============================================================
+
+    def set_card_attrs(card_id: int) -> tuple[int, int, int, int]:
+        return (card_id // 27, (card_id // 9) % 3, (card_id // 3) % 3, card_id % 3)
+
+    def set_is_set(a: int, b: int, c: int) -> bool:
+        for va, vb, vc in zip(set_card_attrs(a), set_card_attrs(b), set_card_attrs(c)):
+            if len({va, vb, vc}) not in (1, 3):
+                return False
+        return True
+
+    def set_find_set(table: list[int]) -> tuple[int, int, int] | None:
+        for i in range(len(table)):
+            for j in range(i + 1, len(table)):
+                for k in range(j + 1, len(table)):
+                    if set_is_set(table[i], table[j], table[k]):
+                        return (table[i], table[j], table[k])
+        return None
+
+    def set_new_deck() -> list[int]:
+        deck = list(range(81))
+        random.shuffle(deck)
+        return deck
+
+    def set_deal_to(game: dict[str, Any], target: int) -> None:
+        while len(game["table"]) < target and game["deck"]:
+            game["table"].append(game["deck"].pop())
+
+    def set_ensure_set(game: dict[str, Any]) -> None:
+        while not set_find_set(game["table"]) and game["deck"]:
+            for _ in range(3):
+                if game["deck"]:
+                    game["table"].append(game["deck"].pop())
+
+    def set_append_log(game: dict[str, Any], text: str) -> None:
+        game["log"].append({"text": text, "at": utc_now()})
+        if len(game["log"]) > SET_MAX_LOG:
+            del game["log"][: len(game["log"]) - SET_MAX_LOG]
+        game["updatedAt"] = utc_now()
+
+    def set_expire_claim(game: dict[str, Any]) -> bool:
+        """Lapse an overdue claim: the caller sits out the penalty window."""
+        claim = game.get("claim")
+        if not claim:
+            return False
+        now = time.time()
+        if now < claim["expiresAt"]:
+            return False
+        player = game["players"].get(claim["playerId"])
+        if player:
+            player["lockedUntil"] = claim["expiresAt"] + SET_PENALTY_SECONDS
+        set_append_log(game, f"{claim['name']} ran out of time — sitting out.")
+        game["claim"] = None
+        return True
+
+    def set_cancel_timer(code: str) -> None:
+        timer = SET_GAME_TIMERS.pop(code, None)
+        if timer:
+            timer.cancel()
+
+    def set_public_view(game: dict[str, Any], player_id: str | None) -> dict[str, Any]:
+        now = time.time()
+        set_expire_claim(game)
+        players = []
+        for pid in game["order"]:
+            info = game["players"][pid]
+            players.append(
+                {
+                    "id": pid,
+                    "name": info["name"],
+                    "score": info["score"],
+                    "lockedUntil": info.get("lockedUntil"),
+                    "isHost": info.get("isHost", False),
+                    "you": pid == player_id,
+                }
+            )
+        claim = game.get("claim")
+        view: dict[str, Any] = {
+            "code": game["code"],
+            "status": game["status"],
+            "round": game["round"],
+            "hostId": game["hostId"],
+            "players": players,
+            "table": game["table"],
+            "deckCount": len(game["deck"]),
+            "claim": None
+            if not claim
+            else {
+                "playerId": claim["playerId"],
+                "name": claim["name"],
+                "msLeft": max(0, int((claim["expiresAt"] - now) * 1000)),
+            },
+            "now": now,
+            "log": [entry["text"] for entry in game["log"]][-12:],
+            "winnerId": game.get("winnerId"),
+        }
+        if player_id and player_id in game["players"]:
+            me = game["players"][player_id]
+            view["playerId"] = player_id
+            view["youAreHost"] = game["hostId"] == player_id
+            view["lockedUntil"] = me.get("lockedUntil")
+            view["yourScore"] = me["score"]
+        return view
+
+    def set_publish(code: str, event_name: str = "game") -> None:
+        with SET_GAMES_LOCK:
+            game = SET_GAMES.get(code)
+            subscribers = list(SET_GAME_SUBSCRIBERS.get(code, []))
+        if not game:
+            return
+        for subscriber in subscribers:
+            player_id = subscriber.get("playerId")
+            subscriber["queue"].put({"event": event_name, "data": set_public_view(game, player_id)})
+
+    def set_expire_and_publish(code: str) -> None:
+        with SET_GAMES_LOCK:
+            game = SET_GAMES.get(code)
+            if not game or not set_expire_claim(game):
+                return
+            SET_GAME_TIMERS.pop(code, None)
+        set_publish(code, "claim")
+
+    def set_new_game() -> dict[str, Any]:
+        now = utc_now()
+        return {
+            "code": uuid.uuid4().hex[:8].upper(),
+            "status": "lobby",
+            "round": 1,
+            "hostId": None,
+            "order": [],
+            "players": {},
+            "deck": set_new_deck(),
+            "table": [],
+            "claim": None,
+            "log": [],
+            "winnerId": None,
+            "createdAt": now,
+            "updatedAt": now,
+        }
+
+    @app.post("/api/set/games")
+    def create_set_game():
+        game = set_new_game()
+        with SET_GAMES_LOCK:
+            SET_GAMES[game["code"]] = game
+            SET_GAME_SUBSCRIBERS.setdefault(game["code"], [])
+        return jsonify({"game": set_public_view(game, None), "shareUrl": f"/set/?table={game['code']}"}), 201
+
+    @app.get("/api/set/games/<code>")
+    def get_set_game(code: str):
+        code = code.upper()
+        player_id = str(request.args.get("playerId") or "").strip() or None
+        with SET_GAMES_LOCK:
+            game = SET_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Table was not found."}), 404
+            return jsonify({"game": set_public_view(game, player_id)})
+
+    @app.post("/api/set/games/<code>/players")
+    def join_set_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        name = str(body.get("name") or "").strip()[:24]
+        provided_id = str(body.get("playerId") or "").strip()
+        if not name:
+            return jsonify({"error": "Name is required."}), 400
+        with SET_GAMES_LOCK:
+            game = SET_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Table was not found."}), 404
+            if provided_id and provided_id in game["players"]:
+                game["players"][provided_id]["name"] = name
+                player_id = provided_id
+            else:
+                if len(game["players"]) >= SET_MAX_PLAYERS:
+                    return jsonify({"error": "This table is full."}), 409
+                player_id = secrets.token_urlsafe(8)
+                is_host = not game["players"]
+                if is_host:
+                    game["hostId"] = player_id
+                game["players"][player_id] = {
+                    "id": player_id,
+                    "name": name,
+                    "score": 0,
+                    "lockedUntil": None,
+                    "isHost": is_host,
+                }
+                game["order"].append(player_id)
+            game["updatedAt"] = utc_now()
+            view = set_public_view(game, player_id)
+        set_publish(code, "joined")
+        return jsonify({"game": view, "playerId": player_id})
+
+    @app.post("/api/set/games/<code>/start")
+    def start_set_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with SET_GAMES_LOCK:
+            game = SET_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Table was not found."}), 404
+            if game["status"] != "lobby":
+                return jsonify({"error": "Already playing."}), 409
+            if player_id != game["hostId"]:
+                return jsonify({"error": "Only the host can start."}), 403
+            if not game["players"]:
+                return jsonify({"error": "Nobody has joined yet."}), 409
+            game["status"] = "active"
+            game["table"] = []
+            set_deal_to(game, SET_TABLE_SIZE)
+            set_ensure_set(game)
+            for info in game["players"].values():
+                info["score"] = 0
+                info["lockedUntil"] = None
+            set_append_log(game, "Go — find those sets!")
+            view = set_public_view(game, player_id or None)
+        set_publish(code, "started")
+        return jsonify({"game": view})
+
+    @app.post("/api/set/games/<code>/call")
+    def call_set_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with SET_GAMES_LOCK:
+            game = SET_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Table was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "The table is not playing."}), 409
+            player = game["players"].get(player_id)
+            if not player:
+                return jsonify({"error": "Pull up a chair first."}), 404
+            set_expire_claim(game)
+            if player.get("lockedUntil") and time.time() < player["lockedUntil"]:
+                return jsonify({"error": "You are sitting out — keep hunting."}), 403
+            if game["claim"]:
+                return jsonify({"error": f"{game['claim']['name']} already called SET!"}), 409
+            now = time.time()
+            game["claim"] = {"playerId": player_id, "name": player["name"], "expiresAt": now + SET_CLAIM_SECONDS}
+            set_append_log(game, f"{player['name']} called SET!")
+            set_cancel_timer(code)
+            timer = threading.Timer(SET_CLAIM_SECONDS + 0.05, set_expire_and_publish, args=(code,))
+            timer.daemon = True
+            SET_GAME_TIMERS[code] = timer
+            view = set_public_view(game, player_id)
+        timer.start()
+        set_publish(code, "claim")
+        return jsonify({"game": view})
+
+    def set_finish(game: dict[str, Any]) -> None:
+        game["status"] = "finished"
+        game["claim"] = None
+        top = max(game["players"].values(), key=lambda info: info["score"], default=None)
+        game["winnerId"] = top["id"] if top else None
+        set_append_log(game, f"Table finished — {top['name']} wins with {top['score']}!" if top else "Table finished.")
+
+    @app.post("/api/set/games/<code>/submit")
+    def submit_set_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        cards = body.get("cards") or []
+        with SET_GAMES_LOCK:
+            game = SET_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Table was not found."}), 404
+            if game["status"] != "active":
+                return jsonify({"error": "The table is not playing."}), 409
+            player = game["players"].get(player_id)
+            if not player:
+                return jsonify({"error": "Pull up a chair first."}), 404
+            set_expire_claim(game)
+            claim = game.get("claim")
+            if not claim or claim["playerId"] != player_id:
+                return jsonify({"error": "Call SET! before showing your cards."}), 409
+            if time.time() > claim["expiresAt"]:
+                set_expire_claim(game)
+                view = set_public_view(game, player_id)
+                set_publish(code, "claim")
+                return jsonify({"game": view, "error": "Your window closed."}), 409
+            try:
+                picked = sorted(int(card) for card in cards)
+            except (TypeError, ValueError):
+                return jsonify({"error": "Pick three cards."}), 400
+            if len(picked) != 3 or len(set(picked)) != 3 or any(card not in game["table"] for card in picked):
+                return jsonify({"error": "Those cards are not on the table."}), 400
+            set_cancel_timer(code)
+            if set_is_set(*picked):
+                game["table"] = [card for card in game["table"] if card not in picked]
+                player["score"] += 1
+                set_append_log(game, f"{player['name']} found a set! ({player['score']})")
+                set_deal_to(game, SET_TABLE_SIZE)
+                set_ensure_set(game)
+                game["claim"] = None
+                if not set_find_set(game["table"]) and not game["deck"]:
+                    set_finish(game)
+                    view = set_public_view(game, player_id)
+                else:
+                    view = set_public_view(game, player_id)
+            else:
+                player["lockedUntil"] = time.time() + SET_PENALTY_SECONDS
+                set_append_log(game, f"{player['name']} called it wrong — sitting out.")
+                game["claim"] = None
+                view = set_public_view(game, player_id)
+        set_publish(code, "set")
+        return jsonify({"game": view})
+
+    @app.post("/api/set/games/<code>/end")
+    def end_set_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with SET_GAMES_LOCK:
+            game = SET_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Table was not found."}), 404
+            if game["status"] == "finished":
+                return jsonify({"error": "Already finished."}), 409
+            if player_id != game["hostId"]:
+                return jsonify({"error": "Only the host can call it."}), 403
+            set_cancel_timer(code)
+            set_finish(game)
+            view = set_public_view(game, player_id or None)
+        set_publish(code, "finished")
+        return jsonify({"game": view})
+
+    @app.post("/api/set/games/<code>/rematch")
+    def rematch_set_game(code: str):
+        code = code.upper()
+        body = request.get_json(silent=True) or {}
+        player_id = str(body.get("playerId") or "").strip()
+        with SET_GAMES_LOCK:
+            game = SET_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Table was not found."}), 404
+            if game["status"] != "finished":
+                return jsonify({"error": "Finish this round first."}), 409
+            if player_id != game["hostId"]:
+                return jsonify({"error": "Only the host can deal again."}), 403
+            game["round"] += 1
+            game["status"] = "active"
+            game["deck"] = set_new_deck()
+            game["table"] = []
+            game["claim"] = None
+            game["winnerId"] = None
+            for info in game["players"].values():
+                info["score"] = 0
+                info["lockedUntil"] = None
+            set_deal_to(game, SET_TABLE_SIZE)
+            set_ensure_set(game)
+            set_append_log(game, f"Round {game['round']} — fresh deal!")
+            view = set_public_view(game, player_id or None)
+        set_publish(code, "started")
+        return jsonify({"game": view})
+
+    @app.get("/api/set/games/<code>/events")
+    def set_game_events(code: str):
+        code = code.upper()
+        player_id = str(request.args.get("playerId") or "").strip() or None
+        event_queue: queue.Queue[dict[str, Any]] = queue.Queue()
+        subscriber = {"queue": event_queue, "playerId": player_id}
+        with SET_GAMES_LOCK:
+            game = SET_GAMES.get(code)
+            if not game:
+                return jsonify({"error": "Table was not found."}), 404
+            SET_GAME_SUBSCRIBERS.setdefault(code, []).append(subscriber)
+            initial_game = set_public_view(game, player_id)
+
+        def stream():
+            yield sse_message("game", initial_game)
+            try:
+                while True:
+                    try:
+                        message = event_queue.get(timeout=25)
+                        yield sse_message(message["event"], message["data"])
+                    except queue.Empty:
+                        yield sse_message("ping", {"ok": True})
+            finally:
+                with SET_GAMES_LOCK:
+                    subscribers = SET_GAME_SUBSCRIBERS.get(code, [])
+                    if subscriber in subscribers:
+                        subscribers.remove(subscriber)
+
+        return Response(stream_with_context(stream()), mimetype="text/event-stream")
 
     return app

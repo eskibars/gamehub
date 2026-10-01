@@ -12,8 +12,8 @@
         <header class="topbar">
           <a class="back-link" href="/">Game Hub</a>
           <div>
-            <p class="eyebrow">Local-first puzzle maker</p>
-            <h1>Word Find Creator</h1>
+            <p class="eyebrow">Build it, print it, or play it right here</p>
+            <h1>Word Find</h1>
           </div>
           <p class="save-status" id="saveStatus">Saved locally</p>
         </header>
@@ -30,15 +30,17 @@
               <input id="gridSize" type="number" min="5" max="30" step="1" value="12">
             </label>
             <label class="field">
+              <span>Theme</span>
+              <select id="categorySelect">
+                <option value="">Custom words</option>
+              </select>
+            </label>
+            <label class="field">
               <span>Fill letters</span>
               <select id="fillStyle">
                 <option value="random" selected>Random letters</option>
                 <option value="word-heavy">Favor word letters</option>
               </select>
-            </label>
-            <label class="toggle">
-              <input id="showAnswers" type="checkbox">
-              <span>Show answers</span>
             </label>
           </div>
         </section>
@@ -54,6 +56,7 @@
           <textarea id="wordInput" rows="12" spellcheck="false" placeholder="One word per line&#10;STORM&#10;UMBRELLA&#10;PUDDLE&#10;RAINCOAT"></textarea>
           <div class="word-actions">
             <button id="buildPuzzle" class="button primary" type="button">Build Puzzle</button>
+            <button id="playPuzzle" class="button success" type="button">▶ Play on screen</button>
             <button id="shufflePuzzle" class="button" type="button">Shuffle</button>
             <button id="printPuzzle" class="button" type="button">Print</button>
           </div>
@@ -78,6 +81,30 @@
       </aside>
     </main>
 
+    <div class="play-overlay" id="playOverlay" hidden>
+      <header class="play-topbar">
+        <button id="exitPlay" class="button ghost" type="button">← Builder</button>
+        <strong id="playTitle">Word Find</strong>
+        <span class="play-clock" id="playClock">0:00</span>
+      </header>
+      <p class="play-message" id="playMessage">Drag from the first letter to the last — any direction.</p>
+      <div class="play-layout">
+        <div class="play-grid" id="playGrid" aria-label="Word find play grid"></div>
+        <aside class="word-bank play-bank" aria-label="Words to find">
+          <h3>Find these</h3>
+          <ul id="playBank"></ul>
+        </aside>
+      </div>
+      <div class="play-won" id="playWon" hidden>
+        <h2>Puzzle solved! 🎉</h2>
+        <p id="playWonStats"></p>
+        <button id="playAgain" class="button primary" type="button">New shuffle</button>
+      </div>
+    </div>
+
+    <script src="/shared/dictionaries.js"></script>
+    <script src="/shared/profile.js"></script>
+    <script src="/shared/juice.js"></script>
     <script src="app.js" defer></script>
   </body>
 </html>

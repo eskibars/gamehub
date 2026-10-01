@@ -370,3 +370,15 @@ h2 {
     justify-items: center;
   }
 }
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.hint {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--muted, #657068);
+}

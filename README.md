@@ -133,7 +133,8 @@ ships surface cell by cell, and full fleets are revealed only after the
 game ends. A short captain's log records each salvo, and the loser of a
 round fires first in the rematch.
 
-Checkers is a remote two-player draughts game where the creator picks the
+Checkers is draughts against a searching robot (alpha-beta at three
+strengths, sized to the board) or a remote two-player game where the creator picks the
 board width — 8×8, 10×10, or 12×12 — which also sets the starting rows
 (3, 4, or 5 rows of men). American rules apply: mandatory captures,
 chained multi-jumps that keep the turn, and crowning ends a move. The
@@ -176,8 +177,9 @@ codes, no sign-in, best scores and streaks live in browser storage:
   survives a page refresh.
 - **Word Guess** (`/word-guess/`) — a Wordle-style deduction game with a
   built-in ~2,500-word list. A deterministic daily word (same for
-  everyone that day, progress saved) or endless practice rounds, hard
-  mode, guess-distribution stats, and one-click emoji share grids.
+  everyone that day, progress saved), endless practice rounds in 14
+  themed categories (animals, food, space…), hard mode,
+  guess-distribution stats, and one-click emoji share grids.
 - **Minesweeper** (`/minesweeper/`) — 9×9, 16×16, and 30×16 boards with
   a guaranteed-safe first click, flags (right-click, long-press, or flag
   mode), chording, and best times per difficulty.
@@ -255,6 +257,10 @@ codes, no sign-in, best scores and streaks live in browser storage:
   with corner-dead-square pruning). Arrows, WASD, swipe, or the on-screen
   pad; full undo, move/push counters, best-push records, and level
   progression that unlocks as you clear.
+- **Set tables** (`/set/`) — the solo board plus remote tables for up to
+  six: anyone who spots a set smashes the big SET! button and gets five
+  seconds to point out their three cards; miss and you sit the next
+  shout out while everyone else keeps hunting.
 - **Eights** (`/crazy-eights/`) — Crazy Eights against one to three
   robots on a felt table. Match suit or rank, eights are wild with a
   suit-picker, one forced draw per turn, and automatic reshuffling when

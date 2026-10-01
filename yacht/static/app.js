@@ -20,15 +20,23 @@ const UPPER_IDS = ["ones", "twos", "threes", "fours", "fives", "sixes"];
 
 const state = {
   mode: "scores",
-  setupPlayers: ["Player 1", "Player 2"],
+  setupPlayers: ["Player 1"],
   players: [],
+  robots: [], // player indices played by the robot
+  robotSkill: "casual",
   scores: {},
   activePlayer: 0,
   dice: [1, 1, 1, 1, 1],
   locked: [false, false, false, false, false],
   rollsLeft: 3,
   isRolling: false,
+  robotTimer: null,
+  gameOverShown: false,
 };
+
+function isRobot(playerIndex) {
+  return state.robots.includes(playerIndex);
+}
 
 const els = {
   setupView: document.querySelector("#setupView"),
@@ -53,6 +61,8 @@ function saveLocal() {
     JSON.stringify({
       mode: state.mode,
       players: state.players,
+      robots: state.robots,
+      robotSkill: state.robotSkill,
       scores: state.scores,
       activePlayer: state.activePlayer,
       dice: state.dice,
@@ -68,6 +78,8 @@ function loadLocal() {
     if (!saved || !Array.isArray(saved.players) || !saved.players.length) return false;
     state.mode = saved.mode === "dice" ? "dice" : "scores";
     state.players = saved.players;
+    state.robots = Array.isArray(saved.robots) ? saved.robots : [];
+    state.robotSkill = saved.robotSkill || "casual";
     state.setupPlayers = [...saved.players];
     state.scores = saved.scores || {};
     state.activePlayer = Number(saved.activePlayer) || 0;
@@ -81,12 +93,17 @@ function loadLocal() {
   }
 }
 
+function robotCount() {
+  return Math.min(Math.max(Number(els.robotCount?.value) || 0, 0), 3);
+}
+
 function syncPlayerSetup() {
   const count = Math.min(Math.max(Number(els.playerCount.value) || 1, 1), 8);
   els.playerCount.value = count;
   while (state.setupPlayers.length < count) state.setupPlayers.push(`Player ${state.setupPlayers.length + 1}`);
   state.setupPlayers = state.setupPlayers.slice(0, count);
-  els.playerCountLabel.textContent = `${count} player${count === 1 ? "" : "s"}`;
+  const bots = robotCount();
+  els.playerCountLabel.textContent = `${count} player${count === 1 ? "" : "s"} + ${bots} robot${bots === 1 ? "" : "s"}`;
 }
 
 function renderPlayerEditor() {
@@ -127,34 +144,43 @@ function renderDiePips(value) {
   return fragment;
 }
 
-function counts() {
-  return state.dice.reduce((map, value) => {
+function countsOf(dice) {
+  return dice.reduce((map, value) => {
     map[value] = (map[value] || 0) + 1;
     return map;
   }, {});
 }
 
-function diceTotal() {
-  return state.dice.reduce((total, value) => total + value, 0);
+function counts() {
+  return countsOf(state.dice);
 }
 
-function hasStraight(length) {
-  const unique = [...new Set(state.dice)].sort((a, b) => a - b).join("");
+function diceTotal(dice = state.dice) {
+  return dice.reduce((total, value) => total + value, 0);
+}
+
+function hasStraight(length, dice = state.dice) {
+  const unique = [...new Set(dice)].sort((a, b) => a - b).join("");
   return length === 4 ? /1234|2345|3456/.test(unique) : /12345|23456/.test(unique);
 }
 
-function suggestedScore(categoryId) {
+// Pure scoring so the robot brain can evaluate hypothetical dice.
+function scoreDice(dice, categoryId) {
   const face = UPPER_IDS.indexOf(categoryId) + 1;
-  if (face > 0) return state.dice.filter((value) => value === face).reduce((sum, value) => sum + value, 0);
+  if (face > 0) return dice.filter((value) => value === face).reduce((sum, value) => sum + value, 0);
 
-  const values = Object.values(counts());
-  if (categoryId === "threeKind") return values.some((count) => count >= 3) ? diceTotal() : 0;
-  if (categoryId === "fourKind") return values.some((count) => count >= 4) ? diceTotal() : 0;
+  const values = Object.values(countsOf(dice));
+  if (categoryId === "threeKind") return values.some((count) => count >= 3) ? diceTotal(dice) : 0;
+  if (categoryId === "fourKind") return values.some((count) => count >= 4) ? diceTotal(dice) : 0;
   if (categoryId === "fullHouse") return values.includes(3) && values.includes(2) ? 25 : 0;
-  if (categoryId === "smallStraight") return hasStraight(4) ? 30 : 0;
-  if (categoryId === "largeStraight") return hasStraight(5) ? 40 : 0;
+  if (categoryId === "smallStraight") return hasStraight(4, dice) ? 30 : 0;
+  if (categoryId === "largeStraight") return hasStraight(5, dice) ? 40 : 0;
   if (categoryId === "yacht") return values.includes(5) ? 50 : 0;
-  return diceTotal();
+  return diceTotal(dice);
+}
+
+function suggestedScore(categoryId) {
+  return scoreDice(state.dice, categoryId);
 }
 
 function playerScore(playerIndex, categoryId) {
@@ -197,12 +223,41 @@ function advanceTurn() {
   resetDiceForTurn();
 }
 
-function fillDiceScore(playerIndex, categoryId) {
+function fillDiceScore(playerIndex, categoryId, value) {
   if (state.mode !== "dice" || playerIndex !== state.activePlayer || playerScore(playerIndex, categoryId) !== undefined) return;
-  setPlayerScore(playerIndex, categoryId, suggestedScore(categoryId));
+  setPlayerScore(playerIndex, categoryId, value ?? suggestedScore(categoryId));
   advanceTurn();
   saveLocal();
   renderAll();
+  if (checkGameOver()) return;
+  maybeRobotTurn();
+}
+
+function allScored(playerIndex) {
+  return CATEGORIES.every((category) => playerScore(playerIndex, category.id) !== undefined);
+}
+
+function checkGameOver() {
+  if (state.gameOverShown) return false;
+  if (!state.players.length || !state.players.every((_, index) => allScored(index))) return false;
+  state.gameOverShown = true;
+  const totals = state.players.map((_, index) => grandTotal(index));
+  const best = Math.max(...totals);
+  const winnerIndex = totals.indexOf(best);
+  els.turnIndicator.textContent = `🏆 ${state.players[winnerIndex]} wins with ${best}!`;
+  const robotsPlayed = state.robots.length > 0;
+  const humanBeatRobots =
+    robotsPlayed && state.robots.every((bot) => totals[winnerIndex] >= totals[bot]) && !isRobot(winnerIndex);
+  if (humanBeatRobots) {
+    GameHubProfile?.achieve("yacht-robot-win");
+    GameHubProfile?.award("yacht", state.robotSkill === "master" ? 8 : state.robotSkill === "sharp" ? 5 : 3,
+      `Beat ${state.robots.length} ${state.robotSkill} robot${state.robots.length === 1 ? "" : "s"} ${best}-${Math.max(...state.robots.map((bot) => totals[bot]))}`, 0);
+    GameHubJuice?.win();
+  } else if (robotsPlayed) {
+    GameHubProfile?.award("yacht", 1, "Lost the dice duel to a robot", 0);
+    GameHubJuice?.lose();
+  }
+  return true;
 }
 
 function renderScoreCell(playerIndex, category) {
@@ -214,8 +269,12 @@ function renderScoreCell(playerIndex, category) {
     button.type = "button";
     button.className = "category-button";
     if (value !== undefined) button.classList.add("is-filled");
-    button.textContent = value !== undefined ? String(value) : playerIndex === state.activePlayer && hasRolled ? String(suggestedScore(category.id)) : "-";
-    button.disabled = value !== undefined || playerIndex !== state.activePlayer || !hasRolled;
+    button.textContent = value !== undefined ? String(value) : playerIndex === state.activePlayer && hasRolled && !isRobot(playerIndex) ? String(suggestedScore(category.id)) : "-";
+    button.disabled =
+      value !== undefined ||
+      playerIndex !== state.activePlayer ||
+      !hasRolled ||
+      isRobot(state.activePlayer);
     button.addEventListener("click", () => fillDiceScore(playerIndex, category.id));
     cell.append(button);
   } else {
@@ -305,7 +364,7 @@ function renderDice() {
     die.append(renderDiePips(value));
     die.ariaLabel = `Die ${index + 1}, ${value}${state.locked[index] ? ", locked" : ""}`;
     die.addEventListener("click", () => {
-      if (state.isRolling) return;
+      if (state.isRolling || isRobot(state.activePlayer)) return;
       state.locked[index] = !state.locked[index];
       saveLocal();
       renderDice();
@@ -313,7 +372,7 @@ function renderDice() {
     els.diceRow.append(die);
   });
   els.rollStatus.textContent = `${state.rollsLeft} roll${state.rollsLeft === 1 ? "" : "s"} left`;
-  els.rollDice.disabled = state.rollsLeft <= 0 || state.isRolling;
+  els.rollDice.disabled = state.rollsLeft <= 0 || state.isRolling || isRobot(state.activePlayer);
 }
 
 function renderAll() {
@@ -324,16 +383,26 @@ function renderAll() {
 
 function startGame(event) {
   event.preventDefault();
-  state.mode = new FormData(els.setupForm).get("mode") === "dice" ? "dice" : "scores";
+  const bots = robotCount();
+  state.robotSkill = els.robotSkill?.value || "casual";
+  const chosenMode = new FormData(els.setupForm).get("mode") === "dice" ? "dice" : "scores";
+  state.mode = bots > 0 ? "dice" : chosenMode;
   syncPlayerSetup();
   state.players = state.setupPlayers.map((name, index) => name.trim() || `Player ${index + 1}`);
+  state.robots = [];
+  for (let i = 0; i < bots; i += 1) {
+    state.robots.push(state.players.length);
+    state.players.push(`🤖 Robot ${i + 1}`);
+  }
   state.scores = {};
   state.activePlayer = 0;
+  state.gameOverShown = false;
   resetDiceForTurn();
   els.setupView.hidden = true;
   els.gameView.hidden = false;
   saveLocal();
   renderAll();
+  maybeRobotTurn();
 }
 
 function rollDice() {
@@ -346,15 +415,19 @@ function rollDice() {
     state.isRolling = false;
     saveLocal();
     renderAll();
+    maybeRobotTurn(700);
   }, 520);
 }
 
 function resetGame() {
   localStorage.removeItem(STORAGE_KEY);
+  if (state.robotTimer) clearTimeout(state.robotTimer);
   state.players = [];
+  state.robots = [];
   state.scores = {};
   state.activePlayer = 0;
-  state.setupPlayers = ["Player 1", "Player 2"];
+  state.gameOverShown = false;
+  state.setupPlayers = ["Player 1"];
   resetDiceForTurn();
   els.setupView.hidden = false;
   els.gameView.hidden = true;
@@ -372,6 +445,148 @@ function bindEvents() {
     renderDice();
   });
   els.resetGame.addEventListener("click", resetGame);
+}
+
+
+// ----- Robot players -----
+//
+// Casual never holds dice and scores whatever is biggest at the end.
+// Sharp holds toward the most promising pattern with a few rules of thumb.
+// Master scores exactly: for every one of the 32 hold masks it enumerates
+// all reroll outcomes and takes the expected best category value.
+
+const ROBOT_SKILLS = { casual: "Casual", sharp: "Sharp", master: "Master" };
+const evMemo = new Map();
+
+function unfilledCategories(playerIndex) {
+  return CATEGORIES.filter((category) => playerScore(playerIndex, category.id) === undefined).map((c) => c.id);
+}
+
+function bestScoreNow(dice, unfilled) {
+  let best = -1;
+  let bestId = unfilled[0];
+  for (const id of unfilled) {
+    const value = scoreDice(dice, id);
+    if (value > best) {
+      best = value;
+      bestId = id;
+    }
+  }
+  return { score: best, id: bestId };
+}
+
+function robotFinalScore(dice, unfilled) {
+  const key = dice.slice().sort().join("") + "|" + unfilled.join(",");
+  if (evMemo.has(key)) return evMemo.get(key);
+  let best = 0;
+  for (const id of unfilled) {
+    const value = scoreDice(dice, id);
+    if (value > best) best = value;
+  }
+  evMemo.set(key, best);
+  return best;
+}
+
+// Expected final score, holding exactly `mask` (bit i set = keep die i)
+// through one more roll.
+function robotEvMask(dice, mask, unfilled) {
+  const held = dice.filter((_, i) => mask & (1 << i));
+  const rerolls = 5 - held.length;
+  const combos = 6 ** rerolls;
+  let total = 0;
+  for (let code = 0; code < combos; code += 1) {
+    const rolled = [];
+    let rest = code;
+    for (let i = 0; i < rerolls; i += 1) {
+      rolled.push((rest % 6) + 1);
+      rest = Math.floor(rest / 6);
+    }
+    total += robotFinalScore(held.concat(rolled), unfilled);
+  }
+  return total / combos;
+}
+
+function robotBestMask(dice, unfilled) {
+  let bestMask = 0;
+  let bestEv = -1;
+  for (let mask = 0; mask < 32; mask += 1) {
+    const ev = robotEvMask(dice, mask, unfilled);
+    if (ev > bestEv) {
+      bestEv = ev;
+      bestMask = mask;
+    }
+  }
+  return { mask: bestMask, ev: bestEv };
+}
+
+function robotChooseHolds() {
+  const skill = state.robotSkill;
+  const dice = state.dice;
+  const robotIndex = state.activePlayer;
+  const unfilled = unfilledCategories(robotIndex);
+  if (skill === "master") {
+    const { mask } = robotBestMask(dice, unfilled);
+    return Array.from({ length: 5 }, (_, i) => Boolean(mask & (1 << i)));
+  }
+  if (skill === "sharp") {
+    const entries = Object.entries(countsOf(dice)).sort((a, b) => b[1] - a[1]);
+    const [topFace, topCount] = [Number(entries[0][0]), entries[0][1]];
+    // Hold a made three-plus of a kind outright — chase four / yacht.
+    if (topCount >= 3) return dice.map((v) => v === topFace);
+    // Hold a 4-run toward a straight.
+    const unique = [...new Set(dice)].sort((a, b) => a - b);
+    for (const run of [[1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6]]) {
+      if (run.every((face) => unique.includes(face))) {
+        return dice.map((v) => run.includes(v));
+      }
+    }
+    if (topCount === 2) return dice.map((v) => v === topFace);
+    return dice.map((v) => v === Math.max(...dice));
+  }
+  // Casual: never hold anything.
+  return [false, false, false, false, false];
+}
+
+function robotStep() {
+  if (state.mode !== "dice" || !isRobot(state.activePlayer)) return;
+  if (state.gameOverShown) return;
+  const robotIndex = state.activePlayer;
+  const unfilled = unfilledCategories(robotIndex);
+  if (!unfilled.length) {
+    advanceTurn();
+    saveLocal();
+    renderAll();
+    if (checkGameOver()) return;
+    maybeRobotTurn();
+    return;
+  }
+  const skill = state.robotSkill;
+  const now = bestScoreNow(state.dice, unfilled);
+  const skillName = ROBOT_SKILLS[skill] || "Casual";
+
+  // Score immediately when out of rolls — or, for Sharp/Master, when the
+  // points on the table beat the expected value of rolling again.
+  const scoreNow =
+    state.rollsLeft <= 0 ||
+    (skill !== "casual" && now.score >= (skill === "master" ? robotBestMask(state.dice, unfilled).ev : 20));
+
+  if (scoreNow) {
+    els.turnIndicator.textContent = `🤖 ${state.players[robotIndex]} (${skillName}) scores ${now.score}`;
+    fillDiceScore(robotIndex, now.id, now.score);
+    return;
+  }
+
+  state.locked = robotChooseHolds();
+  renderDice();
+  els.turnIndicator.textContent = `🤖 ${state.players[robotIndex]} (${skillName}) rolls…`;
+  rollDice();
+}
+
+function maybeRobotTurn(delay = 900) {
+  if (state.robotTimer) clearTimeout(state.robotTimer);
+  if (state.mode !== "dice" || !isRobot(state.activePlayer)) return;
+  if (allScored(state.activePlayer)) return;
+  state.robotTimer = setTimeout(robotStep, delay);
 }
 
 function init() {

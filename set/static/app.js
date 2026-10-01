@@ -18,6 +18,26 @@
 
   const els = {
     board: document.querySelector("#board"),
+    friendsButton: document.querySelector("#friendsButton"),
+    remoteBackdrop: document.querySelector("#remoteBackdrop"),
+    remoteName: document.querySelector("#remoteName"),
+    remoteCode: document.querySelector("#remoteCode"),
+    createTable: document.querySelector("#createTable"),
+    joinTable: document.querySelector("#joinTable"),
+    remoteCancel: document.querySelector("#remoteCancel"),
+    remoteMessage: document.querySelector("#remoteMessage"),
+    remoteLobby: document.querySelector("#remoteLobby"),
+    lobbyHeading: document.querySelector("#lobbyHeading"),
+    shareRow: document.querySelector("#shareRow"),
+    shareCode: document.querySelector("#shareCode"),
+    copyShare: document.querySelector("#copyShare"),
+    remotePlayers: document.querySelector("#remotePlayers"),
+    startTable: document.querySelector("#startTable"),
+    leaveTable: document.querySelector("#leaveTable"),
+    lobbyMessage: document.querySelector("#lobbyMessage"),
+    tableActions: document.querySelector("#tableActions"),
+    callButton: document.querySelector("#callButton"),
+    remoteStrip: document.querySelector("#remoteStrip"),
     setsFound: document.querySelector("#setsFound"),
     deckLeft: document.querySelector("#deckLeft"),
     clock: document.querySelector("#clock"),
@@ -43,6 +63,7 @@
     startedAt: 0,
     timer: null,
     busy: false,
+    remote: null,   // remote table state: { game, playerId, eventSource, claimEnd, countdown, subTimer }
   };
 
   try {
@@ -63,6 +84,16 @@
   /* ------------------------------------------------------------------ *
    * Cards + set logic                                                   *
    * ------------------------------------------------------------------ */
+
+  function cardFromIndex(idx) {
+    return {
+      id: idx,
+      number: Math.floor(idx / 27) + 1,
+      color: Math.floor(idx / 9) % 3,
+      shape: SHAPES[Math.floor(idx / 3) % 3],
+      shading: SHADINGS[idx % 3],
+    };
+  }
 
   function buildDeck() {
     const deck = [];
@@ -175,6 +206,10 @@
   }
 
   function onCardClick(id) {
+    if (game.remote) {
+      onRemoteCardClick(id);
+      return;
+    }
     if (!game.running || game.busy) return;
     if (game.selected.includes(id)) {
       game.selected = game.selected.filter((v) => v !== id);
@@ -293,8 +328,406 @@
     }
   });
 
+  /* ------------------------------------------------------------------ *
+   * Remote tables                                                       *
+   * ------------------------------------------------------------------ */
+
+  function remoteRequest(url, options = {}) {
+    return fetch(url, {
+      ...options,
+      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    }).then(async (response) => {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Request failed");
+      return data;
+    });
+  }
+
+  function showRemoteMessage(text) {
+    if (els.remoteMessage) els.remoteMessage.textContent = text;
+  }
+
+  function openRemoteModal() {
+    els.remoteBackdrop.hidden = false;
+    showRemoteMessage("");
+    els.remoteName.focus();
+  }
+
+  function closeRemoteModal() {
+    els.remoteBackdrop.hidden = true;
+  }
+
+  function savedRemoteName() {
+    try {
+      return localStorage.getItem("gamehub-set-name") || "";
+    } catch {
+      return "";
+    }
+  }
+
+  function rememberRemoteName(name) {
+    try {
+      localStorage.setItem("gamehub-set-name", name);
+    } catch {
+      // Storage unavailable.
+    }
+  }
+
+  async function createTable() {
+    const name = els.remoteName.value.trim();
+    if (!name) {
+      showRemoteMessage("Add your name first.");
+      return;
+    }
+    rememberRemoteName(name);
+    try {
+      const data = await remoteRequest("/api/set/games", { method: "POST", body: JSON.stringify({}) });
+      const joined = await remoteRequest(`/api/set/games/${data.game.code}/players`, {
+        method: "POST",
+        body: JSON.stringify({ name }),
+      });
+      adoptRemote(joined.game, joined.playerId);
+      closeRemoteModal();
+    } catch (error) {
+      showRemoteMessage(error.message);
+    }
+  }
+
+  async function joinTable() {
+    const name = els.remoteName.value.trim();
+    const code = els.remoteCode.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (!name) {
+      showRemoteMessage("Add your name first.");
+      return;
+    }
+    if (!code) {
+      showRemoteMessage("Enter a table code.");
+      return;
+    }
+    rememberRemoteName(name);
+    try {
+      const joined = await remoteRequest(`/api/set/games/${code}/players`, {
+        method: "POST",
+        body: JSON.stringify({ name }),
+      });
+      adoptRemote(joined.game, joined.playerId);
+      closeRemoteModal();
+    } catch (error) {
+      showRemoteMessage(error.message);
+    }
+  }
+
+  function adoptRemote(view, playerId) {
+    if (!game.remote || game.remote.playerId !== playerId) {
+      game.remote = { game: view, playerId, eventSource: null, claimEnd: 0, countdown: null };
+    } else {
+      game.remote.game = view;
+    }
+    const actionsRow = document.querySelector(".actions");
+    if (actionsRow) actionsRow.hidden = view.status !== "lobby";
+    els.remoteLobby.hidden = view.status !== "lobby";
+    els.tableActions.hidden = view.status !== "active";
+    els.overlay.hidden = view.status === "active" || view.status === "lobby" || view.status === "finished";
+    if (view.status === "lobby") {
+      renderRemoteLobby(view);
+    } else if (view.status === "finished") {
+      showRemoteFinished(view);
+    } else {
+      renderRemoteTable(view);
+    }
+    connectRemoteEvents(view.code);
+  }
+
+  function renderRemoteLobby(view) {
+    els.lobbyHeading.textContent = `Round ${view.round} table`;
+    els.shareRow.hidden = false;
+    els.shareCode.textContent = view.code;
+    els.remotePlayers.innerHTML = "";
+    view.players.forEach((player) => {
+      const chip = document.createElement("span");
+      chip.className = "remote-chip";
+      if (player.isHost) chip.classList.add("is-host");
+      chip.textContent = player.name;
+      els.remotePlayers.append(chip);
+    });
+    els.startTable.hidden = !view.youAreHost;
+    els.startTable.disabled = !view.players.length;
+    els.lobbyMessage.textContent = view.youAreHost
+      ? "Share the code — deal when everyone is in."
+      : "Waiting for the host to deal…";
+  }
+
+  function onRemoteCardClick(id) {
+    const remote = game.remote;
+    if (!remote) return;
+    const view = remote.game;
+    if (view.status !== "active") return;
+    const myClaim = view.claim && view.claim.playerId === remote.playerId;
+    if (!myClaim) {
+      flashCall("Press SET! first");
+      return;
+    }
+    if (game.selected.includes(id)) {
+      game.selected = game.selected.filter((v) => v !== id);
+      syncSelection(view);
+      return;
+    }
+    if (game.selected.length >= 3) return;
+    game.selected.push(id);
+    GameHubJuice.tick();
+    syncSelection(view);
+    if (game.selected.length === 3) submitRemoteSet();
+  }
+
+  let flashTimer = null;
+  function flashCall(text) {
+    const previous = "SET!";
+    if (flashTimer) clearTimeout(flashTimer);
+    els.callButton.textContent = text;
+    flashTimer = setTimeout(() => {
+      els.callButton.textContent = previous;
+      flashTimer = null;
+    }, 1200);
+  }
+
+  function renderRemoteTable(view) {
+    const mine = view.claim && view.claim.playerId === game.remote?.playerId;
+    if (!mine) game.selected = [];
+    // Rebuild the table only when the card multiset changes — selecting
+    // cards re-renders classes in place to keep click handlers alive.
+    const signature = view.table.join(",");
+    if (signature !== game.tableSignature) {
+      game.tableSignature = signature;
+      game.table = view.table.map(cardFromIndex);
+      game.selected = [];
+      render();
+    } else {
+      syncSelection(view);
+    }
+    els.deckLeft.textContent = view.deckCount;
+    els.setsFound.textContent = String(view.yourScore ?? 0);
+
+    renderRemoteStrip(view);
+
+    // Claim countdown + button state.
+    const claim = view.claim;
+    if (game.remote.countdown) clearInterval(game.remote.countdown);
+    game.remote.countdown = null;
+    if (!claim) {
+      const lockedUntil = (view.lockedUntil || 0) * 1000;
+      const locked = Date.now() < lockedUntil;
+      els.callButton.disabled = locked;
+      els.callButton.classList.remove("is-mine");
+      els.callButton.textContent = locked
+        ? `Sitting out ${Math.ceil((lockedUntil - Date.now()) / 1000)}s…`
+        : "SET!";
+      const tick = setInterval(() => {
+        if (Date.now() >= lockedUntil || !game.remote) {
+          clearInterval(tick);
+          return;
+        }
+        if (!game.remote.game?.claim) {
+          els.callButton.textContent = `Sitting out ${Math.ceil((lockedUntil - Date.now()) / 1000)}s…`;
+        }
+      }, 250);
+    } else if (mine) {
+      els.callButton.disabled = true;
+      els.callButton.classList.add("is-mine");
+      game.remote.claimEnd = Date.now() + claim.msLeft;
+      els.callButton.textContent = `${(claim.msLeft / 1000).toFixed(1)}s — pick your set!`;
+      game.remote.countdown = setInterval(() => {
+        const left = game.remote.claimEnd - Date.now();
+        if (left <= 0) {
+          clearInterval(game.remote.countdown);
+          game.remote.countdown = null;
+          return;
+        }
+        els.callButton.textContent = `${(left / 1000).toFixed(1)}s — pick your set!`;
+      }, 80);
+    } else {
+      els.callButton.disabled = true;
+      els.callButton.classList.remove("is-mine");
+      els.callButton.textContent = `🚨 ${claim.name} called SET!`;
+    }
+  }
+
+  function renderRemoteStrip(view) {
+    els.remoteStrip.innerHTML = "";
+    view.players.forEach((player) => {
+      const chip = document.createElement("span");
+      chip.className = "remote-chip";
+      if (view.claim && view.claim.playerId === player.id) chip.classList.add("is-claim");
+      chip.textContent = `${player.name} · ${player.score}`;
+      els.remoteStrip.append(chip);
+    });
+  }
+
+  function syncSelection(view) {
+    const claimMine = view.claim && view.claim.playerId === game.remote?.playerId;
+    game.selected = game.selected.filter((id) => game.table.some((card) => card.id === id));
+    for (const el of els.board.children) {
+      el.classList.toggle("selected", claimMine && game.selected.includes(Number(el.dataset.id)));
+    }
+  }
+
+  function connectRemoteEvents(code) {
+    if (!game.remote) return;
+    // adoptRemote runs on every SSE event — only (re)connect when the
+    // stream target actually changes, or this would loop forever.
+    if (game.remote.streamKey === code) return;
+    game.remote.streamKey = code;
+    if (game.remote.eventSource) game.remote.eventSource.close();
+    const url = `/api/set/games/${code}/events?playerId=${encodeURIComponent(game.remote.playerId)}`;
+    game.remote.eventSource = new EventSource(url);
+    game.remote.eventSource.addEventListener("game", (event) => adoptRemote(JSON.parse(event.data), game.remote.playerId));
+    ["joined", "started", "claim", "set"].forEach((name) => {
+      game.remote.eventSource.addEventListener(name, (event) => adoptRemote(JSON.parse(event.data), game.remote.playerId));
+    });
+    game.remote.eventSource.addEventListener("finished", (event) => {
+      adoptRemote(JSON.parse(event.data), game.remote.playerId);
+      showRemoteFinished(game.remote.game);
+    });
+    game.remote.eventSource.addEventListener("closed", () => {
+      exitRemote("The table was swept — everyone left or it timed out.");
+    });
+  }
+
+  function showRemoteFinished(view) {
+    if (!game.remote) return;
+    const roundKey = `${view.code}:${view.round}`;
+    if (game.remote.awardedRound === roundKey) return;
+    game.remote.awardedRound = roundKey;
+    const standings = [...view.players].sort((a, b) => b.score - a.score);
+    const winner = standings[0];
+    const myScore = view.players.find((p) => p.id === game.remote.playerId)?.score || 0;
+    const iWon = winner && winner.id === game.remote.playerId;
+    const chips = myScore + (iWon ? 3 : 0);
+    GameHubProfile?.award("set", chips,
+      iWon ? `Won the table with ${myScore} sets` : `${myScore} sets at the table`, myScore);
+    if (myScore >= 10) GameHubProfile?.achieve("set-10");
+    if (myScore >= 27) GameHubProfile?.achieve("set-all");
+    GameHubJuice.win();
+    els.overlayTitle.textContent = iWon ? "You won the table! 🧠" : `${winner?.name || "Nobody"} wins`;
+    els.overlaySub.textContent = standings
+      .map((player) => `${player.name}: ${player.score}`)
+      .join(" · ") + (iWon ? ` · +${chips} chips` : ` · +${chips} chips`);
+    els.playButton.textContent = "Play solo";
+    els.overlay.hidden = false;
+  }
+
+  function exitRemote(reason) {
+    if (game.remote?.eventSource) game.remote.eventSource.close();
+    game.remote = null;
+    game.tableSignature = null;
+    const actionsRow = document.querySelector(".actions");
+    if (actionsRow) actionsRow.hidden = false;
+    els.remoteLobby.hidden = true;
+    els.tableActions.hidden = true;
+    els.overlay.hidden = false;
+    els.overlayTitle.textContent = "Set";
+    els.overlaySub.textContent = reason || "Back to the solo table.";
+    els.playButton.textContent = "Play solo";
+    game.deck = buildDeck();
+    game.table = [];
+    game.selected = [];
+    game.running = false;
+    refill(false);
+  }
+
+  async function callSet() {
+    if (!game.remote) return;
+    try {
+      const data = await remoteRequest(`/api/set/games/${game.remote.game.code}/call`, {
+        method: "POST",
+        body: JSON.stringify({ playerId: game.remote.playerId }),
+      });
+      adoptRemote(data.game, game.remote.playerId);
+    } catch (error) {
+      els.playMessage || els.remoteMessage;
+      // Surface call errors on the button label briefly.
+      const previous = els.callButton.textContent;
+      els.callButton.textContent = error.message;
+      setTimeout(() => {
+        if (els.callButton.textContent === error.message) els.callButton.textContent = previous;
+      }, 1600);
+    }
+  }
+
+  async function submitRemoteSet() {
+    if (!game.remote) return;
+    try {
+      const data = await remoteRequest(`/api/set/games/${game.remote.game.code}/submit`, {
+        method: "POST",
+        body: JSON.stringify({ playerId: game.remote.playerId, cards: game.selected }),
+      });
+      adoptRemote(data.game, game.remote.playerId);
+      if (data.game.claim && data.game.claim.playerId !== game.remote.playerId) {
+        GameHubJuice.coin();
+      }
+    } catch (error) {
+      game.selected = [];
+      render();
+      if (game.remote?.game) renderRemoteTable(game.remote.game);
+    }
+  }
+
+  async function startTable() {
+    if (!game.remote) return;
+    try {
+      const data = await remoteRequest(`/api/set/games/${game.remote.game.code}/start`, {
+        method: "POST",
+        body: JSON.stringify({ playerId: game.remote.playerId }),
+      });
+      adoptRemote(data.game, game.remote.playerId);
+    } catch (error) {
+      showRemoteMessage(error.message);
+    }
+  }
+
+  async function leaveTable() {
+    // No server-side leave endpoint: closing the stream is enough, the TTL
+    // sweeper reclaims the table.
+    exitRemote("Left the table.");
+  }
+
+  els.friendsButton?.addEventListener("click", () => {
+    els.remoteName.value = savedRemoteName();
+    openRemoteModal();
+  });
+  els.remoteCancel?.addEventListener("click", closeRemoteModal);
+  els.createTable?.addEventListener("click", createTable);
+  els.joinTable?.addEventListener("click", joinTable);
+  els.remoteCode?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      joinTable();
+    }
+  });
+  els.callButton?.addEventListener("click", callSet);
+  els.startTable?.addEventListener("click", startTable);
+  els.leaveTable?.addEventListener("click", leaveTable);
+  els.copyShare?.addEventListener("click", async () => {
+    if (!game.remote) return;
+    const url = new URL(`/set/?table=${game.remote.game.code}`, window.location.origin).toString();
+    await navigator.clipboard?.writeText(url).catch(() => {});
+    els.shareCode.textContent = "Copied!";
+    setTimeout(() => {
+      els.shareCode.textContent = game.remote?.game?.code || "";
+    }, 1200);
+  });
+
   if (window.GameHubJuice) els.soundButton.textContent = GameHubJuice.muted ? "🔇" : "🔊";
   // Idle preview table behind the start overlay.
   game.deck = buildDeck();
   refill(false);
+
+  // Deep link: /set/?table=CODE joins straight away.
+  const tableParams = new URLSearchParams(window.location.search);
+  const tableCode = tableParams.get("table");
+  if (tableCode) {
+    els.remoteName.value = savedRemoteName();
+    els.remoteCode.value = tableCode.toUpperCase();
+    if (els.remoteName.value) joinTable();
+    else openRemoteModal();
+  }
 })();
