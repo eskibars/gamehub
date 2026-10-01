@@ -5,6 +5,7 @@
 
 const STORAGE_PLAYER_KEY = "battleship-player-v1";
 const SOLO_STORAGE_KEY = "battleship-robot-v1";
+const LEGACY_SOLO_KEY = "gamehub-battleship-solo-v1"; // retired Battleship Solo card
 const COL_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 const SOLO_FLEET_SPEC = [
   { name: "carrier", size: 5 },
@@ -397,8 +398,22 @@ function randomLayout() {
 
 function loadSoloRecord() {
   try {
-    const saved = JSON.parse(localStorage.getItem(SOLO_STORAGE_KEY) || "{}");
-    state.soloRecord = { wins: saved.wins || 0, losses: saved.losses || 0 };
+    const saved = JSON.parse(localStorage.getItem(SOLO_STORAGE_KEY) || "null");
+    if (saved && (saved.wins || saved.losses)) {
+      state.soloRecord = { wins: saved.wins || 0, losses: saved.losses || 0 };
+      return;
+    }
+    // One-time carry-over: wins earned on the retired Battleship Solo card
+    // count toward the robot-duel record here.
+    const legacy = JSON.parse(localStorage.getItem(LEGACY_SOLO_KEY) || "null");
+    if (legacy && (legacy.battlesWon || legacy.battlesPlayed)) {
+      const wins = legacy.battlesWon || 0;
+      state.soloRecord = {
+        wins,
+        losses: Math.max(0, (legacy.battlesPlayed || 0) - wins),
+      };
+      persistSoloRecord();
+    }
   } catch {
     // Fresh install.
   }

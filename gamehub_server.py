@@ -2288,7 +2288,6 @@ def create_app() -> Flask:
         ("mancala", "mancala"),
         ("hearts", "hearts"),
         ("set", "set"),
-        ("battleship-solo", "battleship_solo"),
         ("video-poker", "video_poker"),
         ("gomoku", "gomoku"),
         ("roll-bug", "roll_bug"),
@@ -2310,6 +2309,16 @@ def create_app() -> Flask:
         app.add_url_rule(f"/{slug}/", f"{slug.replace('-', '_')}_index", _make_index())
         app.add_url_rule(f"/{slug}/<path:filename>", f"{slug.replace('-', '_')}_static", _make_static())
 
+
+    # Retired game: Battleship Solo merged into the Battleship card, whose
+    # offline "Play vs Robot" mode supersedes it.
+    @app.get("/battleship-solo")
+    def battleship_solo_redirect():
+        return redirect("/battleship/")
+
+    @app.get("/battleship-solo/")
+    def battleship_solo_redirect_slash():
+        return redirect("/battleship/")
 
     @app.get("/share/<share_id>")
     def shared_card(share_id: str):

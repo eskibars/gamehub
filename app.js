@@ -336,14 +336,6 @@ const icons = {
       <circle cx="40" cy="38" r="2.4" style="fill:currentColor;stroke:none"></circle>
       <circle cx="46" cy="44" r="2.4" style="fill:currentColor;stroke:none"></circle>
     </svg>`,
-  battleshipsolo: `
-    <svg viewBox="0 0 64 64" aria-hidden="true">
-      <rect x="8" y="8" width="48" height="48" rx="5"></rect>
-      <path d="M8 24h48M8 40h48M24 8v48M40 8v48"></path>
-      <circle cx="16" cy="16" r="3" style="fill:currentColor;stroke:none"></circle>
-      <circle cx="32" cy="32" r="3"></circle>
-      <path d="M46 46l3 3M49 46l-3 3" style="stroke-width:3"></path>
-    </svg>`,
   videopoker: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="10" y="12" width="26" height="36" rx="4" transform="rotate(-9 23 30)"></rect>
@@ -960,24 +952,6 @@ const games = [
       Players: "1",
     },
     icon: "dominoes",
-    badge: "New",
-  },
-  {
-    id: "battleship-solo",
-    title: "Battleship Solo",
-    type: "Fleet hunt",
-    status: "ready",
-    category: "board",
-    href: "/battleship-solo/",
-    accent: "#2e6e8e",
-    tilt: "-1deg",
-    description: "The classic salvo duel without needing a second device: place your five ships, then out-hunt a robot admiral that fires in checkerboard patterns and pursues every hit until your hull cracks.",
-    features: {
-      Mode: "Solo vs robot",
-      Storage: "Local browser",
-      Players: "1",
-    },
-    icon: "battleshipsolo",
     badge: "New",
   },
   {
