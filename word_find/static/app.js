@@ -16,7 +16,6 @@ const state = {
   title: "Rainy Day Word Find",
   size: 12,
   fillStyle: "random",
-  showAnswers: false,
   wordsText: DEFAULT_WORDS.join("\n"),
   puzzle: null,
   play: null, // { cells-for-word map, found, selection, seconds, won }
@@ -42,7 +41,6 @@ const els = {
   puzzleTitle: document.querySelector("#puzzleTitle"),
   gridSize: document.querySelector("#gridSize"),
   fillStyle: document.querySelector("#fillStyle"),
-  showAnswers: document.querySelector("#showAnswers"),
   wordInput: document.querySelector("#wordInput"),
   wordCount: document.querySelector("#wordCount"),
   clearWords: document.querySelector("#clearWords"),
@@ -63,7 +61,6 @@ function saveLocal() {
       title: state.title,
       size: state.size,
       fillStyle: state.fillStyle,
-      showAnswers: state.showAnswers,
       wordsText: state.wordsText,
     })
   );
@@ -78,7 +75,6 @@ function loadLocal() {
     state.title = parsed.title || state.title;
     state.size = cleanGridSize(parsed.size);
     state.fillStyle = parsed.fillStyle || state.fillStyle;
-    state.showAnswers = Boolean(parsed.showAnswers);
     state.wordsText = parsed.wordsText || state.wordsText;
   } catch {
     localStorage.removeItem(STORAGE_KEY);
@@ -223,15 +219,13 @@ function buildPuzzle({ alertOnMissed = false } = {}) {
 
 function renderGrid() {
   const puzzle = state.puzzle;
-  const answerCells = new Set(puzzle?.placements.flatMap((placement) => placement.cells) || []);
   els.letterGrid.innerHTML = "";
   els.letterGrid.style.setProperty("--grid-size", state.size);
 
-  (puzzle?.grid || emptyGrid(state.size)).forEach((row, rowIndex) => {
-    row.forEach((letter, colIndex) => {
+  (puzzle?.grid || emptyGrid(state.size)).forEach((row) => {
+    row.forEach((letter) => {
       const cell = document.createElement("span");
       cell.className = "grid-cell";
-      if (state.showAnswers && answerCells.has(`${rowIndex}-${colIndex}`)) cell.classList.add("is-answer");
       cell.textContent = letter || "";
       els.letterGrid.append(cell);
     });
@@ -274,7 +268,6 @@ function renderAll() {
   els.puzzleTitle.value = state.title;
   els.gridSize.value = String(state.size);
   els.fillStyle.value = state.fillStyle;
-  els.showAnswers.checked = state.showAnswers;
   els.wordInput.value = state.wordsText;
   els.previewTitle.textContent = state.title.trim() ? state.title : "Untitled Word Find";
   els.previewStats.textContent = `${state.size} x ${state.size} puzzle`;
@@ -305,12 +298,6 @@ function bindEvents() {
     state.fillStyle = els.fillStyle.value;
     saveLocal();
     buildPuzzle();
-  });
-
-  els.showAnswers.addEventListener("change", () => {
-    state.showAnswers = els.showAnswers.checked;
-    saveLocal();
-    renderGrid();
   });
 
   els.wordInput.addEventListener("input", () => {
@@ -374,12 +361,8 @@ function startPlay() {
     els.buildMessage.textContent = "Add some words first — or pick a theme.";
     return;
   }
-  // Fresh shuffle so the preview grid (which may show answers) is not the
-  // one being played.
-  const keepAnswers = state.showAnswers;
-  state.showAnswers = false;
+  // Fresh shuffle so the preview grid is not the one being played.
   buildPuzzle({ alertOnMissed: false });
-  state.showAnswers = keepAnswers;
   if (!state.puzzle?.placements?.length) {
     els.buildMessage.textContent = "Could not build a playable puzzle from these words.";
     return;

@@ -42,6 +42,8 @@ const els = {
   setupView: document.querySelector("#setupView"),
   gameView: document.querySelector("#gameView"),
   setupForm: document.querySelector("#setupForm"),
+  robotCount: document.querySelector("#robotCount"),
+  robotSkill: document.querySelector("#robotSkill"),
   playerCount: document.querySelector("#playerCount"),
   playerCountLabel: document.querySelector("#playerCountLabel"),
   playerEditor: document.querySelector("#playerEditor"),
