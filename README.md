@@ -177,8 +177,8 @@ codes, no sign-in, best scores and streaks live in browser storage:
   survives a page refresh.
 - **Word Guess** (`/word-guess/`) — a Wordle-style deduction game with a
   built-in ~2,500-word list. A deterministic daily word (same for
-  everyone that day, progress saved), endless practice rounds in 14
-  themed categories (animals, food, space…), hard mode,
+  everyone that day, progress saved), endless practice rounds in 18
+  themed categories (animals, trains, dinosaurs, countries…), hard mode,
   guess-distribution stats, and one-click emoji share grids.
 - **Minesweeper** (`/minesweeper/`) — 9×9, 16×16, and 30×16 boards with
   a guaranteed-safe first click, flags (right-click, long-press, or flag
