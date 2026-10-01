@@ -1,21 +1,49 @@
 const COLORS = ["white", "black"];
 const LOCAL_GAME_CODE = "LOCAL";
 
+const SOLO_STORAGE_KEY = "backgammon-robot-v1";
+const SOLO_TIER_NAMES = { casual: "Casual", sharp: "Sharp", master: "Master" };
+
 const state = {
   mode: "choice",
   game: null,
   selected: null,
   eventSource: null,
+  difficulty: "casual",
+  robotPlan: null,
+  robotTimer: null,
+  soloAwarded: false,
+  soloRecord: { wins: 0, losses: 0 },
 };
+
+function loadSoloRecord() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SOLO_STORAGE_KEY) || "{}");
+    state.soloRecord = { wins: saved.wins || 0, losses: saved.losses || 0 };
+  } catch {
+    // Fresh install.
+  }
+}
+
+function persistSoloRecord() {
+  try {
+    localStorage.setItem(SOLO_STORAGE_KEY, JSON.stringify(state.soloRecord));
+  } catch {
+    // Storage unavailable.
+  }
+}
 
 const els = {
   setupView: document.querySelector("#setupView"),
   choicePanel: document.querySelector("#choicePanel"),
   createForm: document.querySelector("#createForm"),
   joinForm: document.querySelector("#joinForm"),
+  soloForm: document.querySelector("#soloForm"),
   showLocal: document.querySelector("#showLocal"),
   showCreate: document.querySelector("#showCreate"),
   showJoin: document.querySelector("#showJoin"),
+  showSolo: document.querySelector("#showSolo"),
+  soloDiffRow: document.querySelector("#soloDiffRow"),
   joinCode: document.querySelector("#joinCode"),
   gameView: document.querySelector("#gameView"),
   connectionStatus: document.querySelector("#connectionStatus"),
@@ -215,6 +243,327 @@ function rollDiceFor(game) {
   return next;
 }
 
+// ----- Robot opponent (offline duel) -----
+//
+// A compact engine mirrors the UI rules on a sign-convention board
+// (+n white checkers, -n black) so moves can be applied without cloning
+// whole game objects. Tiers: Casual picks a random legal sequence, Sharp
+// plays the best 1-ply evaluation, Master runs 2-ply expectimax over all
+// 21 opponent rolls.
+
+const BG_HOME_COUNT = 5; // points per home quadrant
+
+function bgBoardFrom(game) {
+  const points = new Int8Array(24);
+  game.points.forEach((point, index) => {
+    if (point) points[index] = point.color === "white" ? point.count : -point.count;
+  });
+  return { points, barW: game.bar.white, barB: game.bar.black, offW: game.borneOff.white, offB: game.borneOff.black };
+}
+
+function bgApply(pos, color, from, die) {
+  // from: 0..23 or "bar"; returns {to} and mutates pos. Assumes legality.
+  const white = color === "white";
+  if (from === "bar") {
+    if (white) pos.barW -= 1;
+    else pos.barB -= 1;
+  } else if (white) {
+    pos.points[from] -= 1;
+  } else {
+    pos.points[from] += 1;
+  }
+  let to;
+  if (from === "bar") to = white ? 24 - die : die - 1;
+  else to = white ? from - die : from + die;
+  if (to >= 0 && to <= 23) {
+    const occupant = pos.points[to];
+    if (occupant !== 0 && (occupant > 0) !== white && Math.abs(occupant) === 1) {
+      pos.points[to] = white ? 1 : -1;
+      if (white) pos.barB += 1;
+      else pos.barW += 1;
+    } else {
+      pos.points[to] = white ? occupant + 1 : occupant - 1;
+    }
+  } else if (white) {
+    pos.offW += 1;
+  } else {
+    pos.offB += 1;
+  }
+}
+
+function bgDestination(color, from, die) {
+  if (from === "bar") return color === "white" ? 24 - die : die - 1;
+  const to = color === "white" ? from - die : from + die;
+  if (to >= 0 && to <= 23) return to;
+  return to < 0 || to > 23 ? "off" : to;
+}
+
+function bgHasAllHome(pos, color) {
+  if (color === "white") {
+    if (pos.barW > 0) return false;
+    for (let i = 6; i < 24; i += 1) if (pos.points[i] > 0) return false;
+    return true;
+  }
+  if (pos.barB > 0) return false;
+  for (let i = 0; i < 18; i += 1) if (pos.points[i] < 0) return false;
+  return true;
+}
+
+function bgCanBearOff(pos, color, from) {
+  if (!bgHasAllHome(pos, color)) return false;
+  if (color === "white") {
+    for (let i = from + 1; i < 24; i += 1) if (pos.points[i] > 0) return false;
+    return true;
+  }
+  for (let i = 0; i < from; i += 1) if (pos.points[i] < 0) return false;
+  return true;
+}
+
+function bgLegalTargets(pos, color, from, die) {
+  // Returns the destination ("off" allowed) when moving `from` by `die`.
+  const white = color === "white";
+  if (from === "bar") {
+    const onBar = white ? pos.barW > 0 : pos.barB > 0;
+    if (!onBar) return null;
+  } else {
+    const stack = pos.points[from];
+    const mine = white ? stack > 0 : stack < 0;
+    if (!mine || stack === 0) return null;
+    if ((white ? pos.barW : pos.barB) > 0) return null;
+  }
+  let to = bgDestination(color, from, die);
+  if (to === "off") {
+    return bgCanBearOff(pos, color, from === "bar" ? (white ? 23 : 0) : from) ? "off" : null;
+  }
+  const occupant = pos.points[to];
+  const blocked = white ? occupant <= -2 : occupant >= 2;
+  return blocked ? null : to;
+}
+
+function bgSingleMoves(pos, color, die) {
+  const moves = [];
+  const white = color === "white";
+  if ((white ? pos.barW : pos.barB) > 0) {
+    const to = bgLegalTargets(pos, color, "bar", die);
+    if (to !== null) moves.push({ from: "bar", to, die });
+    return moves;
+  }
+  for (let i = 0; i < 24; i += 1) {
+    const stack = pos.points[i];
+    if (white ? stack <= 0 : stack >= 0) continue;
+    if (stack === 0) continue;
+    const to = bgLegalTargets(pos, color, i, die);
+    if (to !== null) moves.push({ from: i, to, die });
+  }
+  return moves;
+}
+
+function bgKey(pos) {
+  return `${pos.points.join(",")}|${pos.barW},${pos.barB},${pos.offW},${pos.offB}`;
+}
+
+// Enumerate all complete (maximal) move sequences for a dice list.
+function bgSequences(pos, color, dice) {
+  const results = new Map();
+  const budget = { count: 0, max: 6000 };
+  function step(current, remaining, moves) {
+    budget.count += 1;
+    if (budget.count > budget.max) return;
+    let anyMove = false;
+    for (let d = 0; d < remaining.length; d += 1) {
+      const die = remaining[d];
+      const movesForDie = bgSingleMoves(current, color, die);
+      for (const move of movesForDie) {
+        anyMove = true;
+        const next = { points: current.points.slice(), barW: current.barW, barB: current.barB, offW: current.offW, offB: current.offB };
+        bgApply(next, color, move.from, die);
+        const rest = remaining.slice();
+        rest.splice(d, 1);
+        step(next, rest, moves.concat([{ from: move.from, die }]));
+      }
+      if (budget.count > budget.max) return;
+    }
+    if (!anyMove) {
+      const key = bgKey(current);
+      if (!results.has(key)) results.set(key, { moves, pos: current });
+    }
+  }
+  step(pos, dice, []);
+  return [...results.values()];
+}
+
+function bgPips(pos, color) {
+  let total = 0;
+  if (color === "white") {
+    for (let i = 0; i < 24; i += 1) if (pos.points[i] > 0) total += pos.points[i] * (i + 1);
+    total += pos.barW * 25;
+  } else {
+    for (let i = 0; i < 24; i += 1) if (pos.points[i] < 0) total += -pos.points[i] * (24 - i);
+    total += pos.barB * 25;
+  }
+  return total;
+}
+
+function bgNoContact(pos) {
+  let maxBlack = -1;
+  let minWhite = 24;
+  for (let i = 0; i < 24; i += 1) {
+    if (pos.points[i] > 0 && i < minWhite) minWhite = i;
+    if (pos.points[i] < 0 && i > maxBlack) maxBlack = i;
+  }
+  return maxBlack < minWhite;
+}
+
+// Static evaluation from White's perspective.
+function bgEvaluate(pos) {
+  const offDiff = 32 * (pos.offW - pos.offB);
+  if (pos.offW >= 15) return 10000 + offDiff;
+  if (pos.offB >= 15) return -10000 + offDiff;
+  const race = bgPips(pos, "black") - bgPips(pos, "white") + 14 * (pos.barB - pos.barW);
+  if (bgNoContact(pos)) return race + offDiff;
+  let blots = 0;
+  let structure = 0;
+  for (let i = 0; i < 24; i += 1) {
+    const stack = pos.points[i];
+    if (stack === 1) blots -= 1;
+    else if (stack === -1) blots += 1;
+    else if (stack >= 2) structure += i <= 5 ? 2.4 : 1.1;
+    else if (stack <= -2) structure -= i >= 18 ? 2.4 : 1.1;
+  }
+  return race + offDiff + 3.4 * blots + structure;
+}
+
+const BG_ROLLS = (() => {
+  const rolls = [];
+  for (let a = 1; a <= 6; a += 1) {
+    for (let b = a; b <= 6; b += 1) {
+      rolls.push(a === b ? [a, a, a, a] : [a, b]);
+    }
+  }
+  return rolls;
+})();
+
+function robotSequenceChoice(pos, color, dice, difficulty) {
+  const sequences = bgSequences(pos, color, dice);
+  if (!sequences.length) return null;
+  const white = color === "white";
+  const sign = white ? 1 : -1;
+  const scored = sequences.map((seq) => ({ seq, score: sign * bgEvaluate(seq.pos) }));
+  scored.sort((a, b) => b.score - a.score);
+  if (difficulty === "casual") {
+    // Weak but not hopeless: race home badly from the top 60% of plans.
+    const pool = scored.slice(0, Math.max(1, Math.ceil(scored.length * 0.6)));
+    return pool[Math.floor(Math.random() * pool.length)].seq;
+  }
+  if (difficulty !== "master") {
+    return scored[0].seq;
+  }
+  const opponent = white ? "black" : "white";
+  let best = null;
+  let bestValue = -Infinity;
+  for (const { seq } of scored.slice(0, 36)) {
+    let total = 0;
+    for (const roll of BG_ROLLS) {
+      const replies = bgSequences(seq.pos, opponent, roll);
+      if (!replies.length) {
+        total += sign * bgEvaluate(seq.pos);
+        continue;
+      }
+      let bestReply = Infinity;
+      for (const reply of replies) {
+        const value = sign * bgEvaluate(reply.pos);
+        if (value < bestReply) bestReply = value;
+      }
+      total += bestReply;
+    }
+    const value = total / BG_ROLLS.length;
+    if (value > bestValue) {
+      bestValue = value;
+      best = seq;
+    }
+  }
+  return best || scored[0].seq;
+}
+
+function computeRobotPlan() {
+  const game = state.game;
+  const pos = bgBoardFrom(game);
+  const color = game.turn;
+  const dice = game.dice.filter((_, index) => !game.usedDice.includes(index));
+  const seq = robotSequenceChoice(pos, color, dice, state.difficulty);
+  state.robotPlan = seq ? seq.moves : [];
+}
+
+function robotColorIsNext() {
+  return state.mode === "robot" && state.game && !state.game.winner && state.game.turn === "black";
+}
+
+function scheduleRobotStep(delay = 750) {
+  if (state.robotTimer) clearTimeout(state.robotTimer);
+  state.robotTimer = setTimeout(robotStep, delay);
+}
+
+function robotStep() {
+  if (!robotColorIsNext()) return;
+  const game = state.game;
+  if (!game.rolled) {
+    state.robotPlan = null;
+    applyLocal(rollDiceFor(game));
+    if (robotColorIsNext()) scheduleRobotStep(650);
+    return;
+  }
+  if (!state.robotPlan || !state.robotPlan.length) computeRobotPlan();
+  const planMove = state.robotPlan?.[0];
+  if (!planMove) {
+    // Nothing left to play — hand the turn over.
+    const next = structuredClone(game);
+    advanceTurn(next);
+    applyLocal(next);
+    return;
+  }
+  // Translate the planned (from, die) into the UI engine's move object.
+  const options = legalMovesFrom(game, planMove.from);
+  const move = options.find((option) => option.die === planMove.die);
+  if (!move) {
+    computeRobotPlan();
+    const retry = legalMovesFrom(game, state.robotPlan?.[0]?.from ?? "bar").find(
+      (option) => option.die === state.robotPlan?.[0]?.die
+    );
+    if (!retry) {
+      const next = structuredClone(game);
+      advanceTurn(next);
+      applyLocal(next);
+      return;
+    }
+    state.robotPlan.shift();
+    applyLocal(moveChecker(game, retry));
+    scheduleRobotStep(600);
+    return;
+  }
+  state.robotPlan.shift();
+  applyLocal(moveChecker(game, move));
+  if (robotColorIsNext()) scheduleRobotStep(600);
+}
+
+function maybeAwardSolo() {
+  if (state.mode !== "robot" || state.soloAwarded || !state.game?.winner) return;
+  state.soloAwarded = true;
+  const humanWon = state.game.winner === "white";
+  if (humanWon) {
+    state.soloRecord.wins += 1;
+    const chips = state.difficulty === "master" ? 6 : state.difficulty === "sharp" ? 4 : 2;
+    GameHubProfile?.achieve("backgammon-robot-win");
+    if (state.soloRecord.wins >= 5) GameHubProfile?.achieve("backgammon-robot-5");
+    GameHubProfile?.award("backgammon", chips, `Raced the ${SOLO_TIER_NAMES[state.difficulty]} robot home`, state.soloRecord.wins);
+    GameHubJuice?.win();
+  } else {
+    state.soloRecord.losses += 1;
+    GameHubProfile?.award("backgammon", 1, "The robot bore off first", 0);
+    GameHubJuice?.lose();
+  }
+  persistSoloRecord();
+}
+
 function parseShareInput(value) {
   const trimmed = value.trim();
   if (!trimmed) return "";
@@ -241,7 +590,20 @@ function showMode(mode) {
   els.choicePanel.hidden = mode !== "choice";
   els.createForm.hidden = mode !== "create";
   els.joinForm.hidden = mode !== "join";
+  els.soloForm.hidden = mode !== "solo";
   if (mode === "join") els.joinCode.focus();
+}
+
+function startSolo(event) {
+  event.preventDefault();
+  const checked = els.soloDiffRow.querySelector("input[name=soloDiff]:checked");
+  state.difficulty = checked ? checked.value : "casual";
+  state.soloAwarded = false;
+  state.robotPlan = null;
+  if (state.robotTimer) clearTimeout(state.robotTimer);
+  closeRemote();
+  openGame(newLocalGame(), "robot");
+  els.connectionStatus.textContent = "Offline duel";
 }
 
 function openGame(game, mode) {
@@ -318,6 +680,9 @@ function applyLocal(nextGame) {
   state.game = nextGame;
   state.selected = null;
   render();
+  if (state.mode !== "robot") return;
+  maybeAwardSolo();
+  if (robotColorIsNext()) scheduleRobotStep(700);
 }
 
 function rollDice() {
@@ -481,6 +846,8 @@ function renderStats() {
 function renderMessage() {
   if (state.game.winner) {
     els.gameMessage.textContent = `${titleColor(state.game.winner)} wins.`;
+  } else if (state.mode === "robot" && state.game.turn === "black") {
+    els.gameMessage.textContent = state.game.rolled ? "The robot is moving…" : "The robot is rolling…";
   } else if (!state.game.rolled) {
     els.gameMessage.textContent = `${titleColor(state.game.turn)} rolls.`;
   } else if (state.game.bar[state.game.turn] > 0) {
@@ -495,11 +862,12 @@ function renderMessage() {
 function render() {
   if (!state.game) return;
   els.shareCode.textContent = state.game.code;
-  els.factMode.textContent = state.mode === "remote" ? "Remote" : "Local";
+  els.factMode.textContent = state.mode === "remote" ? "Remote" : state.mode === "robot" ? "vs Robot" : "Local";
   els.factTurn.textContent = titleColor(state.game.turn);
   els.factDice.textContent = state.game.dice.length ? remainingDice(state.game).join(", ") || "Done" : "Roll";
-  els.rollButton.disabled = state.game.rolled || Boolean(state.game.winner);
-  els.endTurnButton.disabled = !state.game.rolled || Boolean(state.game.winner);
+  const robotTurn = state.mode === "robot" && state.game.turn === "black";
+  els.rollButton.disabled = state.game.rolled || Boolean(state.game.winner) || robotTurn;
+  els.endTurnButton.disabled = !state.game.rolled || Boolean(state.game.winner) || robotTurn;
   renderDice();
   renderBoard();
   renderStats();
@@ -508,6 +876,9 @@ function render() {
 
 function resetToStart() {
   closeRemote();
+  if (state.robotTimer) clearTimeout(state.robotTimer);
+  state.robotTimer = null;
+  state.robotPlan = null;
   state.game = null;
   state.selected = null;
   state.mode = "choice";
@@ -523,6 +894,8 @@ function bindEvents() {
     openGame(newLocalGame(), "local");
     els.connectionStatus.textContent = "Local";
   });
+  els.showSolo.addEventListener("click", () => showMode("solo"));
+  els.soloForm.addEventListener("submit", startSolo);
   els.showCreate.addEventListener("click", () => showMode("create"));
   els.showJoin.addEventListener("click", () => showMode("join"));
   els.createForm.addEventListener("submit", createRemote);
@@ -538,6 +911,7 @@ function bindEvents() {
 }
 
 bindEvents();
+loadSoloRecord();
 showMode("choice");
 
 const params = new URLSearchParams(window.location.search);

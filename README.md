@@ -40,9 +40,12 @@ python-dotenv. See `.env.example` for the full list with comments.
   `/api/*/games/*/events` endpoints so server-sent events stream through.
 
 The ready tools are Bingo Card Builder, Color Guesser, Yahtzee Scorepad,
-Boggle Table, Word Find Creator, Backgammon, Find 'em, Table Tools,
-Who Am I? — a Guess Who-style character guessing game, Hangman,
-Battleship, Checkers, The Oracle, Training, plus a solo/arcade shelf:
+Boggle Table (playable solo against a dictionary-solving robot), Word Find
+Creator, Backgammon (vs a robot at three strengths, locally, or remotely),
+Find 'em, Table Tools, Who Am I? — a Guess Who-style character guessing
+game that also runs against a detective robot offline, Hangman (robot,
+pass-and-play, or remote), Battleship (vs a robot admiral or remote),
+Checkers, The Oracle, Training, plus a solo/arcade shelf:
 2048, Word Guess, Minesweeper, Connect Four, Memory Match, Snake,
 Simon Says, Sliding Puzzle, Dots and Boxes, Lights Out, Sudoku,
 Block Drop, Solitaire, Reversi, Blackjack, Chess, Gem Crush,
@@ -84,6 +87,11 @@ count, and round count; the hidden code is generated automatically. The shared
 URL carries an opaque token that can recreate the game setup without login,
 while live guesses flow over server-sent events while the Flask server is
 running.
+
+Bulls and Cows is the Mastermind-style duel: play fully offline against a
+robot that cracks your code while you crack its — Casual guesses at random,
+Sharp plays only consistent codes, and Oracle runs Knuth's minimax to solve
+most 4-peg codes in five guesses — or create a share code for live play.
 
 Yahtzee Scorepad stores its current game in browser storage. It can run as a
 manual scorecard for players bringing their own dice, or as a dice roller with
@@ -310,8 +318,11 @@ To run the hub from a tablet in airplane mode:
    its own icon, and a green theme.
 3. Flip on airplane mode and play. Solo games (2048, Word Guess,
    Minesweeper, Sliding Puzzle, Snake, Simon, Memory, and all of Table
-   Tools) work fully; pass-and-play games on one device work fully; remote
-   share-code games need the server back.
+   Tools) work fully; pass-and-play games on one device work fully; and the
+   remote-duel games — Battleship, Bulls and Cows, Who Am I?, Hangman,
+   Backgammon, and Boggle Table — each offer a "Play vs Robot" mode at
+   three strengths, so a single player has a full opponent with no server
+   at all. Only the remote share-code modes themselves need the hub back.
 
 Browsers only allow service workers in **secure contexts** — `localhost` is
 fine, but a tablet reaching the hub over your LAN needs HTTPS. Set the two

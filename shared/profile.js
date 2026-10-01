@@ -322,6 +322,18 @@
     { id: "rollbug-win", icon: "🐞", title: "Bug Builder", description: "Finish your first Roll-a-Bug ladybug.", game: "roll-bug", test: null },
     { id: "rollbug-3", icon: "🎨", title: "Bug Gallery", description: "Finish 3 Roll-a-Bug ladybugs.", game: "roll-bug", test: null },
     { id: "rollbug-master", icon: "📐", title: "Proper Bug", description: "Win a Roll-a-Bug game in Proper Bug mode.", game: "roll-bug", test: null },
+    { id: "bulls-cows-win", icon: "🎨", title: "Code Breaker", description: "Crack a robot's code in Bulls and Cows.", game: "bulls-and-cows", test: null },
+    { id: "bulls-cows-5", icon: "🔍", title: "Mastermind", description: "Crack 5 robot codes in Bulls and Cows.", game: "bulls-and-cows", test: null },
+    { id: "battleship-robot-win", icon: "🎯", title: "Robot Navy Hunter", description: "Sink the robot admiral's fleet in Battleship.", game: "battleship", test: null },
+    { id: "battleship-robot-5", icon: "🎖️", title: "Grand Fleet", description: "Beat the Battleship robot 5 times.", game: "battleship", test: null },
+    { id: "whoami-robot-win", icon: "🕵️", title: "Master Detective", description: "Guess the robot's secret character.", game: "whoami", test: null },
+    { id: "whoami-robot-5", icon: "🚀", title: "Interrogator", description: "Beat the Who Am I? robot 5 times.", game: "whoami", test: null },
+    { id: "backgammon-robot-win", icon: "🎲", title: "Point Maker", description: "Beat the Backgammon robot.", game: "backgammon", test: null },
+    { id: "backgammon-robot-5", icon: "🏆", title: "Gammon Grinder", description: "Beat the Backgammon robot 5 times.", game: "backgammon", test: null },
+    { id: "hangman-guess-win", icon: "🔤", title: "Letter Wizard", description: "Guess the Hangman robot's word.", game: "hangman", test: null },
+    { id: "hangman-stump", icon: "🪢", title: "Word Keeper", description: "Stump the Hangman robot with your word.", game: "hangman", test: null },
+    { id: "boggle-robot-win", icon: "📖", title: "Word Smith", description: "Out-word the Boggle robot.", game: "boggle", test: null },
+    { id: "boggle-robot-5", icon: "📚", title: "Lexicon Hero", description: "Beat the Boggle robot 5 times.", game: "boggle", test: null },
   ];
 
   function achievementToast(achievement) {

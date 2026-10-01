@@ -13,15 +13,37 @@ const HANGMAN_PARTS = ["head", "body", "arm-left", "arm-right", "leg-left", "leg
 const HANGMAN_MAX_WRONG = HANGMAN_PARTS.length;
 const LOCAL_DEFAULT_NAMES = ["Player 1", "Player 2"];
 
+const ROBOT_STORAGE_KEY = "hangman-robot-v1";
+const ROBOT_TIER_NAMES = { rookie: "Rookie", sleuth: "Sleuth", master: "Master" };
+const LETTER_FREQUENCY_ORDER = "ETAOINSHRDLCUMWFGYPBVKJXQZ".split("");
+
 const state = {
-  mode: null, // "local" | "remote"
+  mode: null, // "local" | "remote" | "robot"
   game: null,
   playerId: "",
   eventSource: null,
   entryMode: "choice",
   local: null,
   handoff: null, // { from, to, toName }
+  robot: null, // { difficulty, timer, awardRound }
 };
+
+function loadRobotRecord() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(ROBOT_STORAGE_KEY) || "{}");
+    return { wins: saved.wins || 0, stumps: saved.stumps || 0 };
+  } catch {
+    return { wins: 0, stumps: 0 };
+  }
+}
+
+function persistRobotRecord(record) {
+  try {
+    localStorage.setItem(ROBOT_STORAGE_KEY, JSON.stringify(record));
+  } catch {
+    // Storage unavailable.
+  }
+}
 
 const els = {
   setupView: document.querySelector("#setupView"),
@@ -31,6 +53,9 @@ const els = {
   showLocal: document.querySelector("#showLocal"),
   showCreate: document.querySelector("#showCreate"),
   showJoin: document.querySelector("#showJoin"),
+  soloForm: document.querySelector("#soloForm"),
+  showSolo: document.querySelector("#showSolo"),
+  soloDiffRow: document.querySelector("#soloDiffRow"),
   categoryInput: document.querySelector("#categoryInput"),
   joinCode: document.querySelector("#joinCode"),
   connectionStatus: document.querySelector("#connectionStatus"),
@@ -251,14 +276,19 @@ function setLocalWord(rawWord) {
   state.local.word = word;
   state.local.status = "active";
   state.local.setAt = new Date().toISOString();
-  state.handoff = {
-    from: state.local.pickerIndex,
-    to: localGuesserIndex(),
-    toName: localGuesserName(),
-  };
+  if (state.mode === "robot") {
+    state.handoff = null;
+  } else {
+    state.handoff = {
+      from: state.local.pickerIndex,
+      to: localGuesserIndex(),
+      toName: localGuesserName(),
+    };
+  }
   saveLocal(state.local);
-  els.connectionStatus.textContent = "Local";
+  els.connectionStatus.textContent = state.mode === "robot" ? "Offline duel" : "Local";
   render();
+  if (state.mode === "robot") maybeRobotAct(1100 + Math.random() * 600);
 }
 
 function guessLocalLetter(letter) {
@@ -298,6 +328,7 @@ function guessLocalLetter(letter) {
   if (state.local.history.length > 8) state.local.history = state.local.history.slice(0, 8);
   saveLocal(state.local);
   render();
+  if (state.mode === "robot") awardRobotHangman();
 }
 
 function nextLocalRound() {
@@ -311,6 +342,13 @@ function nextLocalRound() {
   state.local.result = null;
   state.local.setAt = null;
   state.local.finishedAt = null;
+  if (state.mode === "robot") {
+    state.handoff = null;
+    saveLocal(state.local);
+    render();
+    maybeRobotAct(900);
+    return;
+  }
   // Hand the device to the next picker.
   state.handoff = {
     from: localGuesserIndex(),
@@ -322,11 +360,155 @@ function nextLocalRound() {
 }
 
 function exitToSetup() {
+  if (state.robot?.timer) clearTimeout(state.robot.timer);
   state.mode = null;
   state.local = null;
+  state.robot = null;
   state.handoff = null;
   clearLocal();
   showStartMode("choice");
+}
+
+// ----- Mode 1b: Robot duel -----
+//
+// Reuses the local pass-and-play machine with You/Robot as the two seats.
+// The robot picks words from a frequency-tiered dictionary and guesses by
+// pattern-matching candidates; tiers trade dictionary breadth for patience.
+
+function startRobotGame(difficulty) {
+  state.mode = "robot";
+  state.robot = { difficulty, timer: null, record: loadRobotRecord() };
+  state.local = newLocalGame(["You", "Robot"], null);
+  state.local.pickerIndex = 1; // the robot picks first, so you solve first
+  state.handoff = null;
+  clearLocal();
+  els.connectionStatus.textContent = "Offline duel";
+  els.setupView.hidden = true;
+  els.playArea.hidden = false;
+  els.lobbyPanel.hidden = true;
+  render();
+  maybeRobotAct(900);
+}
+
+function robotWordPool() {
+  const words = window.HangmanWords?.WORDS || [];
+  const total = words.length;
+  const difficulty = state.robot?.difficulty || "rookie";
+  if (difficulty === "rookie") {
+    return words.slice(0, Math.floor(total * 0.4)).filter((w) => w.length >= 3 && w.length <= 6);
+  }
+  if (difficulty === "sleuth") {
+    return words.slice(Math.floor(total * 0.15), Math.floor(total * 0.7)).filter((w) => w.length >= 5 && w.length <= 9);
+  }
+  return words.slice(Math.floor(total * 0.4)).filter((w) => w.length >= 6 && w.length <= 12);
+}
+
+function robotSetWord() {
+  if (state.mode !== "robot" || !state.local || state.local.status !== "pending" || state.local.pickerIndex !== 1) return;
+  const pool = robotWordPool();
+  const word = (pool[Math.floor(Math.random() * pool.length)] || window.HangmanWords.WORDS[10] || "engine").toUpperCase();
+  state.local.word = word;
+  state.local.status = "active";
+  state.local.setAt = new Date().toISOString();
+  state.handoff = null;
+  saveLocal(state.local);
+  render();
+  maybeRobotAct(1100 + Math.random() * 500);
+}
+
+// Pattern-match the dictionary against the current reveal.
+function robotCandidateWords(local) {
+  const word = local.word.toUpperCase();
+  const guessed = new Set(local.guessed.map((g) => g.letter));
+  const candidates = [];
+  for (const candidate of window.HangmanWords.WORDS) {
+    if (candidate.length !== word.length) continue;
+    let ok = true;
+    for (let i = 0; i < candidate.length; i += 1) {
+      const secretChar = word[i];
+      if (guessed.has(secretChar)) {
+        if (candidate[i].toUpperCase() !== secretChar) { ok = false; break; }
+      } else if (guessed.has(candidate[i].toUpperCase())) {
+        ok = false; break;
+      }
+    }
+    if (ok) candidates.push(candidate);
+  }
+  return candidates;
+}
+
+function hangmanRobotGuessLetter(local, difficulty) {
+  const guessed = new Set(local.guessed.map((g) => g.letter));
+  if (difficulty !== "rookie") {
+    const candidates = robotCandidateWords(local);
+    const cap = difficulty === "sleuth" ? 400 : 4000;
+    if (candidates.length <= cap) {
+      const counts = new Map();
+      for (const candidate of candidates) {
+        for (const char of new Set(candidate)) {
+          const upper = char.toUpperCase();
+          if (guessed.has(upper)) continue;
+          counts.set(upper, (counts.get(upper) || 0) + 1);
+        }
+      }
+      let best = null;
+      let bestCount = -1;
+      for (const [letter, count] of counts) {
+        if (count > bestCount) { bestCount = count; best = letter; }
+      }
+      if (best) return best;
+    }
+  }
+  return LETTER_FREQUENCY_ORDER.find((letter) => !guessed.has(letter)) || null;
+}
+
+function robotGuessStep() {
+  const local = state.local;
+  if (state.mode !== "robot" || !local || local.status !== "active" || localGuesserIndex() !== 1) return;
+  const letter = hangmanRobotGuessLetter(local, state.robot.difficulty);
+  if (!letter) return;
+  guessLocalLetter(letter);
+  maybeRobotAct(850 + Math.random() * 650);
+}
+
+function maybeRobotAct(delay = 1000) {
+  if (state.mode !== "robot" || !state.local || !state.local) return;
+  if (state.robot.timer) clearTimeout(state.robot.timer);
+  const local = state.local;
+  if (local.status === "finished") return;
+  if (local.status === "pending" && local.pickerIndex === 1) {
+    state.robot.timer = setTimeout(robotSetWord, delay);
+  } else if (local.status === "active" && localGuesserIndex() === 1) {
+    state.robot.timer = setTimeout(robotGuessStep, delay);
+  }
+}
+
+function awardRobotHangman() {
+  const local = state.local;
+  if (state.mode !== "robot" || !local || local.status !== "finished") return;
+  if (local.awardRound === local.roundNumber) return;
+  local.awardRound = local.roundNumber;
+  const tier = state.robot.difficulty;
+  const chipsByTier = tier === "master" ? 6 : tier === "sleuth" ? 4 : 2;
+  const record = state.robot.record || loadRobotRecord();
+  if (local.result === "won" && localGuesserIndex() === 0) {
+    record.wins += 1;
+    persistRobotRecord(record);
+    GameHubProfile?.achieve("hangman-guess-win");
+    GameHubProfile?.award("hangman", chipsByTier,
+      `Solved the ${ROBOT_TIER_NAMES[tier]} robot's word`, record.wins);
+    GameHubJuice?.win();
+  } else if (local.result === "lost" && local.pickerIndex === 0) {
+    record.stumps += 1;
+    persistRobotRecord(record);
+    GameHubProfile?.achieve("hangman-stump");
+    GameHubProfile?.award("hangman", Math.max(2, chipsByTier - 1),
+      `Stumped the ${ROBOT_TIER_NAMES[tier]} robot`, record.stumps);
+    GameHubJuice?.levelUp();
+  } else {
+    GameHubProfile?.award("hangman", 1, "A round against the robot", 0);
+    GameHubJuice?.drop();
+  }
 }
 
 // ----- Mode 2: Remote -----
@@ -562,7 +744,7 @@ function renderAlphabet(guessedEntries, disabled) {
 }
 
 function onLetterClick(letter) {
-  if (state.mode === "local") {
+  if (state.mode === "local" || state.mode === "robot") {
     guessLocalLetter(letter);
   } else if (state.mode === "remote") {
     guessRemoteLetter(letter);
@@ -694,11 +876,13 @@ function renderResultBanner(roundData) {
   const isLocalWin = state.mode === "local" && roundData.result === "won";
   const isRemoteWin = state.mode === "remote" && remoteWon && roundData.result === "won";
   const isRemoteStumped = state.mode === "remote" && remoteWon && roundData.result === "lost";
+  const isRobotYouWon = state.mode === "robot" && roundData.result === "won" && roundData.pickerIndex === 1;
+  const isRobotStumped = state.mode === "robot" && roundData.result === "lost" && roundData.pickerIndex === 0;
   let title;
   if (roundData.result === "won") {
-    title = isLocalWin || isRemoteWin ? "You won!" : "Guesser won";
+    title = isLocalWin || isRemoteWin || isRobotYouWon ? "You won!" : "The robot got it";
   } else {
-    title = isRemoteStumped ? "You stumped them" : "You lost";
+    title = isRemoteStumped || isRobotStumped ? "You stumped the robot!" : "You lost";
   }
   els.resultTitle.textContent = title;
   els.resultBody.innerHTML = "";
@@ -710,7 +894,7 @@ function renderResultBanner(roundData) {
   els.resultBody.appendChild(
     document.createTextNode(`. ${wrongCount} wrong guess${wrongCount === 1 ? "" : "es"} of ${maxWrong}.`)
   );
-  els.resultInner.classList.toggle("is-won", isLocalWin || isRemoteWin);
+  els.resultInner.classList.toggle("is-won", isLocalWin || isRemoteWin || isRobotYouWon);
   els.resultBanner.hidden = false;
 }
 
@@ -738,9 +922,12 @@ function renderLocalPlayArea() {
   els.opponentName.textContent = local.status === "pending" ? localGuesserName() : localPickerName();
 
   if (local.status === "pending") {
-    els.gameMessage.textContent = `${localPickerName()}, type a word for ${localGuesserName()}.`;
+    const robotPicking = state.mode === "robot" && local.pickerIndex === 1;
+    els.gameMessage.textContent = robotPicking
+      ? `The ${ROBOT_TIER_NAMES[state.robot.difficulty]} robot is choosing a word…`
+      : `${localPickerName()}, type a word for ${localGuesserName()}.`;
     els.pickerBanner.hidden = true;
-    els.pickerForm.hidden = false;
+    els.pickerForm.hidden = robotPicking;
     els.wordInput.value = "";
     els.wordInput.placeholder = `A word for ${localGuesserName()}`;
     renderWordPattern("", null, false);
@@ -751,12 +938,15 @@ function renderLocalPlayArea() {
     els.nextHint.textContent = "Set the word to begin this round.";
   } else if (local.status === "active") {
     const remaining = HANGMAN_MAX_WRONG - local.wrongCount;
-    els.gameMessage.textContent = `${localGuesserName()}, guess the word! ${remaining} wrong guess${remaining === 1 ? "" : "es"} left.`;
+    const robotGuessing = state.mode === "robot" && localGuesserIndex() === 1;
+    els.gameMessage.textContent = robotGuessing
+      ? `The ${ROBOT_TIER_NAMES[state.robot.difficulty]} robot is guessing… ${remaining} wrong guess${remaining === 1 ? "" : "es"} left.`
+      : `${localGuesserName()}, guess the word! ${remaining} wrong guess${remaining === 1 ? "" : "es"} left.`;
     els.pickerBanner.hidden = true;
     els.pickerForm.hidden = true;
     const guessedSet = new Set(local.guessed.filter((g) => g.correct).map((g) => g.letter));
     renderWordPattern(buildPattern(local.word, guessedSet), null, false);
-    renderAlphabet(local.guessed, false);
+    renderAlphabet(local.guessed, robotGuessing);
     renderGallows(local.wrongCount);
     els.nextRoundButton.disabled = true;
     els.nextPanelLabel.textContent = "Round in play";
@@ -782,6 +972,7 @@ function renderLocalPlayArea() {
       guessed: local.guessed,
       wrongCount: local.wrongCount,
       maxWrong: HANGMAN_MAX_WRONG,
+      pickerIndex: local.pickerIndex,
     });
   }
   renderScore();
@@ -938,7 +1129,7 @@ function renderHandoff() {
 }
 
 function render() {
-  if (state.mode === "local") {
+  if (state.mode === "local" || state.mode === "robot") {
     els.lobbyPanel.hidden = true;
     els.playArea.hidden = false;
     renderLocalPlayArea();
@@ -969,9 +1160,11 @@ function showStartMode(mode) {
     state.eventSource.close();
     state.eventSource = null;
   }
+  if (state.robot?.timer) clearTimeout(state.robot.timer);
   state.game = null;
   state.mode = null;
   state.local = null;
+  state.robot = null;
   state.playerId = "";
   state.handoff = null;
   state.entryMode = mode;
@@ -983,7 +1176,11 @@ function showStartMode(mode) {
     handoffOverlay.remove();
     handoffOverlay = null;
   }
-  if (entryControls) entryControls.showMode(mode);
+  els.choicePanel.hidden = mode !== "choice";
+  els.createForm.hidden = mode !== "create";
+  els.joinForm.hidden = mode !== "join";
+  els.soloForm.hidden = mode !== "solo";
+  if (mode === "join") els.joinCode.focus();
   els.connectionStatus.textContent = "Ready";
 }
 
@@ -1035,15 +1232,29 @@ function bindEvents() {
     joinInput: els.joinCode,
     initialMode: "choice",
     onModeChange: () => {
-      // Whenever the user moves into a remote mode, hide the local form.
+      // Whenever the user moves into a remote mode, hide the local forms.
       localForm.hidden = true;
+      els.soloForm.hidden = true;
     },
   });
   els.showLocal.addEventListener("click", () => {
     els.choicePanel.hidden = true;
     els.createForm.hidden = true;
     els.joinForm.hidden = true;
+    els.soloForm.hidden = true;
     localForm.hidden = false;
+  });
+  els.showSolo.addEventListener("click", () => {
+    els.choicePanel.hidden = true;
+    els.createForm.hidden = true;
+    els.joinForm.hidden = true;
+    localForm.hidden = true;
+    els.soloForm.hidden = false;
+  });
+  els.soloForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const checked = els.soloDiffRow.querySelector("input[name=soloDiff]:checked");
+    startRobotGame(checked ? checked.value : "rookie");
   });
   els.createForm.addEventListener("submit", createRemoteGame);
   els.joinForm.addEventListener("submit", joinByCode);
@@ -1051,7 +1262,7 @@ function bindEvents() {
   els.readyButton.addEventListener("click", setReady);
   els.startButton.addEventListener("click", startRemoteGame);
   els.setWordButton.addEventListener("click", () => {
-    if (state.mode === "local") {
+    if (state.mode === "local" || state.mode === "robot") {
       setLocalWord(els.wordInput.value);
     } else {
       setRemoteWord();
@@ -1060,7 +1271,7 @@ function bindEvents() {
   els.wordInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
-      if (state.mode === "local") {
+      if (state.mode === "local" || state.mode === "robot") {
         setLocalWord(els.wordInput.value);
       } else {
         setRemoteWord();
@@ -1068,7 +1279,7 @@ function bindEvents() {
     }
   });
   els.nextRoundButton.addEventListener("click", () => {
-    if (state.mode === "local") {
+    if (state.mode === "local" || state.mode === "robot") {
       nextLocalRound();
     } else {
       requestNextRound();

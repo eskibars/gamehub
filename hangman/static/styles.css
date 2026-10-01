@@ -673,3 +673,30 @@ button:disabled {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
+
+/* Solo-vs-robot mode */
+.mode-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.mode-card { position: relative; }
+
+.mode-card input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+.mode-card span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border: 1px solid rgba(90, 30, 30, 0.25);
+  border-radius: 999px;
+  background: #fffaf0;
+  padding: 0 13px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #657068;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.mode-card input:checked + span {
+  border-color: #a82a2a;
+  background: rgba(168, 42, 42, 0.12);
+  color: #a82a2a;
+}

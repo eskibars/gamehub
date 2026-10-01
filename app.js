@@ -30,8 +30,7 @@ const icons = {
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="14" y="10" width="28" height="40" rx="4"></rect>
       <rect x="23" y="15" width="28" height="40" rx="4"></rect>
-      <path d="M32 30c2.8-5.1 10.2-5.1 13 0-2.8 5.1-10.2 5.1-13 0z"></path>
-      <circle cx="38.5" cy="30" r="2"></circle>
+      <path d="M37 27l6 8-6 8-6-8z"></path>
     </svg>`,
   tools: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -48,10 +47,10 @@ const icons = {
       <rect x="36" y="10" width="18" height="18" rx="3"></rect>
       <rect x="10" y="36" width="18" height="18" rx="3"></rect>
       <rect x="36" y="36" width="18" height="18" rx="3"></rect>
-      <path d="M17 23l2-8 2 8M18 20h2"></path>
-      <path d="M42 16h4a3 3 0 0 1 0 6h-4V16zM42 22h5"></path>
-      <path d="M23 42a5 5 0 1 0 0 6"></path>
-      <path d="M43 42v10h3a5 5 0 0 0 0-10h-3z"></path>
+      <text x="19" y="19" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="12" style="fill:currentColor;stroke:none">A</text>
+      <text x="45" y="19" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="12" style="fill:currentColor;stroke:none">B</text>
+      <text x="19" y="45" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="12" style="fill:currentColor;stroke:none">C</text>
+      <text x="45" y="45" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="12" style="fill:currentColor;stroke:none">D</text>
     </svg>`,
   wordfind: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -84,7 +83,6 @@ const icons = {
   whoami: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <circle cx="32" cy="28" r="14"></circle>
-      <path d="M18 27c0-7 6-13 14-13s14 6 14 13"></path>
       <circle cx="26" cy="28" r="2"></circle>
       <circle cx="38" cy="28" r="2"></circle>
       <path d="M26 35q6 4 12 0"></path>
@@ -102,8 +100,7 @@ const icons = {
       <line x1="38" y1="34" x2="46" y2="40"></line>
       <line x1="38" y1="42" x2="32" y2="52"></line>
       <line x1="38" y1="42" x2="44" y2="52"></line>
-      <text x="48" y="20" font-family="ui-monospace, monospace" font-weight="900" font-size="9">A</text>
-      <text x="54" y="20" font-family="ui-monospace, monospace" font-weight="900" font-size="9">_</text>
+      <path d="M47 51h6M56 51h6"></path>
     </svg>`,
   battleship: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -146,9 +143,9 @@ const icons = {
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="8" y="8" width="48" height="48" rx="6"></rect>
       <path d="M8 24h48M8 40h48M24 8v48M40 8v48"></path>
-      <text x="16" y="20" font-family="ui-monospace, monospace" font-weight="900" font-size="10">2</text>
-      <text x="49" y="36" font-family="ui-monospace, monospace" font-weight="900" font-size="10">4</text>
-      <text x="49" y="52" font-family="ui-monospace, monospace" font-weight="900" font-size="10">8</text>
+      <text x="16" y="16" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="10" style="fill:currentColor;stroke:none">2</text>
+      <text x="48" y="32" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="10" style="fill:currentColor;stroke:none">4</text>
+      <text x="48" y="48" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="10" style="fill:currentColor;stroke:none">8</text>
     </svg>`,
   wordguess: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -156,10 +153,10 @@ const icons = {
       <rect x="36" y="14" width="20" height="20" rx="4"></rect>
       <rect x="8" y="36" width="20" height="20" rx="4"></rect>
       <rect x="36" y="36" width="20" height="20" rx="4"></rect>
-      <text x="13" y="29" font-family="ui-monospace, monospace" font-weight="900" font-size="13" style="fill:currentColor;stroke:none">W</text>
-      <text x="41" y="29" font-family="ui-monospace, monospace" font-weight="900" font-size="13" style="fill:currentColor;stroke:none">O</text>
-      <text x="13" y="51" font-family="ui-monospace, monospace" font-weight="900" font-size="13" style="fill:currentColor;stroke:none">R</text>
-      <text x="41" y="51" font-family="ui-monospace, monospace" font-weight="900" font-size="13" style="fill:currentColor;stroke:none">D</text>
+      <text x="18" y="24" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="13" style="fill:currentColor;stroke:none">W</text>
+      <text x="46" y="24" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="13" style="fill:currentColor;stroke:none">O</text>
+      <text x="18" y="46" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="13" style="fill:currentColor;stroke:none">R</text>
+      <text x="46" y="46" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="13" style="fill:currentColor;stroke:none">D</text>
     </svg>`,
   mine: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -180,8 +177,8 @@ const icons = {
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="10" y="12" width="24" height="34" rx="4" transform="rotate(-8 22 29)"></rect>
       <rect x="28" y="16" width="24" height="34" rx="4" transform="rotate(7 40 33)"></rect>
-      <circle cx="41" cy="34" r="6"></circle>
-      <path d="M19 27l3 8M30 55h4" transform="rotate(-8 22 29)"></path>
+      <circle cx="40" cy="33" r="6.5"></circle>
+      <path d="M40 29.5l3.5 3.5-3.5 3.5-3.5-3.5z"></path>
     </svg>`,
   snake: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -231,9 +228,9 @@ const icons = {
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="8" y="8" width="48" height="48" rx="6"></rect>
       <path d="M8 24h48M8 40h48M24 8v48M40 8v48"></path>
-      <text x="13" y="20" font-family="ui-monospace, monospace" font-weight="900" font-size="10" style="fill:currentColor;stroke:none">5</text>
-      <text x="46" y="36" font-family="ui-monospace, monospace" font-weight="900" font-size="10" style="fill:currentColor;stroke:none">3</text>
-      <text x="29" y="52" font-family="ui-monospace, monospace" font-weight="900" font-size="10" style="fill:currentColor;stroke:none">7</text>
+      <text x="16" y="16" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="10" style="fill:currentColor;stroke:none">5</text>
+      <text x="48" y="32" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="10" style="fill:currentColor;stroke:none">3</text>
+      <text x="32" y="48" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="10" style="fill:currentColor;stroke:none">7</text>
     </svg>`,
   blockdrop: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -248,8 +245,7 @@ const icons = {
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="12" y="12" width="24" height="34" rx="4" transform="rotate(-10 24 29)"></rect>
       <rect x="26" y="12" width="24" height="34" rx="4" transform="rotate(8 38 29)"></rect>
-      <path d="M38 22c-2.4 3.4-6 3.4-8 0 2-3.4 5.6-3.4 8 0z" transform="rotate(8 38 29)"></path>
-      <path d="M30 52h6" transform="rotate(8 38 29)"></path>
+      <path d="M38 21l5 8-5 8-5-8z" transform="rotate(8 38 29)"></path>
     </svg>`,
   reversi: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -263,16 +259,16 @@ const icons = {
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="10" y="14" width="26" height="38" rx="4" transform="rotate(-8 23 33)"></rect>
       <rect x="28" y="12" width="26" height="38" rx="4" transform="rotate(9 41 31)"></rect>
-      <text x="16" y="30" font-family="ui-monospace, monospace" font-weight="900" font-size="13" transform="rotate(-8 23 33)" style="fill:currentColor;stroke:none">A</text>
-      <path d="M42 24c-2.6 4-6.6 4-8.6 0 2-4 6-4 8.6 0z" transform="rotate(9 41 31)"></path>
+      <text x="20" y="33" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="14" transform="rotate(-8 23 33)" style="fill:currentColor;stroke:none">A</text>
+      <path d="M41 24l5.5 7-5.5 7-5.5-7z" transform="rotate(9 41 31)"></path>
     </svg>`,
   chess: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="8" y="8" width="48" height="48" rx="5"></rect>
       <path d="M8 24h48M8 40h48M24 8v48M40 8v48"></path>
-      <path d="M17 47v-5l3-2v-5h5v5l3 2v5z"></path>
-      <circle cx="41" cy="20" r="5"></circle>
-      <path d="M38 44c0-6 1.5-10 3-12 1.5 2 3 6 3 12z"></path>
+      <path d="M17 47v-4l3-3v-7l-3-2v-5h4v3h3v-3h4v5l-3 2v7l3 3v4z"></path>
+      <circle cx="41" cy="18.5" r="4"></circle>
+      <path d="M38 44c0-9 1.2-16.5 3-21.5 1.8 4.5 3 12 3 21.5z"></path>
       <path d="M35 47h12"></path>
     </svg>`,
   gemcrush: `
@@ -309,7 +305,7 @@ const icons = {
       <rect x="34" y="12" width="20" height="28" rx="3" transform="rotate(6 44 26)"></rect>
       <circle cx="20" cy="26" r="4"></circle>
       <circle cx="20" cy="35" r="4"></circle>
-      <path d="M44 20c-2.4 3.4-6 3.4-8 0 2-3.4 5.6-3.4 8 0z" transform="rotate(6 44 26)"></path>
+      <path d="M44 20l4.5 6-4.5 6-4.5-6z" transform="rotate(6 44 26)"></path>
       <path d="M34 46h20M36 52h16"></path>
     </svg>`,
   nonogram: `
@@ -352,8 +348,8 @@ const icons = {
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="10" y="12" width="26" height="36" rx="4" transform="rotate(-9 23 30)"></rect>
       <rect x="29" y="14" width="26" height="36" rx="4" transform="rotate(8 42 32)"></rect>
-      <text x="33" y="32" font-family="ui-monospace, monospace" font-weight="900" font-size="14" transform="rotate(8 42 32)" style="fill:currentColor;stroke:none">A</text>
-      <text x="15" y="30" font-family="ui-monospace, monospace" font-weight="900" font-size="11" transform="rotate(-9 23 30)" style="fill:currentColor;stroke:none">K</text>
+      <text x="19" y="30" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="13" transform="rotate(-9 23 30)" style="fill:currentColor;stroke:none">K</text>
+      <text x="42" y="32" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="14" transform="rotate(8 42 32)" style="fill:currentColor;stroke:none">A</text>
     </svg>`,
   rollbug: `
     <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -403,8 +399,8 @@ const icons = {
     <svg viewBox="0 0 64 64" aria-hidden="true">
       <rect x="12" y="10" width="26" height="38" rx="4" transform="rotate(-9 25 29)"></rect>
       <rect x="27" y="14" width="26" height="38" rx="4" transform="rotate(8 40 33)"></rect>
-      <text x="33" y="34" font-family="ui-monospace, monospace" font-weight="900" font-size="16" transform="rotate(8 40 33)" style="fill:currentColor;stroke:none">8</text>
-      <path d="M46 42c-2.4 3.4-6 3.4-8 0 2-3.4 5.6-3.4 8 0z" transform="rotate(8 40 33)"></path>
+      <text x="40" y="25" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace, monospace" font-weight="900" font-size="15" transform="rotate(8 40 33)" style="fill:currentColor;stroke:none">8</text>
+      <path d="M40 47.5c-4.2-3-6-5.4-6-7.8a3 3 0 0 1 6-.9 3 3 0 0 1 6 .9c0 2.4-1.8 4.8-6 7.8z" transform="rotate(8 40 33)" style="fill:currentColor;stroke:none"></path>
     </svg>`,
 };
 
@@ -452,10 +448,10 @@ const games = [
     href: "/bulls-and-cows/",
     accent: "#6e5cb8",
     tilt: "-0.7deg",
-    description: "A Mastermind-style code breaker with anonymous share codes and live server-sent updates.",
+    description: "A Mastermind-style code breaker: duel a robot cracker offline at three strengths, or share a code and race a friend live.",
     features: {
-      Mode: "Live code guessing",
-      Storage: "In-memory share code",
+      Mode: "Solo vs robot or live",
+      Storage: "Local, or in-memory share code",
       Players: "1-2",
     },
     icon: "bullsandcows",
@@ -469,11 +465,11 @@ const games = [
     href: "/boggle/",
     accent: "#236c5a",
     tilt: "0.8deg",
-    description: "Create a live word board, share a table link, ready up, race the timer, and compare lists together.",
+    description: "Race the clock and a dictionary-solving robot offline, or share a table link and compare lists together at the end.",
     features: {
-      Mode: "Live word hunt",
-      Storage: "In-memory share code",
-      Players: "Group table",
+      Mode: "Solo vs robot or live table",
+      Storage: "Local, or in-memory share code",
+      Players: "1 or group",
     },
     icon: "letters",
   },
@@ -503,11 +499,11 @@ const games = [
     href: "/backgammon/",
     accent: "#8d5735",
     tilt: "1.2deg",
-    description: "Play locally with enforced moves and automated turns, or create a live sharing code with streamed dice and moves.",
+    description: "The classic race with enforced moves — duel a robot at three strengths offline, share one device locally, or stream a live game over a share code.",
     features: {
-      Mode: "Local or remote",
-      Storage: "In-memory share code",
-      Players: "2",
+      Mode: "Solo vs robot, local, or remote",
+      Storage: "Local, or in-memory share code",
+      Players: "1-2",
     },
     icon: "backgammon",
   },
@@ -537,11 +533,11 @@ const games = [
     href: "/whoami/",
     accent: "#c84e3a",
     tilt: "1.6deg",
-    description: "Guess the secret character your opponent picked. Both players share a board of procedurally-generated people, cats, and dogs, then ask yes/no questions to narrow it down.",
+    description: "Guess the secret character — against a detective robot offline or a friend over a share code. Ask yes/no questions about the procedurally-generated people, cats, and dogs.",
     features: {
-      Mode: "Live character guessing",
-      Storage: "In-memory share code",
-      Players: "2",
+      Mode: "Solo vs robot or live",
+      Storage: "Local, or in-memory share code",
+      Players: "1-2",
     },
     icon: "whoami",
   },
@@ -554,9 +550,9 @@ const games = [
     href: "/hangman/",
     accent: "#a82a2a",
     tilt: "-1.3deg",
-    description: "Pass-and-play letter guessing. Type a word, hand the device, and watch the gallows fill in — or play remotely with a share code and an optional category that sticks for the whole table.",
+    description: "Letter-guessing duels against a word-minded robot offline, pass-and-play on one device, or remotely with a share code and an optional table-wide category.",
     features: {
-      Mode: "Local or remote",
+      Mode: "Robot, local, or remote",
       Storage: "Local browser or in-memory share code",
       Players: "1-2",
     },
@@ -571,11 +567,11 @@ const games = [
     href: "/battleship/",
     accent: "#173042",
     tilt: "1.1deg",
-    description: "Hide a five-ship fleet, then trade salvos over a share code. Hits ping on a live radar board, sunk ships surface where they lie, and the captain's log calls every shot.",
+    description: "Hide a five-ship fleet, then trade salvos — against a robot admiral offline or a friend over a share code. Hits ping on a live radar board and the captain's log calls every shot.",
     features: {
-      Mode: "Remote duel",
-      Storage: "In-memory share code",
-      Players: "2",
+      Mode: "Solo vs robot or remote",
+      Storage: "Local, or in-memory share code",
+      Players: "1-2",
     },
     icon: "battleship",
   },

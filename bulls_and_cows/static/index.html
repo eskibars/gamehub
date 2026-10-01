@@ -22,10 +22,45 @@
         <section class="entry-choice" id="choicePanel">
           <h2>Choose a Mode</h2>
           <div class="entry-actions">
+            <button class="entry-choice-button" id="showSolo" type="button">Play vs Robot</button>
             <button class="entry-choice-button" id="showJoin" type="button">Join Game</button>
             <button class="entry-choice-button" id="showCreate" type="button">Create Game</button>
           </div>
         </section>
+
+        <form class="entry-panel" id="soloForm" hidden>
+          <div class="section-heading">
+            <h2>Crack the Robot's Code</h2>
+          </div>
+          <p class="hint">A duel, fully offline: the robot hides a secret code while you build yours below. You guess on the board, the robot guesses on its own board — first to crack wins.</p>
+          <label class="field">
+            <span>Robot strength</span>
+            <div class="mode-row" id="soloDiffRow" role="radiogroup" aria-label="Robot strength">
+              <label class="mode-card"><input type="radio" name="soloDiff" value="casual" checked><span>🤖 Casual</span></label>
+              <label class="mode-card"><input type="radio" name="soloDiff" value="sharp"><span>🤖 Sharp</span></label>
+              <label class="mode-card"><input type="radio" name="soloDiff" value="oracle"><span>🤖 Oracle</span></label>
+            </div>
+          </label>
+          <div class="settings-grid">
+            <label class="field">
+              <span>Pegs</span>
+              <input id="soloPegCount" type="number" min="3" max="6" value="4">
+            </label>
+            <label class="field">
+              <span>Rounds</span>
+              <input id="soloMaxRounds" type="number" min="5" max="16" value="10">
+            </label>
+          </div>
+          <section class="secret-panel">
+            <div class="section-heading compact">
+              <h2>Your Code</h2>
+              <button class="small-button" id="soloRandomize" type="button">Randomize</button>
+            </div>
+            <div class="palette" id="soloPalette"></div>
+            <div class="secret-slots" id="soloSlots"></div>
+          </section>
+          <button class="primary-button" type="submit">Start Duel</button>
+        </form>
 
         <form class="entry-panel" id="createForm" hidden>
           <div class="section-heading">
@@ -110,10 +145,18 @@
           <div class="guess-slots" id="guessSlots"></div>
           <button class="primary-button" id="submitGuess" type="button">Submit Guess</button>
         </aside>
+
+        <aside class="guess-panel" id="robotPanel">
+          <h2>Robot's Attack</h2>
+          <p class="hint" id="robotMessage">The robot is working on your code.</p>
+          <div class="guess-board robot-board" id="robotBoard"></div>
+        </aside>
       </section>
     </main>
 
     <script src="/shared/game-entry.js" defer></script>
+    <script src="/shared/profile.js"></script>
+    <script src="/shared/juice.js"></script>
     <script src="/shared/offline-note.js"></script>
     <script src="app.js" defer></script>
   </body>

@@ -22,10 +22,27 @@
         <section class="entry-choice" id="choicePanel">
           <h2>Choose a Mode</h2>
           <div class="entry-actions">
+            <button class="entry-choice-button" id="showSolo" type="button">Play vs Robot</button>
             <button class="entry-choice-button" id="showJoin" type="button">Join Game</button>
             <button class="entry-choice-button" id="showCreate" type="button">Create Game</button>
           </div>
         </section>
+
+        <form class="entry-panel" id="soloForm" hidden>
+          <div class="section-heading">
+            <h2>Duel the Detective Robot</h2>
+          </div>
+          <p class="hint">Fully offline: you each guard a secret character on the same 24-card board. Ask yes/no questions in plain English — the robot answers truthfully and asks its own. First correct guess wins.</p>
+          <label class="field">
+            <span>Robot strength</span>
+            <div class="mode-row" id="soloDiffRow" role="radiogroup" aria-label="Robot strength">
+              <label class="mode-card"><input type="radio" name="soloDiff" value="rookie" checked><span>🤖 Rookie</span></label>
+              <label class="mode-card"><input type="radio" name="soloDiff" value="sleuth"><span>🤖 Sleuth</span></label>
+              <label class="mode-card"><input type="radio" name="soloDiff" value="mastermind"><span>🤖 Mastermind</span></label>
+            </div>
+          </label>
+          <button class="primary-button" type="submit">Deal the board</button>
+        </form>
 
         <form class="entry-panel" id="createForm" hidden>
           <div class="section-heading">
@@ -80,7 +97,7 @@
             </form>
           </section>
 
-          <section class="chat" aria-label="Chat">
+          <section class="chat" id="chatPanel" aria-label="Chat">
             <div class="section-heading compact">
               <h2>Chat</h2>
               <span id="chatCount" class="count">0</span>
@@ -161,6 +178,8 @@
 
     <script src="/shared/game-entry.js" defer></script>
     <script src="characters.js" defer></script>
+    <script src="/shared/profile.js"></script>
+    <script src="/shared/juice.js"></script>
     <script src="/shared/offline-note.js"></script>
     <script src="app.js" defer></script>
   </body>

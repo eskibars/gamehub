@@ -22,10 +22,27 @@
         <section class="entry-choice" id="choicePanel">
           <h2>Choose a Mode</h2>
           <div class="entry-actions">
+            <button class="entry-choice-button" id="showSolo" type="button">Play vs Robot</button>
             <button class="entry-choice-button" id="showJoin" type="button">Join Game</button>
             <button class="entry-choice-button" id="showCreate" type="button">Create Game</button>
           </div>
         </section>
+
+        <form class="entry-panel" id="soloForm" hidden>
+          <div class="section-heading">
+            <h2>Duel a Robot Admiral</h2>
+          </div>
+          <p class="hint">Fully offline. Hide your five-ship fleet, then trade salvos with a robot that hunts in patterns and pursues every hit. No share code needed.</p>
+          <label class="field">
+            <span>Robot strength</span>
+            <div class="mode-row" id="soloDiffRow" role="radiogroup" aria-label="Robot strength">
+              <label class="mode-card"><input type="radio" name="soloDiff" value="easy" checked><span>🤖 Easy</span></label>
+              <label class="mode-card"><input type="radio" name="soloDiff" value="medium"><span>🤖 Medium</span></label>
+              <label class="mode-card"><input type="radio" name="soloDiff" value="hard"><span>🤖 Hard</span></label>
+            </div>
+          </label>
+          <button class="primary-button" type="submit">To battle stations</button>
+        </form>
 
         <form class="entry-panel" id="createForm" hidden>
           <div class="section-heading">
@@ -163,6 +180,8 @@
     </main>
 
     <script src="/shared/game-entry.js" defer></script>
+    <script src="/shared/profile.js"></script>
+    <script src="/shared/juice.js"></script>
     <script src="/shared/offline-note.js"></script>
     <script src="app.js" defer></script>
   </body>

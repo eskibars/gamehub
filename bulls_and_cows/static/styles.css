@@ -430,3 +430,42 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
+
+/* Solo-vs-robot mode */
+.mode-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.mode-card { position: relative; }
+
+.mode-card input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+.mode-card span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  padding: 0 13px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--muted);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.mode-card input:checked + span {
+  border-color: var(--green);
+  background: rgba(35, 108, 90, 0.12);
+  color: var(--green);
+}
+
+.robot-board .round-pegs {
+  opacity: 0.92;
+}
+
+.robot-board .feedback span {
+  font-size: 0.72rem;
+}
+
+.play-view.has-robot {
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1.4fr) minmax(220px, 1fr);
+}

@@ -1,4 +1,13 @@
 const PLAYER_KEY_PREFIX = "boggle-table-player-";
+const SOLO_STORAGE_KEY = "boggle-robot-v1";
+const SOLO_TIER_NAMES = { casual: "Casual", sharp: "Sharp", master: "Master" };
+// Mirrors the server's weighted letter pool so solo boards play the same.
+const SOLO_LETTER_DISTRIBUTION = (
+  "E".repeat(12) + "A".repeat(9) + "I".repeat(9) + "O".repeat(8) +
+  "N".repeat(6) + "R".repeat(6) + "T".repeat(6) + "L".repeat(4) +
+  "S".repeat(4) + "U".repeat(4) + "D".repeat(4) + "G".repeat(3) +
+  "BCMPFHVWY".repeat(2) + "KJXQZ"
+).split("");
 
 const state = {
   game: null,
@@ -6,6 +15,9 @@ const state = {
   eventSource: null,
   clock: null,
   entryMode: "choice",
+  solo: null,
+  soloTimer: null,
+  soloRecord: { wins: 0, losses: 0 },
 };
 
 const els = {
@@ -14,8 +26,13 @@ const els = {
   gameView: document.querySelector("#gameView"),
   createForm: document.querySelector("#createForm"),
   joinByCodeForm: document.querySelector("#joinByCodeForm"),
+  soloForm: document.querySelector("#soloForm"),
   showJoin: document.querySelector("#showJoin"),
   showCreate: document.querySelector("#showCreate"),
+  showSolo: document.querySelector("#showSolo"),
+  soloDiffRow: document.querySelector("#soloDiffRow"),
+  soloBoardSize: document.querySelector("#soloBoardSize"),
+  soloTimerSeconds: document.querySelector("#soloTimerSeconds"),
   boardSize: document.querySelector("#boardSize"),
   timerSeconds: document.querySelector("#timerSeconds"),
   joinCode: document.querySelector("#joinCode"),
@@ -59,6 +76,329 @@ function formatTime(seconds) {
 
 function normalizeWord(word) {
   return word.toUpperCase().replace(/[^A-Z]/g, "");
+}
+
+// ----- Solo hunt vs the word robot -----
+//
+// The board and the full robot word list are computed locally: the sorted
+// dictionary supports prefix membership by binary search, so the DFS that
+// solves the board costs no extra memory. The robot "finds" its words on a
+// schedule during the round so it feels like a live rival.
+
+function soloDictionary() {
+  if (state.solo?.words) return state.solo.words;
+  const raw = window.BoggleWords?.RAW || "";
+  const words = raw.split("\n").filter((w) => w.length >= 3);
+  words.sort();
+  if (state.solo) state.solo.words = words;
+  return words;
+}
+
+function soloLowerBound(list, target) {
+  let lo = 0;
+  let hi = list.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (list[mid] < target) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+function soloIsWord(list, word) {
+  const lower = word.toLowerCase();
+  const index = soloLowerBound(list, lower);
+  return list[index] === lower;
+}
+
+function soloHasPrefix(list, prefix) {
+  const index = soloLowerBound(list, prefix);
+  return index < list.length && list[index].startsWith(prefix);
+}
+
+// Match a board tile ("Qu" counts as one tile) against the next letters of
+// word; word may arrive in any case (the UI normalizes to uppercase).
+function tileMatches(tile, word, position) {
+  if (tile === "Qu") return word.toLowerCase().startsWith("qu", position);
+  const char = word[position];
+  return Boolean(char) && char.toLowerCase() === tile.toLowerCase();
+}
+
+function soloWordReachable(board, word) {
+  const size = board.length;
+  const seen = new Set();
+  const search = (r, c, position) => {
+    if (position >= word.length) return true;
+    for (const [dr, dc] of [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]]) {
+      const nr = r + dr;
+      const nc = c + dc;
+      if (nr < 0 || nr >= size || nc < 0 || nc >= size) continue;
+      const key = nr * size + nc;
+      if (seen.has(key)) continue;
+      const tile = board[nr][nc];
+      const step = tile === "Qu" ? 2 : 1;
+      if (!tileMatches(tile, word, position)) continue;
+      seen.add(key);
+      if (search(nr, nc, position + step)) { seen.delete(key); return true; }
+      seen.delete(key);
+    }
+    return false;
+  };
+  for (let r = 0; r < size; r += 1) {
+    for (let c = 0; c < size; c += 1) {
+      const tile = board[r][c];
+      const step = tile === "Qu" ? 2 : 1;
+      if (!tileMatches(tile, word, 0)) continue;
+      seen.add(r * size + c);
+      if (search(r, c, step)) return true;
+      seen.delete(r * size + c);
+    }
+  }
+  return false;
+}
+
+// Find every dictionary word on the board.
+function soloSolveBoard(board) {
+  const list = soloDictionary();
+  const size = board.length;
+  const found = new Set();
+  const walk = (r, c, prefix, seen) => {
+    for (const [dr, dc] of [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]]) {
+      const nr = r + dr;
+      const nc = c + dc;
+      if (nr < 0 || nr >= size || nc < 0 || nc >= size) continue;
+      const key = nr * size + nc;
+      if (seen.has(key)) continue;
+      const tile = board[nr][nc];
+      const next = prefix + (tile === "Qu" ? "qu" : tile.toLowerCase());
+      if (next.length > 10 || !soloHasPrefix(list, next)) continue;
+      if (next.length >= 3 && soloIsWord(list, next)) found.add(next);
+      seen.add(key);
+      walk(nr, nc, next, seen);
+      seen.delete(key);
+    }
+  };
+  for (let r = 0; r < size; r += 1) {
+    for (let c = 0; c < size; c += 1) {
+      const tile = board[r][c];
+      const start = tile === "Qu" ? "qu" : tile.toLowerCase();
+      if (!soloHasPrefix(list, start)) continue;
+      walk(r, c, start, new Set([r * size + c]));
+    }
+  }
+  return [...found];
+}
+
+function randomSoloBoard(size) {
+  const cells = [];
+  for (let i = 0; i < size * size; i += 1) {
+    const letter = SOLO_LETTER_DISTRIBUTION[Math.floor(Math.random() * SOLO_LETTER_DISTRIBUTION.length)];
+    cells.push(letter === "Q" ? "Qu" : letter);
+  }
+  const board = [];
+  for (let r = 0; r < size; r += 1) board.push(cells.slice(r * size, (r + 1) * size));
+  return board;
+}
+
+function boggleWordPoints(word) {
+  const length = word.length;
+  if (length <= 4) return 1;
+  if (length === 5) return 2;
+  if (length === 6) return 3;
+  if (length === 7) return 5;
+  return 11;
+}
+
+function loadSoloRecord() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SOLO_STORAGE_KEY) || "{}");
+    state.soloRecord = { wins: saved.wins || 0, losses: saved.losses || 0 };
+  } catch {
+    // Fresh install.
+  }
+}
+
+function persistSoloRecord() {
+  try {
+    localStorage.setItem(SOLO_STORAGE_KEY, JSON.stringify(state.soloRecord));
+  } catch {
+    // Storage unavailable.
+  }
+}
+
+function soloDifficulty() {
+  const checked = els.soloDiffRow?.querySelector("input[name=soloDiff]:checked");
+  return checked ? checked.value : "casual";
+}
+
+function startSolo(event) {
+  event.preventDefault();
+  if (state.eventSource) state.eventSource.close();
+  state.eventSource = null;
+  if (state.soloTimer) clearTimeout(state.soloTimer);
+  const size = Number(els.soloBoardSize.value) || 4;
+  const timerSeconds = Number(els.soloTimerSeconds.value) || 180;
+  const difficulty = soloDifficulty();
+  const board = randomSoloBoard(size);
+  state.entryMode = "solo";
+  state.playerId = "you";
+  state.solo = {
+    difficulty,
+    words: null, // dictionary parsed lazily on first use
+    robotPlan: [],
+    robotTimer: null,
+    finishTimer: null,
+  };
+  state.game = {
+    code: "ROBOT",
+    hostId: "you",
+    size,
+    timerSeconds,
+    status: "active",
+    board,
+    startsAt: Date.now() / 1000,
+    endsAt: Date.now() / 1000 + timerSeconds,
+    players: [
+      { id: "you", name: "You", ready: true, wordCount: 0, words: [] },
+      { id: "robot", name: `${SOLO_TIER_NAMES[difficulty]} Robot`, ready: true, wordCount: 0, words: [] },
+    ],
+    duplicateWords: [],
+    challenges: [],
+  };
+  // Plan the robot's hunt, then pace its finds across the round.
+  const all = soloSolveBoard(board);
+  let pool = all;
+  if (difficulty === "casual") {
+    pool = all.filter((w) => w.length <= 4);
+  } else if (difficulty === "sharp") {
+    pool = all.filter((w) => w.length <= 6);
+  }
+  const fraction = difficulty === "master" ? 1 : difficulty === "sharp" ? 0.85 : 0.55;
+  const plan = [];
+  for (const word of pool) {
+    if (Math.random() < fraction) plan.push(word);
+  }
+  for (let i = plan.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [plan[i], plan[j]] = [plan[j], plan[i]];
+  }
+  state.solo.robotPlan = plan;
+  els.setupView.hidden = true;
+  els.gameView.hidden = false;
+  els.connectionStatus.textContent = "Offline hunt";
+  els.gameMessage.textContent = "Find words. Press Enter to submit.";
+  render();
+  if (state.game.status === "active" && state.game.board.length) {
+    // Board is hidden in lobbies only; force it visible for solo.
+    els.letterBoard.hidden = false;
+  }
+  scheduleSoloRobotReveal();
+  state.solo.finishTimer = setTimeout(soloFinish, timerSeconds * 1000);
+}
+
+function scheduleSoloRobotReveal() {
+  const solo = state.solo;
+  const game = state.game;
+  if (!solo || !game || game.status !== "active") return;
+  if (!solo.robotPlan.length) return;
+  const remaining = (game.endsAt - Date.now() / 1000) * 1000;
+  const finds = solo.robotPlan.length;
+  const delay = Math.max(450, (remaining / (finds + 1)) * (0.6 + Math.random() * 0.8));
+  solo.robotTimer = setTimeout(() => {
+    if (!state.game || state.game.status !== "active" || !solo.robotPlan.length) return;
+    const word = solo.robotPlan.shift();
+    const robot = state.game.players.find((player) => player.id === "robot");
+    robot.words.push(word);
+    robot.wordCount = robot.words.length;
+    render();
+    scheduleSoloRobotReveal();
+  }, delay);
+}
+
+function soloSubmitWord(event) {
+  event.preventDefault();
+  const game = state.game;
+  if (!game || game.status !== "active") return;
+  const word = normalizeWord(els.wordInput.value);
+  if (!word) return;
+  const you = game.players.find((player) => player.id === "you");
+  const reject = (reason) => {
+    els.gameMessage.textContent = reason;
+    GameHubJuice?.tick();
+  };
+  if (word.length < 3) return reject("Words need at least 3 letters.");
+  if (you.words.some((existing) => normalizeWord(existing) === word)) return reject("You already found that word.");
+  const list = soloDictionary();
+  if (!soloIsWord(list, word)) return reject(`${word} isn't in the dictionary.`);
+  if (!soloWordReachable(game.board, word)) return reject(`${word} can't be traced on this board.`);
+  you.words.push(word);
+  you.wordCount = you.words.length;
+  els.wordInput.value = "";
+  els.gameMessage.textContent = `Found ${word.toUpperCase()} — ${boggleWordPoints(word.toLowerCase())} point${boggleWordPoints(word.toLowerCase()) === 1 ? "" : "s"}.`;
+  GameHubJuice?.pop(300 + word.length * 40);
+  render();
+}
+
+function soloDuplicateSet() {
+  const game = state.game;
+  const counts = new Map();
+  for (const player of game.players) {
+    for (const word of player.words) {
+      const key = normalizeWord(word);
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+  }
+  return new Set([...counts.entries()].filter(([, count]) => count > 1).map(([word]) => word));
+}
+
+function soloScores() {
+  const game = state.game;
+  const duplicates = soloDuplicateSet();
+  return game.players.map((player) => {
+    const unique = player.words.filter((word) => !duplicates.has(normalizeWord(word)));
+    return {
+      player,
+      score: unique.reduce((sum, word) => sum + boggleWordPoints(normalizeWord(word)), 0),
+      words: unique.length,
+    };
+  });
+}
+
+function soloFinish() {
+  const game = state.game;
+  const solo = state.solo;
+  if (!game || game.status !== "active") return;
+  clearTimeout(solo.robotTimer);
+  game.status = "finished";
+  // Dump the robot's whole planned list — it "finds" everything it was holding.
+  const robot = game.players.find((player) => player.id === "robot");
+  while (solo.robotPlan.length) {
+    robot.words.push(solo.robotPlan.shift());
+  }
+  robot.wordCount = robot.words.length;
+  game.duplicateWords = [...soloDuplicateSet()];
+  const scores = soloScores();
+  const you = scores.find((entry) => entry.player.id === "you");
+  const bot = scores.find((entry) => entry.player.id === "robot");
+  const youWon = you.score > bot.score;
+  if (youWon) {
+    state.soloRecord.wins += 1;
+    const chips = solo.difficulty === "master" ? 8 : solo.difficulty === "sharp" ? 5 : 3;
+    GameHubProfile?.achieve("boggle-robot-win");
+    if (state.soloRecord.wins >= 5) GameHubProfile?.achieve("boggle-robot-5");
+    GameHubProfile?.award("boggle", chips,
+      `Out-worded the ${SOLO_TIER_NAMES[solo.difficulty]} robot ${you.score} to ${bot.score}`, state.soloRecord.wins);
+    GameHubJuice?.win();
+  } else {
+    state.soloRecord.losses += 1;
+    GameHubProfile?.award("boggle", 1, `Lost the word race ${you.score} to ${bot.score}`, 0);
+    GameHubJuice?.lose();
+  }
+  persistSoloRecord();
+  els.gameMessage.textContent = youWon
+    ? `You win ${you.score} to ${bot.score}! (${you.words} words to the robot's ${bot.words})`
+    : `The ${SOLO_TIER_NAMES[solo.difficulty]} robot wins ${bot.score} to ${you.score}.`;
+  render();
 }
 
 function currentPlayer() {
@@ -183,6 +523,10 @@ async function startGame() {
 
 async function submitWord(event) {
   event.preventDefault();
+  if (state.entryMode === "solo" && state.solo) {
+    soloSubmitWord(event);
+    return;
+  }
   const word = normalizeWord(els.wordInput.value);
   if (!state.game || !state.playerId || !word) return;
   try {
@@ -271,7 +615,7 @@ function hasMyChallenge(targetId, word) {
 }
 
 function renderWords() {
-  const duplicates = new Set(state.game.duplicateWords || []);
+  const duplicates = state.entryMode === "solo" ? soloDuplicateSet() : new Set(state.game.duplicateWords || []);
   const player = currentPlayer();
   const ownWords = player?.words || [];
   els.wordCount.textContent = String(ownWords.length);
@@ -300,7 +644,7 @@ function renderWords() {
       label.textContent = word;
       item.append(label);
 
-      if (state.game.status === "finished" && listOwner.id !== state.playerId) {
+      if (state.game.status === "finished" && listOwner.id !== state.playerId && state.entryMode !== "solo") {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "challenge-button";
@@ -349,7 +693,7 @@ function render() {
   els.factTimer.textContent = formatTime(state.game.timerSeconds);
   els.factStatus.textContent = state.game.status[0].toUpperCase() + state.game.status.slice(1);
   els.gameView.classList.toggle("is-lobby", inLobby);
-  els.shareTools.hidden = !canInvite;
+  els.shareTools.hidden = !canInvite || state.entryMode === "solo";
   els.newGameButton.hidden = !canInvite;
   els.nameForm.hidden = Boolean(player) || !inLobby;
   els.nameForm.querySelector("button").textContent = canInvite ? "Join as Host" : "Join Table";
@@ -365,8 +709,8 @@ function render() {
   if (inLobby) {
     els.gameMessage.textContent = isHost ? "Start when everyone is ready." : "Waiting for the host.";
   } else if (state.game.status === "active") {
-    els.gameMessage.textContent = "Find words. Press Enter to submit.";
-  } else {
+    if (state.entryMode !== "solo") els.gameMessage.textContent = "Find words. Press Enter to submit.";
+  } else if (state.entryMode !== "solo") {
     els.gameMessage.textContent = "Lists are revealed. Duplicates are crossed out.";
   }
 
@@ -384,9 +728,19 @@ function bindEvents() {
     showCreate: els.showCreate,
     showJoin: els.showJoin,
     joinInput: els.joinCode,
+    onModeChange: (mode) => {
+      if (mode !== "solo") els.soloForm.hidden = true;
+    },
   });
   els.createForm.addEventListener("submit", createGame);
   els.joinByCodeForm.addEventListener("submit", joinByCode);
+  els.soloForm.addEventListener("submit", startSolo);
+  els.showSolo.addEventListener("click", () => {
+    els.choicePanel.hidden = true;
+    els.createForm.hidden = true;
+    els.joinByCodeForm.hidden = true;
+    els.soloForm.hidden = false;
+  });
   els.nameForm.addEventListener("submit", joinPlayer);
   els.readyButton.addEventListener("click", setReady);
   els.startButton.addEventListener("click", startGame);
@@ -398,17 +752,25 @@ function bindEvents() {
   });
   els.newGameButton.addEventListener("click", () => {
     if (state.eventSource) state.eventSource.close();
+    if (state.soloTimer) clearTimeout(state.soloTimer);
+    if (state.solo?.robotTimer) clearTimeout(state.solo.robotTimer);
+    if (state.solo?.finishTimer) clearTimeout(state.solo.finishTimer);
     els.setupView.hidden = false;
     els.gameView.hidden = true;
     state.game = null;
+    state.solo = null;
     state.playerId = "";
     state.entryMode = "choice";
     els.connectionStatus.textContent = "Ready";
-    entryControls.showMode("choice");
+    els.choicePanel.hidden = false;
+    els.createForm.hidden = true;
+    els.joinByCodeForm.hidden = true;
+    els.soloForm.hidden = true;
   });
 }
 
 bindEvents();
+loadSoloRecord();
 const params = new URLSearchParams(window.location.search);
 const gameCode = params.get("game");
 if (gameCode) loadGame(gameCode.toUpperCase(), { entryMode: "join" });
