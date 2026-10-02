@@ -981,7 +981,7 @@ const games = [
     href: "/roll-bug/",
     accent: "#c0392b",
     tilt: "0.8deg",
-    description: "The schoolyard classic: roll the die for body, head, spots, wings, antennae, or feet, then hand-draw that part on your own canvas. Whoever finishes their bug first wins — then the gallery compares everyone's art. Optional proper-bug order and roll-streak challenges.",
+    description: "The schoolyard classic: pick a creature — ladybug, bee, butterfly, snail, caterpillar, or beetle — then roll the die and hand-draw that part on your own canvas. Each creature rolls its own six parts, so a bee rolls stripes and a stinger while a snail rolls a shell. Whoever finishes their bug first wins — then the gallery compares everyone's art. Optional proper-bug order and roll-streak challenges.",
     features: {
       Mode: "Pass-and-play, 1-8",
       Storage: "Local browser",
