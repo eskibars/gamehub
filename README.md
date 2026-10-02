@@ -266,6 +266,16 @@ codes, no sign-in, best scores and streaks live in browser storage:
   suit-picker, one forced draw per turn, and automatic reshuffling when
   the stock runs dry. Robots dump their biggest matching cards and hoard
   eights; hands won are remembered.
+- **Roll-a-Bug** (`/roll-bug/`) — the schoolyard roll-and-draw party game.
+  Pick which creature the table is building — ladybug, bee, butterfly,
+  snail, caterpillar, or beetle — and each one rolls its own six parts
+  (a bee rolls stripes and a stinger, a snail rolls a shell and a spiral).
+  Roll the die, then hand-draw that part on your own canvas. First bug
+  with all six parts wins, then the gallery lines everyone's art up
+  against the target. House rules: *school classic* draws parts in any
+  order, *proper bug* gates them behind prerequisites (head needs the
+  body, antennae need the head), and the streak setting makes you roll
+  each number two or three times before you may draw it.
 
 ## Verified-by-construction puzzles
 

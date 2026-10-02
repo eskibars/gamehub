@@ -1,33 +1,163 @@
 /*
  * Roll-a-Bug — the school-classic roll-and-draw party game, pass-and-play.
- * Roll the die: 1 body, 2 head, 3 spots, 4 wings, 5 antennae, 6 feet. Draw
- * the part you rolled onto your own canvas with your own hand. First bug
- * with all six parts wins, then the gallery compares everyone's art.
+ * Pick a creature, roll the die, and hand-draw the part you rolled onto your
+ * own canvas with your own hand. First bug with all six parts wins, then the
+ * gallery compares everyone's art.
  *
- * House rules: "School classic" lets you draw parts in any rolled order
- * (spots before body is the joke); "Proper bug" gates parts behind their
- * prerequisites; the extra challenge makes you roll each number N times
- * before you may draw it.
+ * Six creatures ship, each owning its own six parts (so a snail rolls a shell,
+ * and a bee rolls a stinger). House rules: "School classic" lets you draw
+ * parts in any rolled order (spots before body is the joke); "Proper bug"
+ * gates parts behind their prerequisites; the extra challenge makes you roll
+ * each number N times before you may draw it.
  */
 (() => {
   "use strict";
 
-  const PARTS = [
-    { name: "body", glyph: "🍅" },
-    { name: "head", glyph: "⚫" },
-    { name: "spots", glyph: "🔴" },
-    { name: "wings", glyph: "🪽" },
-    { name: "antennae", glyph: "🥢" },
-    { name: "feet", glyph: "🐾" },
+  /* ------------------------------------------------------------------ *
+   * Creatures                                                           *
+   * Every creature owns six parts in die order (index 0 = a roll of 1),  *
+   * the prerequisites "proper bug" mode enforces by part name, and the   *
+   * art used for the setup preview, draw thumbnail, and gallery target.  *
+   * ------------------------------------------------------------------ */
+
+  const CREATURES = [
+    {
+      id: "ladybug",
+      name: "Ladybug",
+      emoji: "🐞",
+      parts: [
+        { name: "body", glyph: "🍅" },
+        { name: "head", glyph: "⚫" },
+        { name: "spots", glyph: "🔴" },
+        { name: "wings", glyph: "🪽" },
+        { name: "antennae", glyph: "🥢" },
+        { name: "feet", glyph: "🐾" },
+      ],
+      prereqs: {
+        body: [],
+        head: ["body"],
+        spots: ["body"],
+        wings: ["body"],
+        feet: ["body"],
+        antennae: ["head"],
+      },
+      art: ladybugSVG,
+    },
+    {
+      id: "bee",
+      name: "Bee",
+      emoji: "🐝",
+      parts: [
+        { name: "body", glyph: "🍯" },
+        { name: "head", glyph: "⚫" },
+        { name: "stripes", glyph: "🦓" },
+        { name: "wings", glyph: "🪽" },
+        { name: "antennae", glyph: "🥢" },
+        { name: "stinger", glyph: "📍" },
+      ],
+      prereqs: {
+        body: [],
+        head: ["body"],
+        stripes: ["body"],
+        wings: ["body"],
+        antennae: ["head"],
+        stinger: ["body"],
+      },
+      art: beeSVG,
+    },
+    {
+      id: "butterfly",
+      name: "Butterfly",
+      emoji: "🦋",
+      parts: [
+        { name: "body", glyph: "🐛" },
+        { name: "head", glyph: "⚫" },
+        { name: "upper wings", glyph: "🔶" },
+        { name: "lower wings", glyph: "🔻" },
+        { name: "spots", glyph: "🔴" },
+        { name: "antennae", glyph: "🥢" },
+      ],
+      prereqs: {
+        body: [],
+        head: ["body"],
+        "upper wings": ["body"],
+        "lower wings": ["body"],
+        spots: ["upper wings"],
+        antennae: ["head"],
+      },
+      art: butterflySVG,
+    },
+    {
+      id: "snail",
+      name: "Snail",
+      emoji: "🐌",
+      parts: [
+        { name: "body", glyph: "🍞" },
+        { name: "head", glyph: "⚫" },
+        { name: "eye stalks", glyph: "👀" },
+        { name: "shell", glyph: "🌀" },
+        { name: "spiral", glyph: "💫" },
+        { name: "slime trail", glyph: "💧" },
+      ],
+      prereqs: {
+        body: [],
+        head: ["body"],
+        "eye stalks": ["head"],
+        shell: ["body"],
+        spiral: ["shell"],
+        "slime trail": ["body"],
+      },
+      art: snailSVG,
+    },
+    {
+      id: "caterpillar",
+      name: "Caterpillar",
+      emoji: "🐛",
+      parts: [
+        { name: "body", glyph: "🍈" },
+        { name: "head", glyph: "⚫" },
+        { name: "segments", glyph: "🧩" },
+        { name: "feet", glyph: "🐾" },
+        { name: "antennae", glyph: "🥢" },
+        { name: "spots", glyph: "🔴" },
+      ],
+      prereqs: {
+        body: [],
+        head: ["body"],
+        segments: ["body"],
+        feet: ["body"],
+        antennae: ["head"],
+        spots: ["body"],
+      },
+      art: caterpillarSVG,
+    },
+    {
+      id: "beetle",
+      name: "Beetle",
+      emoji: "🪲",
+      parts: [
+        { name: "body", glyph: "🥔" },
+        { name: "head", glyph: "⚫" },
+        { name: "wing case", glyph: "🛡️" },
+        { name: "legs", glyph: "🦵" },
+        { name: "horns", glyph: "🌙" },
+        { name: "antennae", glyph: "🥢" },
+      ],
+      prereqs: {
+        body: [],
+        head: ["body"],
+        "wing case": ["body"],
+        legs: ["body"],
+        horns: ["head"],
+        antennae: ["head"],
+      },
+      art: beetleSVG,
+    },
   ];
-  const PREREQS = {
-    body: [],
-    head: ["body"],
-    spots: ["body"],
-    wings: ["body"],
-    feet: ["body"],
-    antennae: ["head"],
-  };
+
+  function creatureById(id) {
+    return CREATURES.find((creature) => creature.id === id) || CREATURES[0];
+  }
   const AVATARS = ["🐞", "🦋", "🐝", "🐛", "🦗", "🕷️", "🐢", "🦔"];
   const BRUSH_COLORS = ["#20231f", "#d0342c", "#e8874e", "#2f8c5a", "#3565b8", "#8a4a8c"];
   const BRUSH_SIZES = [4, 10, 22];
@@ -38,6 +168,7 @@
   [
     "playerRows", "addPlayer", "modeRow", "streakRow", "startButton",
     "resumeRow", "resumeButton", "discardButton", "referenceBugSetup",
+    "creaturePicker", "legendList", "legendCreature", "legendNote",
     "setupScreen", "gameScreen", "turnAvatar", "turnName", "turnSub",
     "die", "dieFace", "rollButton", "statusLine", "partsGrid", "rollLog",
     "quitButton", "passOverlay", "passName", "imReady", "drawOverlay",
@@ -53,34 +184,212 @@
     current: 0,
     mode: "jumble",
     streak: 1,
+    creatureId: "ladybug",
     winner: null,
     wins: {}, // name -> win count (persisted meta)
   };
+
+  // The creature everyone is building this game.
+  function currentCreature() {
+    return creatureById(game.creatureId);
+  }
+
+  function currentParts() {
+    return currentCreature().parts;
+  }
+
+  function currentPrereqs() {
+    return currentCreature().prereqs;
+  }
 
   /* ------------------------------------------------------------------ *
    * Reference bug art                                                   *
    * ------------------------------------------------------------------ */
 
-  function referenceBugSVG() {
-    return `<svg viewBox="0 0 200 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reference ladybug">
-      <g stroke="#20231f" stroke-width="5" stroke-linecap="round" fill="none">
-        <path d="M55 148 L38 170"/><path d="M45 138 L24 156"/>
-        <path d="M145 148 L162 170"/><path d="M155 138 L176 156"/>
-        <path d="M100 162 L100 184"/>
+  /* ------------------------------------------------------------------ *
+   * Reference art                                                       *
+   * One function per creature returning an SVG string, so the same      *
+   * drawing serves the setup preview, the draw-overlay thumbnail, and    *
+   * the gallery's "target" card. Style follows the hub: flat fills, a    *
+   * single ink outline, and one warm accent colour per creature.         *
+   * ------------------------------------------------------------------ */
+
+  const INK = "#20231f";
+  let artUid = 0;
+
+  // Both eyes at once, mirrored about cx so the face never sits askew.
+  function eyes(cx, cy, dx, r) {
+    return `<circle cx="${cx - dx}" cy="${cy}" r="${r}" fill="#fff"/>` +
+      `<circle cx="${cx + dx}" cy="${cy}" r="${r}" fill="#fff"/>` +
+      `<circle cx="${cx - dx + 1}" cy="${cy + 1}" r="${r * 0.46}" fill="${INK}"/>` +
+      `<circle cx="${cx + dx - 1}" cy="${cy + 1}" r="${r * 0.46}" fill="${INK}"/>`;
+  }
+
+  function smile(cx, cy, w) {
+    return `<path d="M${cx - w} ${cy} Q${cx} ${cy + w * 0.7} ${cx + w} ${cy}" ` +
+      `stroke="#fff" stroke-width="3" fill="none"/>`;
+  }
+
+  // Archimedean spiral as a polyline — used for the snail's shell coil.
+  function spiralPath(cx, cy, turns, r0, r1, steps) {
+    let d = "";
+    for (let i = 0; i <= steps; i += 1) {
+      const t = i / steps;
+      const angle = t * turns * Math.PI * 2;
+      const r = r0 + (r1 - r0) * t;
+      const x = (cx + Math.cos(angle) * r).toFixed(1);
+      const y = (cy + Math.sin(angle) * r).toFixed(1);
+      d += `${i ? "L" : "M"}${x} ${y} `;
+    }
+    return d.trim();
+  }
+
+  function ladybugSVG() {
+    // Drawn back-to-front so the parts stack the way a real bug reads:
+    // legs peeking out, then head + face, then the black body rind, then the
+    // two red wing panels with a seam down the middle, then the spots.
+    // Every coordinate is symmetric about x = 100 so nothing sits askew.
+    return `<svg viewBox="0 0 200 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reference ladybug: black head with two eyes, six legs, two antennae, and two red wings with black spots">
+      <g transform="translate(0 4.5)" stroke-linecap="round" stroke-linejoin="round">
+        <g stroke="#20231f" stroke-width="4" fill="none">
+          <path d="M54 98 L18 92"/><path d="M44 122 L10 124"/><path d="M52 146 L22 168"/>
+          <path d="M146 98 L182 92"/><path d="M156 122 L190 124"/><path d="M148 146 L178 168"/>
+        </g>
+        <circle cx="100" cy="54" r="26" fill="#20231f"/>
+        <g stroke="#20231f" stroke-width="4" fill="none">
+          <path d="M84 36 Q74 18 60 16"/><path d="M116 36 Q126 18 140 16"/>
+        </g>
+        <circle cx="58" cy="15" r="4.5" fill="#20231f"/><circle cx="142" cy="15" r="4.5" fill="#20231f"/>
+        <circle cx="88" cy="47" r="6.5" fill="#fff"/><circle cx="112" cy="47" r="6.5" fill="#fff"/>
+        <circle cx="89" cy="48" r="3" fill="#20231f"/><circle cx="111" cy="48" r="3" fill="#20231f"/>
+        <path d="M91 58 Q100 65 109 58" stroke="#fff" stroke-width="3" fill="none"/>
+        <ellipse cx="100" cy="115" rx="61" ry="51" fill="#20231f"/>
+        <path d="M98 68 A55 47 0 0 0 98 162 Z" fill="#d0342c"/>
+        <path d="M102 68 A55 47 0 0 1 102 162 Z" fill="#d0342c"/>
+        <g fill="#20231f">
+          <circle cx="68" cy="96" r="11"/><circle cx="62" cy="134" r="8.5"/><circle cx="86" cy="124" r="7"/>
+          <circle cx="132" cy="96" r="11"/><circle cx="138" cy="134" r="8.5"/><circle cx="114" cy="124" r="7"/>
+        </g>
       </g>
-      <ellipse cx="100" cy="105" rx="62" ry="56" fill="#d0342c" stroke="#20231f" stroke-width="5"/>
-      <line x1="100" y1="50" x2="100" y2="160" stroke="#20231f" stroke-width="4"/>
-      <path d="M42 78 A62 56 0 0 1 158 78 Q100 52 42 78 Z" fill="#20231f"/>
-      <g fill="none" stroke="#20231f" stroke-width="4" stroke-linecap="round">
-        <path d="M82 32 Q72 14 58 10"/><path d="M118 32 Q128 14 142 10"/>
+    </svg>`;
+  }
+
+  function beeSVG() {
+    const uid = `bee-clip-${++artUid}`;
+    return `<svg viewBox="0 0 200 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reference bee: black head with two eyes and two antennae, gold body with black stripes, two wings, and a stinger">
+      <defs><clipPath id="${uid}"><ellipse cx="100" cy="114" rx="51" ry="47"/></clipPath></defs>
+      <g stroke-linecap="round" stroke-linejoin="round">
+        <path d="M100 176 L93 160 L107 160 Z" fill="${INK}"/>
+        <g fill="#eef4ff" stroke="${INK}" stroke-width="4">
+          <ellipse cx="54" cy="80" rx="31" ry="16" transform="rotate(-22 54 80)"/>
+          <ellipse cx="146" cy="80" rx="31" ry="16" transform="rotate(22 146 80)"/>
+        </g>
+        <g stroke="${INK}" stroke-width="4" fill="none">
+          <path d="M86 42 Q76 22 62 20"/><path d="M114 42 Q124 22 138 20"/>
+        </g>
+        <circle cx="60" cy="19" r="4.5" fill="${INK}"/><circle cx="140" cy="19" r="4.5" fill="${INK}"/>
+        <circle cx="100" cy="58" r="25" fill="${INK}"/>
+        ${eyes(100, 54, 11, 6.5)}
+        ${smile(100, 66, 8)}
+        <ellipse cx="100" cy="114" rx="51" ry="47" fill="#dfb44e"/>
+        <g clip-path="url(#${uid})">
+          <rect x="45" y="96" width="110" height="15" fill="${INK}"/>
+          <rect x="45" y="128" width="110" height="15" fill="${INK}"/>
+        </g>
+        <ellipse cx="100" cy="114" rx="51" ry="47" fill="none" stroke="${INK}" stroke-width="5"/>
       </g>
-      <circle cx="57" cy="10" r="5" fill="#20231f"/><circle cx="143" cy="10" r="5" fill="#20231f"/>
-      <circle cx="76" cy="52" r="4.5" fill="#fff"/><circle cx="124" cy="52" r="4.5" fill="#fff"/>
-      <circle cx="76" cy="52" r="2" fill="#20231f"/><circle cx="124" cy="52" r="2" fill="#20231f"/>
-      <g fill="#20231f">
-        <circle cx="74" cy="102" r="12"/><circle cx="128" cy="94" r="10"/>
-        <circle cx="92" cy="140" r="9"/><circle cx="135" cy="128" r="8"/>
-        <circle cx="64" cy="132" r="6"/>
+    </svg>`;
+  }
+
+  function butterflySVG() {
+    return `<svg viewBox="0 0 200 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reference butterfly: slim black body with a head, two antennae, two large orange upper wings, two gold lower wings, and pale spots">
+      <g stroke-linecap="round" stroke-linejoin="round">
+        <g fill="#e8874e" stroke="${INK}" stroke-width="5">
+          <ellipse cx="58" cy="84" rx="42" ry="33" transform="rotate(-18 58 84)"/>
+          <ellipse cx="142" cy="84" rx="42" ry="33" transform="rotate(18 142 84)"/>
+        </g>
+        <g fill="#dfb44e" stroke="${INK}" stroke-width="5">
+          <ellipse cx="66" cy="138" rx="31" ry="25" transform="rotate(20 66 138)"/>
+          <ellipse cx="134" cy="138" rx="31" ry="25" transform="rotate(-20 134 138)"/>
+        </g>
+        <g fill="#fffdf7">
+          <circle cx="44" cy="76" r="8"/><circle cx="156" cy="76" r="8"/>
+          <circle cx="60" cy="136" r="6"/><circle cx="140" cy="136" r="6"/>
+        </g>
+        <g stroke="${INK}" stroke-width="4" fill="none">
+          <path d="M92 40 Q82 18 64 14"/><path d="M108 40 Q118 18 136 14"/>
+        </g>
+        <circle cx="62" cy="13" r="4.5" fill="${INK}"/><circle cx="138" cy="13" r="4.5" fill="${INK}"/>
+        <ellipse cx="100" cy="106" rx="13" ry="56" fill="${INK}"/>
+        <circle cx="100" cy="50" r="16" fill="${INK}"/>
+        ${eyes(100, 46, 7, 4.5)}
+        ${smile(100, 56, 5)}
+      </g>
+    </svg>`;
+  }
+
+  function snailSVG() {
+    return `<svg viewBox="0 0 200 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reference snail: pale body with a head, two eye stalks, a big gold shell with a spiral, and a slime trail">
+      <g stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 168 Q100 182 188 168" stroke="#bcd7e4" stroke-width="10" fill="none"/>
+        <rect x="24" y="122" width="128" height="40" rx="20" fill="#f0d9a8" stroke="${INK}" stroke-width="5"/>
+        <circle cx="40" cy="116" r="22" fill="#f0d9a8" stroke="${INK}" stroke-width="5"/>
+        <g stroke="${INK}" stroke-width="4" fill="none">
+          <path d="M34 98 Q28 76 24 64"/><path d="M48 98 Q50 76 54 64"/>
+        </g>
+        <circle cx="23" cy="62" r="5" fill="${INK}"/><circle cx="55" cy="62" r="5" fill="${INK}"/>
+        <circle cx="128" cy="100" r="52" fill="#dfb44e" stroke="${INK}" stroke-width="5"/>
+        <path d="${spiralPath(128, 100, 2.6, 5, 40, 64)}" stroke="${INK}" stroke-width="4" fill="none"/>
+      </g>
+    </svg>`;
+  }
+
+  function caterpillarSVG() {
+    return `<svg viewBox="0 0 200 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reference caterpillar: green segmented body, a lighter head with two eyes and two antennae, small feet, and gold spots">
+      <g stroke-linecap="round" stroke-linejoin="round">
+        <g stroke="${INK}" stroke-width="6" fill="none">
+          <path d="M78 146 L78 164"/><path d="M105 146 L105 164"/>
+          <path d="M132 146 L132 164"/><path d="M155 146 L155 164"/>
+        </g>
+        <rect x="22" y="96" width="152" height="54" rx="27" fill="#2f8c5a" stroke="${INK}" stroke-width="5"/>
+        <g stroke="${INK}" stroke-width="3.5" fill="none">
+          <path d="M78 99 Q71 123 78 147"/><path d="M108 99 Q101 123 108 147"/>
+          <path d="M138 99 Q131 123 138 147"/>
+        </g>
+        <g fill="#dfb44e">
+          <circle cx="93" cy="110" r="6.5"/><circle cx="126" cy="110" r="6.5"/><circle cx="110" cy="136" r="6"/>
+        </g>
+        <circle cx="40" cy="123" r="27" fill="#46a878" stroke="${INK}" stroke-width="5"/>
+        <g stroke="${INK}" stroke-width="4" fill="none">
+          <path d="M32 99 Q26 79 20 69"/><path d="M48 99 Q52 79 58 69"/>
+        </g>
+        <circle cx="19" cy="67" r="4.5" fill="${INK}"/><circle cx="59" cy="67" r="4.5" fill="${INK}"/>
+        ${eyes(40, 116, 9, 6)}
+        ${smile(40, 127, 7)}
+      </g>
+    </svg>`;
+  }
+
+  function beetleSVG() {
+    return `<svg viewBox="0 0 200 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reference beetle: black head with two eyes, two horns and two antennae, six legs, and a brown body with two wing cases">
+      <g stroke-linecap="round" stroke-linejoin="round">
+        <g stroke="${INK}" stroke-width="4" fill="none">
+          <path d="M52 104 L16 92"/><path d="M44 128 L8 128"/><path d="M52 152 L20 172"/>
+          <path d="M148 104 L184 92"/><path d="M156 128 L192 128"/><path d="M148 152 L180 172"/>
+        </g>
+        <g stroke="#dfb44e" stroke-width="8" fill="none">
+          <path d="M80 46 Q58 20 36 26"/><path d="M120 46 Q142 20 164 26"/>
+        </g>
+        <g stroke="${INK}" stroke-width="3.5" fill="none">
+          <path d="M92 40 Q85 22 77 16"/><path d="M108 40 Q115 22 123 16"/>
+        </g>
+        <circle cx="76" cy="15" r="3.5" fill="${INK}"/><circle cx="124" cy="15" r="3.5" fill="${INK}"/>
+        <circle cx="100" cy="58" r="24" fill="${INK}"/>
+        ${eyes(100, 50, 10, 6.5)}
+        ${smile(100, 60, 8)}
+        <ellipse cx="100" cy="118" rx="57" ry="49" fill="#6f4a28"/>
+        <path d="M97 74 A52 44 0 0 0 97 162 Z" fill="#96693a"/>
+        <path d="M103 74 A52 44 0 0 1 103 162 Z" fill="#96693a"/>
       </g>
     </svg>`;
   }
@@ -99,6 +408,7 @@
       current: game.current,
       mode: game.mode,
       streak: game.streak,
+      creatureId: game.creatureId,
       players: game.players.map((p) => ({
         name: p.name,
         avatar: p.avatar,
@@ -139,6 +449,8 @@
     game.current = data.current || 0;
     game.mode = data.mode || "jumble";
     game.streak = data.streak || 1;
+    // Saves from before the creature chooser have no creatureId: ladybug.
+    game.creatureId = creatureById(data.creatureId).id;
     game.phase = "passing";
     els.setupScreen.hidden = true;
     els.gameScreen.hidden = false;
@@ -157,6 +469,86 @@
       ];
     }
     renderPlayerRows();
+  }
+
+  function renderCreaturePicker() {
+    els.creaturePicker.innerHTML = "";
+    CREATURES.forEach((creature) => {
+      const card = document.createElement("label");
+      card.className = "creature-card" + (creature.id === game.creatureId ? " active" : "");
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = "creature";
+      input.value = creature.id;
+      input.checked = creature.id === game.creatureId;
+      input.addEventListener("change", () => {
+        game.creatureId = creature.id;
+        renderCreaturePicker();
+        renderReference();
+        GameHubJuice.tick();
+      });
+      const preview = document.createElement("span");
+      preview.className = "creature-preview";
+      preview.innerHTML = creature.art();
+      const label = document.createElement("span");
+      label.className = "creature-name";
+      label.textContent = `${creature.emoji} ${creature.name}`;
+      card.append(input, preview, label);
+      els.creaturePicker.append(card);
+    });
+  }
+
+  // "a, b and c" — used to keep the proper-bug note readable.
+  function listWords(words) {
+    if (words.length <= 1) return words.join("");
+    return `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
+  }
+
+  // Parts that name more than one thing take a plural verb ("the antennae
+  // need"), so the proper-bug note doesn't read as broken English.
+  const IRREGULAR_PLURALS = new Set(["antennae", "feet"]);
+
+  function isPluralPart(name) {
+    return IRREGULAR_PLURALS.has(name) || name.endsWith("s");
+  }
+
+  // Spell out this creature's real prerequisites, grouped by what they wait on,
+  // so the note never claims a snail has antennae.
+  function orderedNote(creature) {
+    const groups = new Map();
+    for (const part of creature.parts) {
+      const pre = creature.prereqs[part.name] || [];
+      if (!pre.length) continue;
+      const key = pre.join("+");
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(part.name);
+    }
+    const clauses = [];
+    for (const [key, parts] of groups) {
+      const pres = key.split("+");
+      const subject = parts.length === 1 ? `the ${parts[0]}` : listWords(parts);
+      const plural = parts.length > 1 || isPluralPart(parts[0]);
+      const needed = listWords(pres.map((pre) => `the ${pre}`));
+      clauses.push(`${subject} ${plural ? "need" : "needs"} ${needed}`);
+    }
+    return `Proper-bug order: the body comes first — ${clauses.join(", ")}.`;
+  }
+
+  // The "Every roll picks a part" list plus the "The target" drawing, both
+  // rebuilt whenever the chosen creature changes.
+  function renderReference() {
+    const creature = currentCreature();
+    els.legendCreature.textContent = creature.name.toLowerCase();
+    els.legendList.innerHTML = "";
+    creature.parts.forEach((part, index) => {
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="mini-die" data-n="${index + 1}">${index + 1}</span> ${part.name}`;
+      els.legendList.append(li);
+    });
+    els.legendNote.textContent =
+      `First bug with all six parts wins, then everyone compares drawings — ` +
+      `the weirder the better. ${orderedNote(creature)}`;
+    els.referenceBugSetup.innerHTML = creature.art();
   }
 
   function renderPlayerRows() {
@@ -211,6 +603,7 @@
     if (game.players.length < 2) game.players = game.players.slice(0, 1);
     game.mode = els.modeRow.querySelector("input[name=mode]:checked").value;
     game.streak = Number(els.streakRow.querySelector("input[name=streak]:checked").value);
+    game.creatureId = creatureById(game.creatureId).id;
     game.current = 0;
     game.winner = null;
     game.phase = "passing";
@@ -256,14 +649,15 @@
 
   function renderParts() {
     const player = game.players[game.current];
+    const prereqs = currentPrereqs();
     els.partsGrid.innerHTML = "";
-    for (const part of PARTS) {
+    for (const part of currentParts()) {
       const chip = document.createElement("div");
       chip.className = "part-chip";
       const drawn = player.parts.has(part.name);
       const count = player.rollCounts[part.name] || 0;
       const locked = game.mode === "ordered" && !drawn &&
-        PREREQS[part.name].some((pre) => !player.parts.has(pre));
+        (prereqs[part.name] || []).some((pre) => !player.parts.has(pre));
       let status = "";
       if (drawn) {
         chip.classList.add("drawn");
@@ -309,7 +703,7 @@
 
   function resolveRoll(value) {
     const player = game.players[game.current];
-    const part = PARTS[value - 1];
+    const part = currentParts()[value - 1];
     player.rolls += 1;
     player.rollCounts[part.name] = (player.rollCounts[part.name] || 0) + 1;
     const count = player.rollCounts[part.name];
@@ -318,7 +712,7 @@
     if (player.parts.has(part.name)) {
       blocked = `You already drew the ${part.name}! Roll again.`;
     } else if (game.mode === "ordered") {
-      const missing = PREREQS[part.name].find((pre) => !player.parts.has(pre));
+      const missing = (currentPrereqs()[part.name] || []).find((pre) => !player.parts.has(pre));
       if (missing) blocked = `No ${missing} yet — the ${part.name} has nowhere to go!`;
     }
     if (!blocked && game.streak > 1 && count < game.streak) {
@@ -353,7 +747,7 @@
     game.phase = "drawing";
     game.drawingPart = part.name;
     els.drawPart.textContent = `Draw the ${part.name}!`;
-    els.referenceThumb.innerHTML = referenceBugSVG();
+    els.referenceThumb.innerHTML = currentCreature().art();
     els.drawOverlay.hidden = false;
     replayCanvas(game.players[game.current].strokes);
     renderBrushes();
@@ -475,7 +869,7 @@
     GameHubJuice.pop(700);
     saveGame();
 
-    if (player.parts.size === PARTS.length) {
+    if (player.parts.size === currentParts().length) {
       declareWinner(player);
       return;
     }
@@ -490,6 +884,7 @@
    * ------------------------------------------------------------------ */
 
   function declareWinner(winner) {
+    const creature = currentCreature();
     game.phase = "done";
     game.winner = winner.name;
     game.wins[winner.name] = (game.wins[winner.name] || 0) + 1;
@@ -497,7 +892,11 @@
     GameHubProfile?.achieve("rollbug-win");
     if (game.wins[winner.name] >= 3) GameHubProfile?.achieve("rollbug-3");
     if (game.mode === "ordered") GameHubProfile?.achieve("rollbug-master");
-    GameHubProfile?.award("roll-bug", 8, "First ladybug finished! 🐞", game.wins[winner.name]);
+    GameHubProfile?.award(
+      "roll-bug", 8,
+      `First ${creature.name.toLowerCase()} finished! ${creature.emoji}`,
+      game.wins[winner.name],
+    );
     GameHubJuice.confetti(200);
     GameHubJuice.win();
     saveGame();
@@ -505,14 +904,15 @@
   }
 
   function showGallery(winner) {
-    els.galleryTitle.textContent = "🐞 Ladybug gallery!";
+    const creature = currentCreature();
+    els.galleryTitle.textContent = `${creature.emoji} ${creature.name} gallery!`;
     els.gallerySub.textContent = winner
       ? `${winner.avatar} ${winner.name} finished first with ${winner.rolls} rolls — behold the fleet:`
       : "The fleet, in all its glory:";
     els.galleryGrid.innerHTML = "";
     const referenceCard = document.createElement("div");
     referenceCard.className = "gallery-card";
-    referenceCard.innerHTML = `<div class="reference-bug">${referenceBugSVG()}</div><span class="gallery-name">The target 📋</span>`;
+    referenceCard.innerHTML = `<div class="reference-bug">${creature.art()}</div><span class="gallery-name">The target 📋</span>`;
     els.galleryGrid.append(referenceCard);
     for (const player of game.players) {
       const card = document.createElement("div");
@@ -536,7 +936,7 @@
       }
       const name = document.createElement("span");
       name.className = "gallery-name";
-      const parts = `${player.parts.size}/6`;
+      const parts = `${player.parts.size}/${currentParts().length}`;
       name.textContent = `${player.avatar} ${player.name} · ${parts}${winner && player === winner ? " 🏆" : ""}`;
       card.append(canvas, name);
       els.galleryGrid.append(card);
@@ -577,23 +977,27 @@
     GameHubJuice.tick();
   });
 
-  els.quitButton.addEventListener("click", () => {
-    if (!window.confirm("End this game and go back to setup?")) return;
+  // Leaving the table (either quitting or starting over) returns to setup with
+  // the player list and the creature picker reflecting current game state.
+  function backToSetup() {
     game.phase = "setup";
     saveGame();
     els.gameScreen.hidden = true;
     els.setupScreen.hidden = false;
     setupPlayers();
+    renderCreaturePicker();
+    renderReference();
+  }
+
+  els.quitButton.addEventListener("click", () => {
+    if (!window.confirm("End this game and go back to setup?")) return;
+    backToSetup();
   });
 
   els.againButton.addEventListener("click", () => {
     els.galleryOverlay.hidden = true;
     els.peekButton.hidden = true;
-    game.phase = "setup";
-    saveGame();
-    els.gameScreen.hidden = true;
-    els.setupScreen.hidden = false;
-    setupPlayers();
+    backToSetup();
   });
   els.galleryClose.addEventListener("click", () => {
     els.galleryOverlay.hidden = true;
@@ -612,13 +1016,15 @@
    * Boot                                                                *
    * ------------------------------------------------------------------ */
 
-  els.referenceBugSetup.innerHTML = referenceBugSVG();
+  renderCreaturePicker();
+  renderReference();
   if (window.GameHubJuice) els.soundButton.textContent = GameHubJuice.muted ? "🔇" : "🔊";
   setupPlayers();
   const saved = loadSavedGame();
   if (saved) {
     els.resumeRow.hidden = false;
+    const savedCreature = creatureById(saved.creatureId);
     els.resumeButton.textContent =
-      `Resume game (${saved.players.map((p) => p.name).join(", ")})`;
+      `Resume game (${saved.players.map((p) => p.name).join(", ")} · ${savedCreature.name})`;
   }
 })();

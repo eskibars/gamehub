@@ -134,6 +134,49 @@ h1 { margin: 0; font-size: clamp(1.6rem, 4vw, 2rem); }
   margin-bottom: 10px;
 }
 
+/* ---------------- creature picker ---------------- */
+
+.creature-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.creature-card {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  padding: 8px 4px 6px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.creature-card input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
+}
+
+.creature-preview { display: block; width: 100%; }
+.creature-preview svg { display: block; width: 100%; height: auto; }
+
+.creature-name { font-size: 0.8rem; font-weight: 900; color: var(--muted); }
+
+.creature-card.active {
+  border-color: var(--green);
+  background: rgba(35, 108, 90, 0.1);
+}
+
+.creature-card.active .creature-name { color: var(--green); }
+
+.creature-card:focus-within { outline: 2px solid var(--green); outline-offset: 2px; }
+
 .rule-label { font-size: 0.85rem; font-weight: 850; padding-top: 6px; }
 .rule-label small { display: block; color: var(--muted); font-weight: 700; }
 

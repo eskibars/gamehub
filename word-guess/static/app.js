@@ -36,6 +36,9 @@ const state = {
   status: "playing", // playing | won | lost
   revealed: false,
   lastWonDaily: "",
+  categoryName: "", // theme requested in the practice category select
+  category: "", // theme actually in force this round ("" = general list)
+  categoryFallback: "", // requested theme with no usable words of this length
 };
 
 function dayNumber(date = new Date()) {
@@ -72,6 +75,7 @@ function persistState() {
   saveJson(stateKey(), {
     dayKey: state.dayKey,
     answer: state.answer,
+    category: state.category,
     guesses: state.guesses,
     status: state.status,
   });
@@ -83,6 +87,7 @@ function restoreState() {
   if (state.mode === "daily" && saved.dayKey !== new Date().toISOString().slice(0, 10)) return false;
   state.dayKey = saved.dayKey || "";
   state.answer = saved.answer;
+  state.category = typeof saved.category === "string" ? saved.category : "";
   state.guesses = Array.isArray(saved.guesses) ? saved.guesses : [];
   state.status = saved.status || "playing";
   return VALID.has(state.answer) && state.guesses.every((g) => typeof g === "string" && g.length === WORD_LENGTH);
@@ -93,32 +98,49 @@ function startRound(fresh) {
   els.message.classList.remove("win");
   state.current = "";
   state.revealed = false;
-  if (!fresh && restoreState()) {
+  if (!fresh && restoreState() && roundMatchesCategory()) {
+    updateCategoryHint();
     render(true);
     if (state.status !== "playing") finishUi(true);
     return;
   }
-  updateCategoryHint();
   if (state.mode === "daily") {
     state.dayKey = new Date().toISOString().slice(0, 10);
     state.answer = dailyAnswer();
     state.category = "";
+    state.categoryFallback = "";
   } else {
     state.dayKey = "";
     // Category practice draws from a curated theme, restricted to words the
     // guess dictionary accepts so the answer is always typeable.
-    const pool = categoryPool();
+    const { name, pool, fallback } = resolveCategory();
     let next;
     do {
       next = pool[Math.floor(Math.random() * pool.length)];
     } while (next === state.answer && pool.length > 1);
     state.answer = next;
-    state.category = pool._category || "";
+    state.category = name;
+    state.categoryFallback = fallback || "";
+    if (state.categoryFallback) {
+      showTemporary(`No ${state.categoryFallback} words fit five letters — using the full list`);
+    }
   }
   state.guesses = [];
   state.status = "playing";
+  updateCategoryHint();
   render(true);
   persistState();
+}
+
+function roundMatchesCategory() {
+  // A saved practice round belongs to the theme that dealt it. Resuming one
+  // from a different theme (or from before themes were saved at all) would
+  // hand the player an off-theme answer the hint then mislabels.
+  if (state.mode !== "practice") return true;
+  const requested = state.categoryName || "";
+  if ((state.category || "") !== requested) return false;
+  if (!requested) return true;
+  return themedPool(requested).includes(state.answer);
 }
 
 function evaluate(guess, answer) {
@@ -415,8 +437,12 @@ function bindEvents() {
   });
 
   els.categorySelect?.addEventListener("change", () => {
-    saveJson(SETTINGS_KEY, { hard: els.hardMode.checked, category: els.categorySelect.value });
-    if (state.mode === "practice") startRound(false);
+    // categoryName is what the pool logic reads, so the selection has to land
+    // here as well as in storage — otherwise the theme only applies after a
+    // reload. startRound(true) deals a fresh word from the new theme.
+    state.categoryName = els.categorySelect.value;
+    saveJson(SETTINGS_KEY, { hard: els.hardMode.checked, category: state.categoryName });
+    if (state.mode === "practice") startRound(true);
   });
 }
 
@@ -427,31 +453,26 @@ function updateModeUi() {
 function updateCategoryHint() {
   const hint = els.categoryHint;
   if (!hint) return;
-  const active = state.mode === "practice" && state.categoryName;
+  const active = state.mode === "practice" && state.category;
   hint.hidden = !active;
-  hint.textContent = active ? `Category: ${state.categoryName}` : "";
+  hint.textContent = active ? `Category: ${state.category}` : "";
 }
 
-function categoryPool() {
-  const name = state.categoryName || "";
-  if (name && window.GameHubDictionaries?.has(name)) {
-    const valid = WORD_GUESS_ANSWERS.concat(
-      typeof WORD_GUESS_EXTRA !== "undefined" ? WORD_GUESS_EXTRA : []
-    ).map((w) => w.toUpperCase());
-    const validSet = new Set(valid);
-    const words = window.GameHubDictionaries
-      .words(name, WORD_LENGTH)
-      .map((w) => w.toUpperCase())
-      .filter((w) => validSet.has(w));
-    if (words.length >= 4) {
-      const pool = words;
-      pool._category = name;
-      return pool;
-    }
-  }
-  const pool = WORD_GUESS_ANSWERS.slice();
-  pool._category = "";
-  return pool;
+function themedPool(name) {
+  if (!name || !window.GameHubDictionaries?.has(name)) return [];
+  return window.GameHubDictionaries
+    .words(name, WORD_LENGTH)
+    .map((w) => w.toUpperCase())
+    .filter((w) => VALID.has(w));
+}
+
+function resolveCategory() {
+  const requested = state.categoryName || "";
+  const words = themedPool(requested);
+  // A theme that cannot fill a round is reported rather than silently mixed
+  // into the general list, so the draw always matches the hint on screen.
+  if (words.length >= 4) return { name: requested, pool: words, fallback: "" };
+  return { name: "", pool: WORD_GUESS_ANSWERS.slice(), fallback: requested };
 }
 
 const settings = loadJson(SETTINGS_KEY, { hard: false });

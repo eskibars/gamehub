@@ -26,6 +26,11 @@
         </div>
 
         <div class="setup-card">
+          <h2>What are we building?</h2>
+          <div class="creature-picker" id="creaturePicker"></div>
+        </div>
+
+        <div class="setup-card">
           <h2>House rules</h2>
           <div class="rule-row">
             <span class="rule-label">Draw order</span>
@@ -53,8 +58,8 @@
           <h2>How it works</h2>
           <div class="howto-grid">
             <div class="legend">
-              <p>Every roll picks a part:</p>
-              <ul class="legend-list">
+              <p>Every roll picks a part of the <span id="legendCreature">ladybug</span>:</p>
+              <ul class="legend-list" id="legendList">
                 <li><span class="mini-die" data-n="1">1</span> Body</li>
                 <li><span class="mini-die" data-n="2">2</span> Head</li>
                 <li><span class="mini-die" data-n="3">3</span> Spots</li>
@@ -62,7 +67,7 @@
                 <li><span class="mini-die" data-n="5">5</span> Antennae</li>
                 <li><span class="mini-die" data-n="6">6</span> Feet</li>
               </ul>
-              <p class="legend-note">First bug with all six parts wins. Then everyone compares drawings — the weirder the better. In proper-bug mode: body first, head needs the body, antennae need the head.</p>
+              <p class="legend-note" id="legendNote">First bug with all six parts wins, then everyone compares drawings — the weirder the better.</p>
             </div>
             <div class="reference-box">
               <p>The target:</p>
