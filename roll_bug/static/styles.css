@@ -262,6 +262,18 @@ h1 { margin: 0; font-size: clamp(1.6rem, 4vw, 2rem); }
 
 .legend-note { color: var(--muted); font-size: 0.8rem; font-weight: 600; margin: 0; }
 
+.rules-list {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  display: grid;
+  gap: 5px;
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.rules-list strong { font-weight: 900; }
+
 .reference-box p { margin: 0 0 6px; font-weight: 800; font-size: 0.88rem; }
 
 .reference-bug svg, .reference-thumb svg { display: block; width: 100%; height: auto; }
@@ -387,9 +399,32 @@ h1 { margin: 0; font-size: clamp(1.6rem, 4vw, 2rem); }
 
 .pass-overlay { background: var(--paper); }
 
+.pass-note {
+  max-width: min(430px, 90vw);
+  margin: 0;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--gold);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 10px 14px;
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
 .pass-kicker { margin: 0; color: var(--muted); font-weight: 800; }
 
 .pass-name { margin: 0; font-size: clamp(2rem, 8vw, 3rem); font-weight: 900; }
+
+.pass-hint {
+  max-width: min(430px, 90vw);
+  margin: 0;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+}
 
 /* ---------------- draw overlay ---------------- */
 

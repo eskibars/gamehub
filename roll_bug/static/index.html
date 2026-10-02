@@ -40,9 +40,9 @@
             </div>
           </div>
           <div class="rule-row">
-            <span class="rule-label">Extra challenge<br><small>Rolls needed per part</small></span>
+            <span class="rule-label">Extra challenge<br><small>Hits needed per part</small></span>
             <div class="toggle-row" id="streakRow">
-              <label class="toggle-card"><input type="radio" name="streak" value="1" checked><span>1 — plain</span></label>
+              <label class="toggle-card"><input type="radio" name="streak" value="1" checked><span>1 — one hit draws it</span></label>
               <label class="toggle-card"><input type="radio" name="streak" value="2"><span>2 — spicy</span></label>
               <label class="toggle-card"><input type="radio" name="streak" value="3"><span>3 — chaos</span></label>
             </div>
@@ -56,6 +56,12 @@
 
         <div class="setup-card howto">
           <h2>How it works</h2>
+          <ol class="rules-list">
+            <li>Players take turns rolling <strong>one die, once</strong>.</li>
+            <li>Roll a number the rolled-for part still needs and you <strong>mark it</strong>. If that hit completes the part, you draw it there and then.</li>
+            <li>The die <strong>changes hands after every roll</strong> — a roll you can't use (that part is already drawn, or you haven't earned it yet) simply forfeits your turn.</li>
+            <li>The game runs until <strong>one player has all six parts</strong>, then the gallery compares everything.</li>
+          </ol>
           <div class="howto-grid">
             <div class="legend">
               <p>Every roll picks a part of the <span id="legendCreature">ladybug</span>:</p>
@@ -103,8 +109,10 @@
 
       <!-- ============ PASS DEVICE ============ -->
       <div class="pass-overlay" id="passOverlay" hidden>
-        <p class="pass-kicker">Pass the device to</p>
+        <p class="pass-note" id="passNote" hidden></p>
+        <p class="pass-kicker" id="passKicker">Pass the die to</p>
         <p class="pass-name" id="passName">Maya</p>
+        <p class="pass-hint" id="passHint"></p>
         <button class="primary-button" id="imReady" type="button">That's me — roll!</button>
       </div>
 

@@ -270,12 +270,16 @@ codes, no sign-in, best scores and streaks live in browser storage:
   Pick which creature the table is building — ladybug, bee, butterfly,
   snail, caterpillar, or beetle — and each one rolls its own six parts
   (a bee rolls stripes and a stinger, a snail rolls a shell and a spiral).
-  Roll the die, then hand-draw that part on your own canvas. First bug
-  with all six parts wins, then the gallery lines everyone's art up
-  against the target. House rules: *school classic* draws parts in any
-  order, *proper bug* gates them behind prerequisites (head needs the
-  body, antennae need the head), and the streak setting makes you roll
-  each number two or three times before you may draw it.
+  Players alternate rolling a **single die, once per turn**: roll a number
+  the part still needs and you mark it, and the hit that completes the part
+  earns the drawing there and then. The die **changes hands after every
+  roll no matter what**, so a roll you can't use — that part is already
+  drawn, or you haven't earned it yet — simply forfeits the turn. Play
+  runs until one player has all six parts, then the gallery lines
+  everyone's art up against the target. House rules: *school classic*
+  draws parts in any order, *proper bug* gates them behind prerequisites
+  (head needs the body, antennae need the head), and the hits setting
+  makes each part need two or three hits before you may draw it.
 
 ## Verified-by-construction puzzles
 

@@ -173,6 +173,7 @@
     "die", "dieFace", "rollButton", "statusLine", "partsGrid", "rollLog",
     "quitButton", "passOverlay", "passName", "imReady", "drawOverlay",
     "drawPart", "referenceThumb", "drawCanvas", "swatches", "sizes",
+    "passKicker", "passHint", "passNote",
     "undoButton", "clearButton", "doneButton", "galleryOverlay",
     "galleryTitle", "gallerySub", "galleryGrid", "againButton",
     "galleryClose", "peekButton", "soundButton",
@@ -623,22 +624,43 @@
     els.turnAvatar.textContent = player.avatar;
     els.turnName.textContent = `${player.name}'s turn`;
     els.turnSub.textContent = game.streak > 1
-      ? `Roll — each part needs ${game.streak} hits`
-      : "Roll for a part";
+      ? `One roll, then the die moves on — each part needs ${game.streak} hits`
+      : "One roll, then the die moves on";
     els.statusLine.textContent = "";
     els.dieFace.textContent = "?";
-    els.rollLog.innerHTML = "";
     els.rollButton.disabled = false;
     els.die.classList.remove("rolling");
     renderParts();
     if (game.players.length > 1 && showPass) {
+      els.passKicker.textContent = "Pass the die to";
       els.passName.textContent = player.name;
+      els.passNote.hidden = true;
+      els.passNote.textContent = "";
+      els.passHint.textContent = passHintFor(player);
       els.passOverlay.hidden = false;
       game.phase = "passing";
     } else {
       game.phase = "rolling";
     }
     saveGame();
+  }
+
+  // What this player still needs, shown while the device changes hands.
+  function passHintFor(player) {
+    const prereqs = currentPrereqs();
+    const wants = [];
+    currentParts().forEach((part, index) => {
+      if (player.parts.has(part.name)) return;
+      const locked = game.mode === "ordered" &&
+        (prereqs[part.name] || []).some((pre) => !player.parts.has(pre));
+      if (locked) return;
+      const count = player.rollCounts[part.name] || 0;
+      wants.push(game.streak > 1
+        ? `a ${index + 1} for the ${part.name} (${count}/${game.streak})`
+        : `a ${index + 1} for the ${part.name}`);
+    });
+    if (!wants.length) return "Every part is drawn — nothing left to roll for.";
+    return `Wants: ${wants.join(" · ")}.`;
   }
 
   els.imReady.addEventListener("click", () => {
@@ -682,6 +704,26 @@
     while (els.rollLog.children.length > 10) els.rollLog.lastChild.remove();
   }
 
+  // Hand the die to the next player. Called after every single roll, whether
+  // the roll earned a drawing or was forfeited. The outcome is surfaced on the
+  // hand-off card, since the pass overlay covers the table immediately.
+  function passTurn(note) {
+    saveGame();
+    game.current = (game.current + 1) % game.players.length;
+    const showPass = game.players.length > 1;
+    // beginTurn repaints the parts for the new player, clears the die, the
+    // status line, and any previous note, so nothing stale carries over.
+    beginTurn(true);
+    if (note) {
+      if (showPass) {
+        els.passNote.textContent = note;
+        els.passNote.hidden = false;
+      } else {
+        els.statusLine.textContent = note;
+      }
+    }
+  }
+
   els.rollButton.addEventListener("click", () => {
     if (game.phase !== "rolling") return;
     game.phase = "rolling-animation";
@@ -705,33 +747,41 @@
     const player = game.players[game.current];
     const part = currentParts()[value - 1];
     player.rolls += 1;
-    player.rollCounts[part.name] = (player.rollCounts[part.name] || 0) + 1;
-    const count = player.rollCounts[part.name];
-    let blocked = null;
 
-    if (player.parts.has(part.name)) {
-      blocked = `You already drew the ${part.name}! Roll again.`;
-    } else if (game.mode === "ordered") {
-      const missing = (currentPrereqs()[part.name] || []).find((pre) => !player.parts.has(pre));
-      if (missing) blocked = `No ${missing} yet — the ${part.name} has nowhere to go!`;
-    }
-    if (!blocked && game.streak > 1 && count < game.streak) {
-      blocked = `${count}/${game.streak} rolls toward the ${part.name}… keep rolling!`;
-    }
+    const drawn = player.parts.has(part.name);
+    const missing = game.mode === "ordered"
+      ? (currentPrereqs()[part.name] || []).find((pre) => !player.parts.has(pre))
+      : null;
 
-    if (blocked) {
-      els.statusLine.textContent = blocked;
-      logChip(`${value}·${part.name} — not yet`, false);
+    // The die changes hands after this roll no matter what, so every outcome
+    // below ends the turn. A roll the player cannot use is simply forfeited.
+    if (drawn) {
+      logChip(`${player.avatar} rolled ${value}·${part.name} — already drawn`, false);
       GameHubJuice.drop();
-      renderParts();
-      game.phase = "rolling";
-      els.rollButton.disabled = false;
-      saveGame();
+      passTurn(`${player.name} rolled a ${value} — ${part.name} is already drawn. Turn forfeited.`);
       return;
     }
 
+    if (missing) {
+      logChip(`${player.avatar} rolled ${value}·${part.name} — locked`, false);
+      GameHubJuice.drop();
+      passTurn(`${player.name} rolled a ${value} — no ${missing} yet, so the ${part.name} has nowhere to go. Turn forfeited.`);
+      return;
+    }
+
+    const count = (player.rollCounts[part.name] || 0) + 1;
+    player.rollCounts[part.name] = count;
+
+    if (count < game.streak) {
+      logChip(`${player.avatar} rolled ${value}·${part.name} — marked ${count}/${game.streak}`, false);
+      GameHubJuice.drop();
+      passTurn(`${player.name} rolled a ${value} and marked ${count} of ${game.streak} for the ${part.name}. Turn forfeited.`);
+      return;
+    }
+
+    // Enough marks banked: this roll earns the drawing.
     els.statusLine.textContent = "";
-    logChip(`${value}·${part.name} — draw it!`, true);
+    logChip(`${player.avatar} rolled ${value}·${part.name} — draw it!`, true);
     openDrawOverlay(part);
   }
 
@@ -863,7 +913,7 @@
       GameHubJuice.tick();
       return;
     }
-    const partName = game.drawingPart || "body";
+    const partName = game.drawingPart || currentParts()[0].name;
     player.parts.add(partName);
     els.drawOverlay.hidden = true;
     GameHubJuice.pop(700);
@@ -873,10 +923,8 @@
       declareWinner(player);
       return;
     }
-    game.current = (game.current + 1) % game.players.length;
-    game.phase = "passing";
-    renderParts();
-    beginTurn(true);
+    // The drawing is part of the turn that earned it; then the die moves on.
+    passTurn();
   });
 
   /* ------------------------------------------------------------------ *
