@@ -18,6 +18,8 @@ const state = {
   solo: null,
   soloTimer: null,
   soloRecord: { wins: 0, losses: 0 },
+  boardSignature: "",
+  boardRotations: [],
 };
 
 const els = {
@@ -575,15 +577,27 @@ function handleGameEvent(event) {
   render();
 }
 
+// Dice orientation is random but fixed per board: re-rolling on every render
+// would make the letters visibly spin whenever a game event re-renders.
+function boardRotations(board) {
+  const signature = JSON.stringify(board);
+  if (state.boardSignature !== signature) {
+    state.boardSignature = signature;
+    state.boardRotations = board.flat().map(() => `${Math.floor(Math.random() * 4) * 90}deg`);
+  }
+  return state.boardRotations;
+}
+
 function renderBoard() {
   els.letterBoard.innerHTML = "";
   const size = state.game.size;
   els.letterBoard.style.setProperty("--board-size", size);
-  state.game.board.flat().forEach((letter) => {
+  const rotations = boardRotations(state.game.board);
+  state.game.board.flat().forEach((letter, index) => {
     const cell = document.createElement("div");
     cell.className = "letter-cell";
     cell.textContent = letter;
-    cell.style.setProperty("--tile-rotation", `${Math.floor(Math.random() * 4) * 90}deg`);
+    cell.style.setProperty("--tile-rotation", rotations[index]);
     els.letterBoard.append(cell);
   });
   els.letterBoard.hidden = state.game.status === "lobby";

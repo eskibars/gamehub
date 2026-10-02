@@ -395,3 +395,20 @@ button {
   font-weight: 700;
   color: var(--ink, #20231f);
 }
+
+.new-word-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  padding: 0 14px;
+  font-size: 0.85rem;
+  font-weight: 850;
+  color: var(--red);
+}
+
+.new-word-button:hover {
+  border-color: var(--red);
+}

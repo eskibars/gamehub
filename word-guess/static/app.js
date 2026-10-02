@@ -10,6 +10,7 @@ const ROWS = [...document.querySelectorAll("[data-row]")];
 const els = {
   categoryHint: document.querySelector("#categoryHint"),
   categorySelect: document.querySelector("#categorySelect"),
+  newWordButton: document.querySelector("#newWordButton"),
   board: document.querySelector("#board"),
   message: document.querySelector("#message"),
   keyboard: document.querySelector("#keyboard"),
@@ -403,14 +404,24 @@ function bindEvents() {
     input.addEventListener("change", () => {
       if (!input.checked) return;
       state.mode = input.value;
+      updateModeUi();
       startRound(false);
     });
+  });
+
+  els.newWordButton?.addEventListener("click", () => {
+    if (state.mode !== "practice") return;
+    startRound(true);
   });
 
   els.categorySelect?.addEventListener("change", () => {
     saveJson(SETTINGS_KEY, { hard: els.hardMode.checked, category: els.categorySelect.value });
     if (state.mode === "practice") startRound(false);
   });
+}
+
+function updateModeUi() {
+  if (els.newWordButton) els.newWordButton.hidden = state.mode !== "practice";
 }
 
 function updateCategoryHint() {
@@ -455,5 +466,6 @@ if (els.categorySelect && window.GameHubDictionaries) {
     els.categorySelect.append(option);
   });
 }
+updateModeUi();
 startRound(false);
 bindEvents();
