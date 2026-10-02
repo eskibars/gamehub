@@ -690,6 +690,8 @@ h1 {
   text-align: left;
   transform: rotate(var(--tilt));
   transition: transform 160ms ease, box-shadow 160ms ease;
+  /* Both taps of a double-tap must fire as clicks (no double-tap zoom). */
+  touch-action: manipulation;
 }
 
 .game-card:hover,

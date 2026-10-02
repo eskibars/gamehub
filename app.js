@@ -1243,6 +1243,24 @@ function selectedGame() {
   return games.find((game) => game.id === state.selectedId) || games[0];
 }
 
+function recordPlay(game) {
+  state.lastPlayed[game.id] = new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date());
+  state.lastPlayedAt[game.id] = new Date().toISOString();
+  saveState();
+}
+
+function launchSelected() {
+  const game = selectedGame();
+  if (!game.href) return;
+  recordPlay(game);
+  window.location.assign(game.href);
+}
+
 function statusLabel(status) {
   return status === "ready" ? "Ready locally" : "On the table";
 }
@@ -1266,6 +1284,12 @@ function matchesFilter(game) {
 function isSoloFriendly(game) {
   return game.category === "solo" || /Solo|robot/i.test(`${game.features.Mode} ${game.type}`);
 }
+
+// Double-tap opens the game directly (on phones/tablets the Open button sits
+// below the whole card grid). Tap state is module-level because renderCards()
+// rebuilds every card between the two taps of a double-tap.
+const DOUBLE_TAP_MS = 350;
+let lastCardTap = { id: null, at: 0 };
 
 function renderCards() {
   els.gameStack.innerHTML = "";
@@ -1315,6 +1339,14 @@ function renderCards() {
     `;
 
     card.addEventListener("click", () => {
+      const now = performance.now();
+      const isDoubleTap =
+        lastCardTap.id === game.id && now - lastCardTap.at < DOUBLE_TAP_MS;
+      lastCardTap = { id: game.id, at: now };
+      if (isDoubleTap) {
+        launchSelected();
+        return;
+      }
       state.selectedId = game.id;
       saveState();
       render();
@@ -1617,14 +1649,7 @@ function bindEvents() {
       event.preventDefault();
       return;
     }
-    state.lastPlayed[game.id] = new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date());
-    state.lastPlayedAt[game.id] = new Date().toISOString();
-    saveState();
+    recordPlay(game);
   });
 
   els.search.addEventListener("input", () => {
