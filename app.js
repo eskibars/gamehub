@@ -457,7 +457,7 @@ const games = [
     href: "/boggle/",
     accent: "#236c5a",
     tilt: "0.8deg",
-    description: "Race the clock and a dictionary-solving robot offline, or share a table link and compare lists together at the end.",
+    description: "Race the clock and an everyday-word robot offline, or share a table link and compare lists together at the end.",
     features: {
       Mode: "Solo vs robot or live table",
       Storage: "Local, or in-memory share code",

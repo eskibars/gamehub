@@ -1,6 +1,18 @@
 const PLAYER_KEY_PREFIX = "boggle-table-player-";
 const SOLO_STORAGE_KEY = "boggle-robot-v1";
 const SOLO_TIER_NAMES = { casual: "Casual", sharp: "Sharp", master: "Master" };
+// Robot strength tiers. Every tier hunts only from the everyday-word list
+// (never the raw board dictionary), so no setting races you to words like
+// "iao" or "roka". band = how far into the familiarity-ordered list the tier
+// may reach, maxLength caps the words it bothers with, and finds is the
+// number of words it will have found on a 3:00 round (scaled by the timer).
+const SOLO_TIERS = {
+  casual: { band: 0.4, maxLength: 5, finds: { 4: 6, 5: 8, 6: 9 } },
+  sharp: { band: 0.75, maxLength: 7, finds: { 4: 11, 5: 13, 6: 15 } },
+  master: { band: 1, maxLength: 10, finds: { 4: 17, 5: 21, 6: 24 } },
+};
+// Tier counts above are quoted for this round length; other timers scale.
+const SOLO_REFERENCE_SECONDS = 180;
 // Mirrors the server's weighted letter pool so solo boards play the same.
 const SOLO_LETTER_DISTRIBUTION = (
   "E".repeat(12) + "A".repeat(9) + "I".repeat(9) + "O".repeat(8) +
@@ -94,6 +106,24 @@ function soloDictionary() {
   words.sort();
   if (state.solo) state.solo.words = words;
   return words;
+}
+
+// The everyday words (most common first) the robot is allowed to hunt. Built
+// by tools/gen_boggle_common.py, so no tier can play a word a person would
+// not recognise.
+function soloCommonList() {
+  if (state.solo?.common) return state.solo.common;
+  const words = window.BoggleCommon?.WORDS || [];
+  if (state.solo) state.solo.common = words;
+  return words;
+}
+
+function soloCommonRank() {
+  if (state.solo?.commonRank) return state.solo.commonRank;
+  const rank = new Map();
+  soloCommonList().forEach((word, index) => rank.set(word, index));
+  if (state.solo) state.solo.commonRank = rank;
+  return rank;
 }
 
 function soloLowerBound(list, target) {
@@ -246,7 +276,9 @@ function startSolo(event) {
   state.playerId = "you";
   state.solo = {
     difficulty,
-    words: null, // dictionary parsed lazily on first use
+    words: null, // full board dictionary, parsed lazily on first use
+    common: null, // everyday-word list, parsed lazily on first use
+    commonRank: null,
     robotPlan: [],
     robotTimer: null,
     finishTimer: null,
@@ -268,23 +300,7 @@ function startSolo(event) {
     challenges: [],
   };
   // Plan the robot's hunt, then pace its finds across the round.
-  const all = soloSolveBoard(board);
-  let pool = all;
-  if (difficulty === "casual") {
-    pool = all.filter((w) => w.length <= 4);
-  } else if (difficulty === "sharp") {
-    pool = all.filter((w) => w.length <= 6);
-  }
-  const fraction = difficulty === "master" ? 1 : difficulty === "sharp" ? 0.85 : 0.55;
-  const plan = [];
-  for (const word of pool) {
-    if (Math.random() < fraction) plan.push(word);
-  }
-  for (let i = plan.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [plan[i], plan[j]] = [plan[j], plan[i]];
-  }
-  state.solo.robotPlan = plan;
+  state.solo.robotPlan = soloRobotPlan(board, difficulty, timerSeconds);
   els.setupView.hidden = true;
   els.gameView.hidden = false;
   els.connectionStatus.textContent = "Offline hunt";
@@ -296,6 +312,26 @@ function startSolo(event) {
   }
   scheduleSoloRobotReveal();
   state.solo.finishTimer = setTimeout(soloFinish, timerSeconds * 1000);
+}
+
+// Choose the words the robot will find this round. Candidates are the board's
+// everyday words inside the tier's familiarity band, and the count is capped
+// for the round length, so a long hunt cannot become a dictionary dump.
+function soloRobotPlan(board, difficulty, timerSeconds) {
+  const tier = SOLO_TIERS[difficulty] || SOLO_TIERS.casual;
+  const rank = soloCommonRank();
+  const bandEnd = Math.ceil(soloCommonList().length * tier.band);
+  const eligible = soloSolveBoard(board).filter((word) => {
+    const index = rank.get(word);
+    return index !== undefined && index < bandEnd && word.length <= tier.maxLength;
+  });
+  for (let i = eligible.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
+  }
+  const base = tier.finds[board.length] || tier.finds[4];
+  const target = Math.max(1, Math.round(base * (timerSeconds / SOLO_REFERENCE_SECONDS)));
+  return eligible.slice(0, target);
 }
 
 function scheduleSoloRobotReveal() {
@@ -372,12 +408,9 @@ function soloFinish() {
   if (!game || game.status !== "active") return;
   clearTimeout(solo.robotTimer);
   game.status = "finished";
-  // Dump the robot's whole planned list — it "finds" everything it was holding.
-  const robot = game.players.find((player) => player.id === "robot");
-  while (solo.robotPlan.length) {
-    robot.words.push(solo.robotPlan.shift());
-  }
-  robot.wordCount = robot.words.length;
+  // Whatever the robot had not revealed by the buzzer goes unclaimed: its
+  // score is what it actually found during the round, not a backlog dump.
+  solo.robotPlan = [];
   game.duplicateWords = [...soloDuplicateSet()];
   const scores = soloScores();
   const you = scores.find((entry) => entry.player.id === "you");
@@ -629,7 +662,15 @@ function hasMyChallenge(targetId, word) {
 }
 
 function renderWords() {
-  const duplicates = state.entryMode === "solo" ? soloDuplicateSet() : new Set(state.game.duplicateWords || []);
+  // Duplicates are only known once the round ends, so nothing may be crossed
+  // out while the clock runs — otherwise a shared word would spoil the result
+  // the moment the other hunter found it.
+  const finished = state.game.status === "finished";
+  const duplicates = !finished
+    ? new Set()
+    : state.entryMode === "solo"
+      ? soloDuplicateSet()
+      : new Set(state.game.duplicateWords || []);
   const player = currentPlayer();
   const ownWords = player?.words || [];
   els.wordCount.textContent = String(ownWords.length);
